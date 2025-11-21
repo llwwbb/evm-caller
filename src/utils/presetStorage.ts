@@ -1,0 +1,444 @@
+import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig } from '../types';
+
+// localStorage 键名常量
+const STORAGE_KEYS = {
+  RPC_PRESETS: 'evm-caller:rpc-presets',
+  CONTRACT_PRESETS: 'evm-caller:contract-presets',
+  ABI_PRESETS: 'evm-caller:abi-presets',
+  LAST_RPC_URL: 'evm-caller:last-rpc-url',
+  LAST_CONTRACT_ADDRESS: 'evm-caller:last-contract-address',
+  LAST_ABI: 'evm-caller:last-abi',
+  LAST_BLOCK_TAG: 'evm-caller:last-block-tag',
+};
+
+// 生成唯一 ID
+function generateId(): string {
+  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// ==================== RPC 预设 ====================
+
+export function loadRpcPresets(): RpcPreset[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.RPC_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载 RPC 预设失败:', error);
+    return [];
+  }
+}
+
+export function saveRpcPreset(name: string, rpcUrl: string, chainId?: number): RpcPreset {
+  const presets = loadRpcPresets();
+  const newPreset: RpcPreset = {
+    id: generateId(),
+    name,
+    rpcUrl,
+    chainId,
+    createdAt: Date.now(),
+  };
+  
+  presets.unshift(newPreset); // 最新的在前面
+  localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(presets));
+  return newPreset;
+}
+
+export function updateRpcPreset(id: string, updates: Partial<Omit<RpcPreset, 'id' | 'createdAt'>>): boolean {
+  const presets = loadRpcPresets();
+  const index = presets.findIndex(p => p.id === id);
+  
+  if (index === -1) return false;
+  
+  presets[index] = { ...presets[index], ...updates };
+  localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(presets));
+  return true;
+}
+
+export function deleteRpcPreset(id: string): boolean {
+  const presets = loadRpcPresets();
+  const filtered = presets.filter(p => p.id !== id);
+  
+  if (filtered.length === presets.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(filtered));
+  return true;
+}
+
+// ==================== 合约地址预设 ====================
+
+export function loadContractPresets(): ContractPreset[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.CONTRACT_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载合约预设失败:', error);
+    return [];
+  }
+}
+
+export function saveContractPreset(name: string, address: string, description?: string): ContractPreset {
+  const presets = loadContractPresets();
+  const newPreset: ContractPreset = {
+    id: generateId(),
+    name,
+    address,
+    description,
+    createdAt: Date.now(),
+  };
+  
+  presets.unshift(newPreset);
+  localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(presets));
+  return newPreset;
+}
+
+export function updateContractPreset(id: string, updates: Partial<Omit<ContractPreset, 'id' | 'createdAt'>>): boolean {
+  const presets = loadContractPresets();
+  const index = presets.findIndex(p => p.id === id);
+  
+  if (index === -1) return false;
+  
+  presets[index] = { ...presets[index], ...updates };
+  localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(presets));
+  return true;
+}
+
+export function deleteContractPreset(id: string): boolean {
+  const presets = loadContractPresets();
+  const filtered = presets.filter(p => p.id !== id);
+  
+  if (filtered.length === presets.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(filtered));
+  return true;
+}
+
+// ==================== ABI 预设 ====================
+
+export function loadAbiPresets(): AbiPreset[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.ABI_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载 ABI 预设失败:', error);
+    return [];
+  }
+}
+
+export function saveAbiPreset(name: string, abi: string): AbiPreset {
+  const presets = loadAbiPresets();
+  const newPreset: AbiPreset = {
+    id: generateId(),
+    name,
+    abi,
+    createdAt: Date.now(),
+  };
+  
+  presets.unshift(newPreset);
+  localStorage.setItem(STORAGE_KEYS.ABI_PRESETS, JSON.stringify(presets));
+  return newPreset;
+}
+
+export function updateAbiPreset(id: string, updates: Partial<Omit<AbiPreset, 'id' | 'createdAt'>>): boolean {
+  const presets = loadAbiPresets();
+  const index = presets.findIndex(p => p.id === id);
+  
+  if (index === -1) return false;
+  
+  presets[index] = { ...presets[index], ...updates };
+  localStorage.setItem(STORAGE_KEYS.ABI_PRESETS, JSON.stringify(presets));
+  return true;
+}
+
+export function deleteAbiPreset(id: string): boolean {
+  const presets = loadAbiPresets();
+  const filtered = presets.filter(p => p.id !== id);
+  
+  if (filtered.length === presets.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.ABI_PRESETS, JSON.stringify(filtered));
+  return true;
+}
+
+// ==================== 最后使用的配置 ====================
+
+export function saveLastRpcUrl(rpcUrl: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_RPC_URL, rpcUrl);
+  } catch (error) {
+    console.error('保存最后使用的 RPC URL 失败:', error);
+  }
+}
+
+export function loadLastRpcUrl(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LAST_RPC_URL);
+  } catch (error) {
+    console.error('加载最后使用的 RPC URL 失败:', error);
+    return null;
+  }
+}
+
+export function saveLastContractAddress(address: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_CONTRACT_ADDRESS, address);
+  } catch (error) {
+    console.error('保存最后使用的合约地址失败:', error);
+  }
+}
+
+export function loadLastContractAddress(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LAST_CONTRACT_ADDRESS);
+  } catch (error) {
+    console.error('加载最后使用的合约地址失败:', error);
+    return null;
+  }
+}
+
+export function saveLastAbi(abi: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_ABI, abi);
+  } catch (error) {
+    console.error('保存最后使用的 ABI 失败:', error);
+  }
+}
+
+export function loadLastAbi(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LAST_ABI);
+  } catch (error) {
+    console.error('加载最后使用的 ABI 失败:', error);
+    return null;
+  }
+}
+
+export function saveLastBlockTag(blockTag: string): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_BLOCK_TAG, blockTag);
+  } catch (error) {
+    console.error('保存最后使用的区块标识失败:', error);
+  }
+}
+
+export function loadLastBlockTag(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.LAST_BLOCK_TAG);
+  } catch (error) {
+    console.error('加载最后使用的区块标识失败:', error);
+    return null;
+  }
+}
+
+export function loadLastUsedConfig(): LastUsedConfig {
+  return {
+    rpcUrl: loadLastRpcUrl() || undefined,
+    contractAddress: loadLastContractAddress() || undefined,
+    abi: loadLastAbi() || undefined,
+    blockTag: loadLastBlockTag() || undefined,
+  };
+}
+
+// ==================== 初始化默认预设 ====================
+
+export function initializeDefaultPresets(): void {
+  // 只在首次使用时初始化
+  const hasRpcPresets = loadRpcPresets().length > 0;
+  const hasAbiPresets = loadAbiPresets().length > 0;
+  
+  if (!hasRpcPresets) {
+    // 添加常用的 RPC 预设
+    saveRpcPreset('Ethereum 主网', 'https://eth.llamarpc.com', 1);
+    saveRpcPreset('BSC 主网', 'https://bsc-dataseed.binance.org', 56);
+    saveRpcPreset('Polygon 主网', 'https://polygon-rpc.com', 137);
+  }
+  
+  if (!hasAbiPresets) {
+    // 添加 ERC20 标准 ABI
+    const erc20Abi = JSON.stringify([
+      {
+        "name": "name",
+        "type": "function",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [{"type": "string", "name": ""}]
+      },
+      {
+        "name": "symbol",
+        "type": "function",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [{"type": "string", "name": ""}]
+      },
+      {
+        "name": "decimals",
+        "type": "function",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [{"type": "uint8", "name": ""}]
+      },
+      {
+        "name": "totalSupply",
+        "type": "function",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [{"type": "uint256", "name": ""}]
+      },
+      {
+        "name": "balanceOf",
+        "type": "function",
+        "stateMutability": "view",
+        "inputs": [{"type": "address", "name": "account"}],
+        "outputs": [{"type": "uint256", "name": ""}]
+      }
+    ], null, 2);
+    
+    saveAbiPreset('ERC20 标准接口', erc20Abi);
+  }
+}
+
+// ==================== 导入/导出配置 ====================
+
+export interface ExportedConfig {
+  version: string;
+  exportedAt: number;
+  rpcPresets: RpcPreset[];
+  contractPresets: ContractPreset[];
+  abiPresets: AbiPreset[];
+}
+
+/**
+ * 导出所有预设配置为 JSON 对象
+ */
+export function exportAllPresets(): ExportedConfig {
+  return {
+    version: '1.0.0',
+    exportedAt: Date.now(),
+    rpcPresets: loadRpcPresets(),
+    contractPresets: loadContractPresets(),
+    abiPresets: loadAbiPresets(),
+  };
+}
+
+/**
+ * 导出所有预设配置并下载为 JSON 文件
+ */
+export function downloadPresetsAsJson(): void {
+  const config = exportAllPresets();
+  const json = JSON.stringify(config, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `evm-caller-config-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * 从 JSON 对象导入预设配置
+ * @param config - 导入的配置对象
+ * @param mode - 导入模式：'merge' 合并（保留现有）, 'replace' 替换（清空现有）
+ */
+export function importPresets(config: ExportedConfig, mode: 'merge' | 'replace' = 'merge'): {
+  success: boolean;
+  message: string;
+  imported: {
+    rpc: number;
+    contract: number;
+    abi: number;
+  };
+} {
+  try {
+    // 验证配置格式
+    if (!config || typeof config !== 'object') {
+      return {
+        success: false,
+        message: '配置格式无效',
+        imported: { rpc: 0, contract: 0, abi: 0 },
+      };
+    }
+
+    const { rpcPresets = [], contractPresets = [], abiPresets = [] } = config;
+
+    // 根据模式处理数据
+    if (mode === 'replace') {
+      // 替换模式：清空现有数据
+      localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(rpcPresets));
+      localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(contractPresets));
+      localStorage.setItem(STORAGE_KEYS.ABI_PRESETS, JSON.stringify(abiPresets));
+    } else {
+      // 合并模式：保留现有数据，添加新数据（避免重复）
+      const existingRpc = loadRpcPresets();
+      const existingContract = loadContractPresets();
+      const existingAbi = loadAbiPresets();
+
+      // 合并 RPC 预设（根据 rpcUrl 去重）
+      const existingRpcUrls = new Set(existingRpc.map(p => p.rpcUrl));
+      const newRpcPresets = rpcPresets.filter(p => !existingRpcUrls.has(p.rpcUrl));
+      const mergedRpc = [...existingRpc, ...newRpcPresets];
+      localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(mergedRpc));
+
+      // 合并合约预设（根据 address 去重）
+      const existingAddresses = new Set(existingContract.map(p => p.address.toLowerCase()));
+      const newContractPresets = contractPresets.filter(
+        p => !existingAddresses.has(p.address.toLowerCase())
+      );
+      const mergedContract = [...existingContract, ...newContractPresets];
+      localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(mergedContract));
+
+      // 合并 ABI 预设（根据名称去重）
+      const existingAbiNames = new Set(existingAbi.map(p => p.name));
+      const newAbiPresets = abiPresets.filter(p => !existingAbiNames.has(p.name));
+      const mergedAbi = [...existingAbi, ...newAbiPresets];
+      localStorage.setItem(STORAGE_KEYS.ABI_PRESETS, JSON.stringify(mergedAbi));
+    }
+
+    return {
+      success: true,
+      message: `成功导入配置 (${mode === 'replace' ? '替换' : '合并'}模式)`,
+      imported: {
+        rpc: rpcPresets.length,
+        contract: contractPresets.length,
+        abi: abiPresets.length,
+      },
+    };
+  } catch (error) {
+    console.error('导入配置失败:', error);
+    return {
+      success: false,
+      message: `导入失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      imported: { rpc: 0, contract: 0, abi: 0 },
+    };
+  }
+}
+
+/**
+ * 从文件导入预设配置
+ * @param file - JSON 文件
+ * @param mode - 导入模式
+ */
+export async function importPresetsFromFile(
+  file: File,
+  mode: 'merge' | 'replace' = 'merge'
+): Promise<{
+  success: boolean;
+  message: string;
+  imported: { rpc: number; contract: number; abi: number };
+}> {
+  try {
+    const text = await file.text();
+    const config: ExportedConfig = JSON.parse(text);
+    return importPresets(config, mode);
+  } catch (error) {
+    console.error('读取文件失败:', error);
+    return {
+      success: false,
+      message: `文件读取失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      imported: { rpc: 0, contract: 0, abi: 0 },
+    };
+  }
+}
+
