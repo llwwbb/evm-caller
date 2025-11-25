@@ -113,16 +113,16 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden">
       {/* 头部 */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 Web3 RPC 调用工具
               </h1>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-0.5 text-xs text-gray-600">
                 快速调用智能合约的 view/pure 函数
               </p>
             </div>
@@ -142,10 +142,10 @@ function App() {
       </header>
 
       {/* 主内容 */}
-      <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <main className="flex-1 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-hidden w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
           {/* 最左列：预设侧边栏 */}
-          <div className="h-[calc(100vh-12rem)] sticky top-4">
+          <div className="flex flex-col min-h-0">
             <PresetSidebar
               onRpcSelect={setRpcUrl}
               onContractSelect={setContractAddress}
@@ -161,7 +161,7 @@ function App() {
           </div>
 
           {/* 左中列：配置和 ABI 输入 */}
-          <div className="space-y-4">
+          <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
             {/* 步骤 1: RPC 配置 */}
             <RpcConfig 
               onRpcUrlChange={setRpcUrl}
@@ -201,7 +201,7 @@ function App() {
           </div>
 
           {/* 右中列：函数列表 */}
-          <div className="space-y-4">
+          <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
             {functions.length > 0 && rpcUrl && contractAddress && (
               <FunctionList
                 functions={functions}
@@ -213,7 +213,7 @@ function App() {
 
             {/* 调用中提示 */}
             {isCallInProgress && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-shrink-0">
                 <div className="flex items-center space-x-3">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                   <p className="text-sm text-blue-800">正在调用合约函数...</p>
@@ -223,7 +223,7 @@ function App() {
           </div>
 
           {/* 最右列：调用结果 */}
-          <div className="space-y-4">
+          <div className="flex flex-col overflow-y-auto min-h-0 pr-2">
             <div id="results-section">
               <ResultDisplay 
                 results={callHistory}
@@ -233,14 +233,14 @@ function App() {
             </div>
           </div>
         </div>
-
-        {/* 页脚信息 */}
-        <div className="mt-12 text-center text-sm text-gray-500">
-          <p>
-            支持 JSON ABI 和 Solidity 函数签名两种格式 · 基于 ethers.js v6 · 仅支持 view/pure 函数
-          </p>
-        </div>
       </main>
+
+      {/* 页脚信息 */}
+      <footer className="bg-white border-t border-gray-200 py-2 text-center text-xs text-gray-500 flex-shrink-0">
+        <p>
+          支持 JSON ABI 和 Solidity 函数签名两种格式 · 基于 ethers.js v6 · 仅支持 view/pure 函数
+        </p>
+      </footer>
     </div>
   );
 }
