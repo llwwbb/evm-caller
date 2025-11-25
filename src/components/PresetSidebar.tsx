@@ -134,17 +134,17 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-      <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+      <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex-shrink-0">
         <h2 className="text-lg font-bold">预设配置</h2>
         <p className="text-xs text-indigo-100 mt-1">点击快速切换</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* RPC 预设 */}
-        <div className="border-b border-gray-200">
+        <div className="flex-1 border-b border-gray-200 flex flex-col min-h-0">
           <button
             onClick={() => toggleSection('rpc')}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors flex-shrink-0"
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </button>
           
           {expandedSections.has('rpc') && (
-            <div className="px-2 pb-2 space-y-1">
+            <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
               {rpcPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">暂无预设</p>
               ) : (
@@ -246,10 +246,10 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
         </div>
 
         {/* 合约地址预设 */}
-        <div className="border-b border-gray-200">
+        <div className="flex-1 border-b border-gray-200 flex flex-col min-h-0">
           <button
             onClick={() => toggleSection('contract')}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors flex-shrink-0"
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -269,7 +269,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </button>
           
           {expandedSections.has('contract') && (
-            <div className="px-2 pb-2 space-y-1">
+            <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
               {contractPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">暂无预设</p>
               ) : (
@@ -351,10 +351,10 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
         </div>
 
         {/* ABI 预设 */}
-        <div>
+        <div className="flex-1 flex flex-col min-h-0">
           <button
             onClick={() => toggleSection('abi')}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors flex-shrink-0"
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,7 +374,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </button>
           
           {expandedSections.has('abi') && (
-            <div className="px-2 pb-2 space-y-1">
+            <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
               {abiPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">暂无预设</p>
               ) : (
