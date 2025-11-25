@@ -1,5 +1,28 @@
-import { Interface, FunctionFragment } from 'ethers';
-import { ParsedFunction, AbiInput } from '../types';
+import { Interface, FunctionFragment, ParamType } from 'ethers';
+import { ParsedFunction, AbiInput, ParsedParam } from '../types';
+
+/**
+ * 递归解析参数类型，包括 tuple 的 components
+ */
+function parseParamType(param: ParamType): ParsedParam {
+  const parsed: ParsedParam = {
+    name: param.name || '',
+    type: param.type,
+    internalType: param.baseType,
+  };
+
+  // 如果是 tuple 类型，递归解析 components
+  if (param.baseType === 'tuple' && param.components) {
+    parsed.components = param.components.map(comp => parseParamType(comp));
+  }
+
+  // 如果是数组类型的 tuple (tuple[])
+  if (param.baseType === 'array' && param.arrayChildren?.baseType === 'tuple') {
+    parsed.components = param.arrayChildren.components?.map(comp => parseParamType(comp));
+  }
+
+  return parsed;
+}
 
 /**
  * 解析 ABI 输入（支持 JSON ABI 和 Solidity 函数签名）
@@ -58,16 +81,8 @@ export function parseAbi(abiInput: AbiInput, includeStateMutating: boolean = fal
       if (isReadOnly || (includeStateMutating && isStateMutating)) {
         functions.push({
           name: func.name,
-          inputs: func.inputs.map(input => ({
-            name: input.name || '',
-            type: input.type,
-            internalType: input.baseType,
-          })),
-          outputs: func.outputs ? func.outputs.map(output => ({
-            name: output.name || '',
-            type: output.type,
-            internalType: output.baseType,
-          })) : [],
+          inputs: func.inputs.map(input => parseParamType(input)),
+          outputs: func.outputs ? func.outputs.map(output => parseParamType(output)) : [],
           stateMutability: func.stateMutability,
         });
       }

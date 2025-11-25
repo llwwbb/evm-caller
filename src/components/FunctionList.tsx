@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ParsedFunction, RpcConfig } from '../types';
+import { ParsedFunction, ParsedParam, RpcConfig } from '../types';
 import { parseParamValue } from '../utils/rpcCaller';
 
 interface FunctionListProps {
@@ -16,7 +16,8 @@ const FunctionList: React.FC<FunctionListProps> = ({
   onFunctionCall,
 }) => {
   const [expandedFunction, setExpandedFunction] = useState<string | null>(null);
-  const [inputValues, setInputValues] = useState<Record<string, Record<number, string>>>({});
+  // 改用嵌套路径的方式存储值，例如 "functionName.0.field1"
+  const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 获取函数类型的样式和标签
@@ -35,16 +36,14 @@ const FunctionList: React.FC<FunctionListProps> = ({
     }
   };
 
-  const handleInputChange = (functionName: string, paramIndex: number, value: string) => {
+  const handleInputChange = (path: string, value: string) => {
     setInputValues(prev => ({
       ...prev,
-      [functionName]: {
-        ...prev[functionName],
-        [paramIndex]: value,
-      },
+      [path]: value,
     }));
     
     // 清除该函数的错误
+    const functionName = path.split('.')[0];
     if (errors[functionName]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -54,6 +53,25 @@ const FunctionList: React.FC<FunctionListProps> = ({
     }
   };
 
+  // 递归解析参数值，包括 tuple
+  const parseParamRecursive = (param: ParsedParam, basePath: string): any => {
+    const value = inputValues[basePath] || '';
+    
+    // 如果是 tuple 类型，递归解析每个 component
+    if (param.type.startsWith('tuple') && param.components) {
+      const tupleValues: any[] = [];
+      for (let i = 0; i < param.components.length; i++) {
+        const component = param.components[i];
+        const componentPath = `${basePath}.${i}`;
+        tupleValues.push(parseParamRecursive(component, componentPath));
+      }
+      return tupleValues;
+    }
+    
+    // 普通类型，直接解析
+    return parseParamValue(value, param.type);
+  };
+
   const handleCall = (func: ParsedFunction) => {
     try {
       const args: any[] = [];
@@ -61,10 +79,8 @@ const FunctionList: React.FC<FunctionListProps> = ({
       // 解析所有参数
       for (let i = 0; i < func.inputs.length; i++) {
         const input = func.inputs[i];
-        const value = inputValues[func.name]?.[i] || '';
-        
-        const parsedValue = parseParamValue(value, input.type);
-        args.push(parsedValue);
+        const basePath = `${func.name}.${i}`;
+        args.push(parseParamRecursive(input, basePath));
       }
 
       onFunctionCall(func.name, args, func);
@@ -80,6 +96,52 @@ const FunctionList: React.FC<FunctionListProps> = ({
 
   const toggleFunction = (functionName: string) => {
     setExpandedFunction(prev => prev === functionName ? null : functionName);
+  };
+
+  // 递归渲染参数输入框，支持 tuple 展开
+  const renderParamInput = (param: ParsedParam, basePath: string, depth: number = 0): React.ReactElement => {
+    // 如果是 tuple 类型，展开显示所有 components
+    if (param.type.startsWith('tuple') && param.components) {
+      return (
+        <div key={basePath} className={`${depth > 0 ? 'ml-4 pl-4 border-l-2 border-gray-200' : ''}`}>
+          <div className="mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              {param.name || '参数'}
+              <span className="ml-2 text-xs text-gray-500 font-mono">
+                ({param.type})
+              </span>
+            </label>
+            {param.internalType && (
+              <p className="text-xs text-gray-500 mt-0.5">{param.internalType}</p>
+            )}
+          </div>
+          <div className="space-y-3 mt-2">
+            {param.components.map((component, idx) => 
+              renderParamInput(component, `${basePath}.${idx}`, depth + 1)
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // 普通类型，渲染单个输入框
+    return (
+      <div key={basePath} className={depth > 0 ? 'mb-2' : ''}>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {param.name || '字段'}
+          <span className="ml-2 text-xs text-gray-500 font-mono">
+            ({param.type})
+          </span>
+        </label>
+        <input
+          type="text"
+          value={inputValues[basePath] || ''}
+          onChange={(e) => handleInputChange(basePath, e.target.value)}
+          placeholder={getPlaceholder(param.type)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+        />
+      </div>
+    );
   };
 
   return (
@@ -140,24 +202,10 @@ const FunctionList: React.FC<FunctionListProps> = ({
                 {func.inputs.length === 0 ? (
                   <p className="text-sm text-gray-500 mb-4">此函数无需参数</p>
                 ) : (
-                  <div className="space-y-3 mb-4">
-                    {func.inputs.map((input, index) => (
-                      <div key={index}>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          {input.name || `参数 ${index + 1}`}
-                          <span className="ml-2 text-xs text-gray-500 font-mono">
-                            ({input.type})
-                          </span>
-                        </label>
-                        <input
-                          type="text"
-                          value={inputValues[func.name]?.[index] || ''}
-                          onChange={(e) => handleInputChange(func.name, index, e.target.value)}
-                          placeholder={getPlaceholder(input.type)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        />
-                      </div>
-                    ))}
+                  <div className="space-y-4 mb-4">
+                    {func.inputs.map((input, index) => 
+                      renderParamInput(input, `${func.name}.${index}`, 0)
+                    )}
                   </div>
                 )}
 
@@ -189,6 +237,7 @@ function getPlaceholder(type: string): string {
   if (type === 'bool') return 'true 或 false';
   if (type === 'string') return '文本';
   if (type.startsWith('bytes')) return '0x...';
+  if (type.startsWith('tuple')) return '展开填写各字段';
   if (type.endsWith('[]')) return '["item1", "item2"]';
   return '输入值';
 }

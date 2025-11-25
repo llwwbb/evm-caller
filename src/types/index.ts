@@ -11,6 +11,7 @@ export interface ParsedParam {
   name: string;
   type: string;
   internalType?: string;
+  components?: ParsedParam[]; // 支持 tuple 类型的嵌套结构
 }
 
 export interface FunctionCall {
