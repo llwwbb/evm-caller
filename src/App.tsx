@@ -4,6 +4,7 @@ import AbiInput from './components/AbiInput';
 import FunctionList from './components/FunctionList';
 import ResultDisplay from './components/ResultDisplay';
 import ConfigManager from './components/ConfigManager';
+import PresetSidebar from './components/PresetSidebar';
 import { callViewFunction } from './utils/rpcCaller';
 import { RpcConfig as RpcConfigType, ParsedFunction, CallResult } from './types';
 import { initializeDefaultPresets, loadLastUsedConfig } from './utils/presetStorage';
@@ -25,6 +26,7 @@ function App() {
   const [abiString, setAbiString] = useState('');
   const [callHistory, setCallHistory] = useState<CallHistory[]>([]);
   const [isCallInProgress, setIsCallInProgress] = useState(false);
+  const [selectedAbi, setSelectedAbi] = useState<string>(''); // 从侧边栏选择的 ABI
   
   // 加载上次使用的配置
   const [lastUsed] = useState(() => loadLastUsedConfig());
@@ -141,8 +143,24 @@ function App() {
 
       {/* 主内容 */}
       <main className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* 左列：配置和 ABI 输入 */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* 最左列：预设侧边栏 */}
+          <div className="h-[calc(100vh-12rem)] sticky top-4">
+            <PresetSidebar
+              onRpcSelect={setRpcUrl}
+              onContractSelect={setContractAddress}
+              onAbiSelect={setSelectedAbi}
+              onPresetsChanged={() => {
+                // 预设变化时刷新
+                window.location.reload();
+              }}
+              currentRpcUrl={rpcUrl}
+              currentContractAddress={contractAddress}
+              currentAbi={selectedAbi}
+            />
+          </div>
+
+          {/* 左中列：配置和 ABI 输入 */}
           <div className="space-y-4">
             {/* 步骤 1: RPC 配置 */}
             <RpcConfig 
@@ -152,6 +170,7 @@ function App() {
               initialRpcUrl={lastUsed.rpcUrl}
               initialContractAddress={lastUsed.contractAddress}
               initialBlockTag={lastUsed.blockTag}
+              onPresetsSaved={() => window.location.reload()}
             />
 
             {/* 步骤 2: ABI 输入 */}
@@ -159,6 +178,8 @@ function App() {
               onAbiParsed={handleAbiParsed}
               disabled={false}
               initialAbi={lastUsed.abi}
+              externalAbi={selectedAbi}
+              onPresetsSaved={() => window.location.reload()}
             />
 
             {/* 进度提示 */}
@@ -179,7 +200,7 @@ function App() {
             )}
           </div>
 
-          {/* 中列：函数列表 */}
+          {/* 右中列：函数列表 */}
           <div className="space-y-4">
             {functions.length > 0 && rpcUrl && contractAddress && (
               <FunctionList
@@ -201,7 +222,7 @@ function App() {
             )}
           </div>
 
-          {/* 右列：调用结果 */}
+          {/* 最右列：调用结果 */}
           <div className="space-y-4">
             <div id="results-section">
               <ResultDisplay 

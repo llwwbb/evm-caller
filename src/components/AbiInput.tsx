@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { parseAbi, validateAbiInput } from '../utils/abiParser';
-import { ParsedFunction, AbiPreset } from '../types';
-import PresetSelector from './PresetSelector';
-import PresetManager from './PresetManager';
+import { ParsedFunction } from '../types';
 import {
-  loadAbiPresets,
   saveAbiPreset,
-  updateAbiPreset,
-  deleteAbiPreset,
   saveLastAbi,
 } from '../utils/presetStorage';
 
@@ -15,23 +10,21 @@ interface AbiInputProps {
   onAbiParsed: (functions: ParsedFunction[], abiString: string) => void;
   disabled?: boolean;
   initialAbi?: string;
+  externalAbi?: string; // 外部传入的 ABI（从侧边栏预设选择）
+  onPresetsSaved?: () => void;
 }
 
 const AbiInput: React.FC<AbiInputProps> = ({ 
   onAbiParsed, 
   disabled = false,
   initialAbi = '',
+  externalAbi,
+  onPresetsSaved,
 }) => {
   const [abiInput, setAbiInput] = useState(initialAbi);
   const [error, setError] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-
-  // 预设相关状态
-  const [abiPresets, setAbiPresets] = useState<AbiPreset[]>([]);
-  const [selectedAbiPresetId, setSelectedAbiPresetId] = useState<string>();
-  const [showAbiManager, setShowAbiManager] = useState(false);
-  const [editingAbiPreset, setEditingAbiPreset] = useState<AbiPreset | null>(null);
 
   const exampleSolidityAbi = `function name() view returns (string)
 function symbol() view returns (string)
@@ -48,10 +41,39 @@ function balanceOf(address account) view returns (uint256)`;
   }
 ]`;
 
-  // 加载预设
+  // 当外部 ABI 变化时，自动更新并解析
   useEffect(() => {
-    setAbiPresets(loadAbiPresets());
-  }, []);
+    if (externalAbi && externalAbi !== abiInput) {
+      setAbiInput(externalAbi);
+      // 自动解析
+      setTimeout(() => {
+        const validation = validateAbiInput(externalAbi);
+        if (validation.valid) {
+          try {
+            const trimmed = externalAbi.trim();
+            let parsedInput: any;
+            
+            if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+              parsedInput = JSON.parse(trimmed);
+            } else {
+              parsedInput = trimmed;
+            }
+            
+            const functions = parseAbi(parsedInput);
+            const viewFunctions = functions.filter(
+              f => f.stateMutability === 'view' || f.stateMutability === 'pure'
+            );
+            
+            onAbiParsed(viewFunctions, externalAbi);
+            setError('');
+          } catch (err) {
+            console.error('自动解析 ABI 失败:', err);
+          }
+        }
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalAbi]);
 
   // 自动保存到 localStorage
   useEffect(() => {
@@ -83,231 +105,175 @@ function balanceOf(address account) view returns (uint256)`;
       }
 
       const functions = parseAbi(parsedInput);
-      
-      if (functions.length === 0) {
-        setError('未找到 view 或 pure 函数');
-        return;
-      }
+      const viewFunctions = functions.filter(
+        f => f.stateMutability === 'view' || f.stateMutability === 'pure'
+      );
 
-      onAbiParsed(functions, abiInput);
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+      if (viewFunctions.length === 0) {
+        setError('未找到 view 或 pure 函数');
       } else {
-        setError('解析失败：未知错误');
+        onAbiParsed(viewFunctions, abiInput);
       }
+    } catch (err) {
+      console.error('解析 ABI 失败:', err);
+      setError(err instanceof Error ? err.message : '解析失败');
     } finally {
       setIsParsing(false);
     }
   };
 
-  const loadExample = (type: 'solidity' | 'json') => {
-    setAbiInput(type === 'solidity' ? exampleSolidityAbi : exampleJsonAbi);
-    setError('');
-    setSelectedAbiPresetId(undefined);
-  };
-
-  // ABI 预设相关
-  const handleSelectAbiPreset = (preset: AbiPreset | null) => {
-    if (preset) {
-      setAbiInput(preset.abi);
-      setSelectedAbiPresetId(preset.id);
-      setError('');
-    } else {
-      setSelectedAbiPresetId(undefined);
-    }
-  };
-
-  const handleSaveAbiPreset = () => {
+  const handleSaveAbi = () => {
     if (!abiInput.trim()) {
-      alert('请先输入 ABI');
+      alert('请输入 ABI');
       return;
     }
-    
+
+    // 验证 ABI 格式
     const validation = validateAbiInput(abiInput);
     if (!validation.valid) {
-      alert('ABI 格式不正确：' + validation.error);
+      alert(`❌ ABI 格式无效: ${validation.error}`);
       return;
     }
-    
-    const name = prompt('请输入预设名称：', '我的 ABI');
-    if (name) {
-      const newPreset = saveAbiPreset(name.trim(), abiInput);
-      setAbiPresets(loadAbiPresets());
-      setSelectedAbiPresetId(newPreset.id);
+
+    const name = prompt('请为这个 ABI 预设命名：');
+    if (!name?.trim()) return;
+
+    try {
+      saveAbiPreset(name.trim(), abiInput.trim());
+      alert('✅ ABI 预设已保存');
+      onPresetsSaved?.();
+    } catch (error) {
+      console.error('保存 ABI 预设失败:', error);
+      alert('❌ 保存失败');
     }
   };
 
-  const handleEditAbiPreset = (preset: AbiPreset) => {
-    setEditingAbiPreset(preset);
-    setShowAbiManager(false);
-  };
-
-  const handleUpdateAbiPreset = () => {
-    if (!editingAbiPreset) return;
-    
-    const name = prompt('修改预设名称：', editingAbiPreset.name);
-    if (name && name.trim()) {
-      updateAbiPreset(editingAbiPreset.id, { name: name.trim() });
-      setAbiPresets(loadAbiPresets());
-    }
-    setEditingAbiPreset(null);
-  };
-
-  const handleDeleteAbiPreset = (id: string) => {
-    deleteAbiPreset(id);
-    setAbiPresets(loadAbiPresets());
-    if (selectedAbiPresetId === id) {
-      setSelectedAbiPresetId(undefined);
-    }
-  };
-
-  // 处理编辑预设
-  useEffect(() => {
-    if (editingAbiPreset) {
-      handleUpdateAbiPreset();
-    }
-  }, [editingAbiPreset]);
-
-  // 处理文件拖拽
+  // 拖拽文件处理
   const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
 
-    const files = e.dataTransfer.files;
-    if (files.length === 0) return;
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
 
-    const file = files[0];
-    
     // 检查文件类型
+    const validExtensions = ['.json', '.abi', '.txt'];
     const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.json') && !fileName.endsWith('.abi') && !fileName.endsWith('.txt')) {
-      setError('请拖入 .json、.abi 或 .txt 文件');
+    const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!isValidFile) {
+      setError(`不支持的文件类型。请上传 ${validExtensions.join(', ')} 文件`);
       return;
     }
 
     try {
       const content = await file.text();
       setAbiInput(content);
-      setSelectedAbiPresetId(undefined);
       setError('');
     } catch (err) {
-      setError('读取文件失败：' + (err instanceof Error ? err.message : '未知错误'));
+      console.error('读取文件失败:', err);
+      setError('读取文件失败');
     }
   };
 
+  const fillExampleSolidity = () => {
+    setAbiInput(exampleSolidityAbi);
+    setError('');
+  };
+
+  const fillExampleJson = () => {
+    setAbiInput(exampleJsonAbi);
+    setError('');
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        步骤 2: 输入 ABI
-      </h2>
+    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          ② ABI 输入
+        </h2>
+        <button
+          onClick={handleSaveAbi}
+          disabled={!abiInput.trim() || disabled}
+          className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+        >
+          💾 保存为预设
+        </button>
+      </div>
 
       <div className="space-y-4">
-        {/* ABI 预设选择 */}
-        <PresetSelector
-          label="ABI 预设"
-          presets={abiPresets}
-          selectedId={selectedAbiPresetId}
-          onSelect={handleSelectAbiPreset}
-          onSave={handleSaveAbiPreset}
-          onManage={() => setShowAbiManager(true)}
-          placeholder="选择 ABI 接口"
-        />
-
-        {/* ABI 输入框 */}
         <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              ABI（支持 JSON 或 Solidity 函数签名）
-            </label>
-            <div className="space-x-2">
-              <button
-                onClick={() => loadExample('solidity')}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                示例: Solidity
-              </button>
-              <button
-                onClick={() => loadExample('json')}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                示例: JSON
-              </button>
-            </div>
-          </div>
-          
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            合约 ABI
+          </label>
           <textarea
             value={abiInput}
-            onChange={(e) => {
-              setAbiInput(e.target.value);
-              setSelectedAbiPresetId(undefined);
-            }}
+            onChange={(e) => setAbiInput(e.target.value)}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            placeholder="粘贴 JSON ABI 或 Solidity 函数签名，或拖拽 .json/.abi/.txt 文件到此处"
             disabled={disabled}
-            placeholder="粘贴 JSON ABI 或输入 Solidity 函数签名（每行一个）&#10;例如：function balanceOf(address) view returns (uint256)&#10;&#10;💡 提示：可以直接拖拽 .json、.abi 或 .txt 文件到此处"
-            rows={12}
-            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors ${
-              isDragging 
-                ? 'border-blue-500 bg-blue-50 border-2' 
-                : 'border-gray-300'
+            className={`w-full min-h-48 px-4 py-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y ${
+              disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+            } ${
+              isDragging ? 'border-purple-500 bg-purple-50 border-2' : 'border-gray-300'
             }`}
           />
-          
-          <p className="text-xs text-gray-500 mt-1">
-            支持两种格式：<br />
-            1. JSON ABI 格式（标准 ABI 数组）<br />
-            2. Solidity 函数签名（如：function name() view returns (string)）
-          </p>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex gap-2">
+              <button
+                onClick={fillExampleSolidity}
+                disabled={disabled}
+                className="text-xs text-blue-600 hover:text-blue-800 underline disabled:text-gray-400 disabled:no-underline"
+              >
+                示例（Solidity）
+              </button>
+              <button
+                onClick={fillExampleJson}
+                disabled={disabled}
+                className="text-xs text-blue-600 hover:text-blue-800 underline disabled:text-gray-400 disabled:no-underline"
+              >
+                示例（JSON）
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              支持 JSON ABI 和 Solidity 签名格式
+            </p>
+          </div>
         </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-800">❌ {error}</p>
+          </div>
+        )}
 
         <button
           onClick={handleParse}
-          disabled={disabled || isParsing || !abiInput.trim()}
-          className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          disabled={!abiInput.trim() || disabled || isParsing}
+          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
-          {isParsing ? '解析中...' : '解析 ABI'}
-        </button>
-
-        {error && (
-          <div className="p-4 rounded-md bg-red-50 text-red-800 border border-red-200">
-            {error}
-          </div>
-        )}
-      </div>
-
-      {/* ABI 预设管理弹窗 */}
-      {showAbiManager && (
-        <PresetManager
-          title="管理 ABI 预设"
-          presets={abiPresets}
-          onClose={() => setShowAbiManager(false)}
-          onEdit={handleEditAbiPreset}
-          onDelete={handleDeleteAbiPreset}
-          renderPreview={(preset) => (
-            <div className="text-sm">
-              <pre className="text-gray-600 text-xs overflow-x-auto whitespace-pre-wrap break-all max-h-24">
-                {preset.abi.substring(0, 200)}
-                {preset.abi.length > 200 && '...'}
-              </pre>
-            </div>
+          {isParsing ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              解析中...
+            </>
+          ) : (
+            '🔍 解析 ABI'
           )}
-        />
-      )}
+        </button>
+      </div>
     </div>
   );
 };
