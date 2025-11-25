@@ -19,6 +19,22 @@ const FunctionList: React.FC<FunctionListProps> = ({
   const [inputValues, setInputValues] = useState<Record<string, Record<number, string>>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // 获取函数类型的样式和标签
+  const getFunctionTypeBadge = (stateMutability: string) => {
+    switch (stateMutability) {
+      case 'view':
+        return <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-medium">👁️ VIEW</span>;
+      case 'pure':
+        return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">🔒 PURE</span>;
+      case 'payable':
+        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">💰 PAYABLE (模拟)</span>;
+      case 'nonpayable':
+        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">⚠️ 模拟调用</span>;
+      default:
+        return <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs font-medium">{stateMutability}</span>;
+    }
+  };
+
   const handleInputChange = (functionName: string, paramIndex: number, value: string) => {
     setInputValues(prev => ({
       ...prev,
@@ -85,12 +101,12 @@ const FunctionList: React.FC<FunctionListProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">
-                    {func.name}
-                    <span className="ml-2 text-xs text-gray-500">
-                      ({func.stateMutability})
-                    </span>
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-800">
+                      {func.name}
+                    </h3>
+                    {getFunctionTypeBadge(func.stateMutability)}
+                  </div>
                   
                   <p className="text-sm text-gray-600 mt-1 font-mono">
                     {func.inputs.length > 0

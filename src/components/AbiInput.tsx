@@ -25,6 +25,7 @@ const AbiInput: React.FC<AbiInputProps> = ({
   const [error, setError] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [includeStateMutating, setIncludeStateMutating] = useState(false); // 新增：是否包含状态修改函数
 
   const exampleSolidityAbi = `function name() view returns (string)
 function symbol() view returns (string)
@@ -47,7 +48,7 @@ function balanceOf(address account) view returns (uint256)`;
       setAbiInput(externalAbi);
       // 自动解析
       setTimeout(() => {
-        const validation = validateAbiInput(externalAbi);
+        const validation = validateAbiInput(externalAbi, includeStateMutating);
         if (validation.valid) {
           try {
             const trimmed = externalAbi.trim();
@@ -59,12 +60,9 @@ function balanceOf(address account) view returns (uint256)`;
               parsedInput = trimmed;
             }
             
-            const functions = parseAbi(parsedInput);
-            const viewFunctions = functions.filter(
-              f => f.stateMutability === 'view' || f.stateMutability === 'pure'
-            );
+            const functions = parseAbi(parsedInput, includeStateMutating);
             
-            onAbiParsed(viewFunctions, externalAbi);
+            onAbiParsed(functions, externalAbi);
             setError('');
           } catch (err) {
             console.error('自动解析 ABI 失败:', err);
@@ -73,7 +71,7 @@ function balanceOf(address account) view returns (uint256)`;
       }, 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalAbi]);
+  }, [externalAbi, includeStateMutating]); // 添加 includeStateMutating 依赖
 
   // 自动保存到 localStorage
   useEffect(() => {
@@ -86,7 +84,7 @@ function balanceOf(address account) view returns (uint256)`;
   const handleParse = () => {
     setError('');
     
-    const validation = validateAbiInput(abiInput);
+    const validation = validateAbiInput(abiInput, includeStateMutating);
     if (!validation.valid) {
       setError(validation.error || '输入格式错误');
       return;
@@ -104,15 +102,12 @@ function balanceOf(address account) view returns (uint256)`;
         parsedInput = trimmed;
       }
 
-      const functions = parseAbi(parsedInput);
-      const viewFunctions = functions.filter(
-        f => f.stateMutability === 'view' || f.stateMutability === 'pure'
-      );
+      const functions = parseAbi(parsedInput, includeStateMutating);
 
-      if (viewFunctions.length === 0) {
-        setError('未找到 view 或 pure 函数');
+      if (functions.length === 0) {
+        setError(includeStateMutating ? '未找到有效的函数' : '未找到 view 或 pure 函数');
       } else {
-        onAbiParsed(viewFunctions, abiInput);
+        onAbiParsed(functions, abiInput);
       }
     } catch (err) {
       console.error('解析 ABI 失败:', err);
@@ -129,7 +124,7 @@ function balanceOf(address account) view returns (uint256)`;
     }
 
     // 验证 ABI 格式
-    const validation = validateAbiInput(abiInput);
+    const validation = validateAbiInput(abiInput, includeStateMutating);
     if (!validation.valid) {
       alert(`❌ ABI 格式无效: ${validation.error}`);
       return;
@@ -258,6 +253,24 @@ function balanceOf(address account) view returns (uint256)`;
             <p className="text-sm text-red-800">❌ {error}</p>
           </div>
         )}
+
+        {/* 新增：状态修改函数选项 */}
+        <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <input
+            type="checkbox"
+            id="includeStateMutating"
+            checked={includeStateMutating}
+            onChange={(e) => setIncludeStateMutating(e.target.checked)}
+            className="w-4 h-4 text-purple-600 bg-white border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+          />
+          <label htmlFor="includeStateMutating" className="flex-1 text-sm text-gray-700 cursor-pointer select-none">
+            <span className="font-medium">包含状态修改函数</span>
+            <span className="text-xs text-gray-600 ml-2">（payable/nonpayable，将以模拟方式调用）</span>
+          </label>
+          <div className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+            ⚠️ 模拟调用
+          </div>
+        </div>
 
         <button
           onClick={handleParse}

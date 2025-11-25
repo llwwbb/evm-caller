@@ -123,13 +123,16 @@ function App() {
                 Web3 RPC 调用工具
               </h1>
               <p className="mt-0.5 text-xs text-gray-600">
-                快速调用智能合约的 view/pure 函数
+                快速调用智能合约的只读函数 + 模拟执行状态修改函数
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                  仅支持 View 函数
+                  👁️ View/Pure
+                </div>
+                <div className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
+                  ⚠️ 模拟调用
                 </div>
                 <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
                   无需钱包

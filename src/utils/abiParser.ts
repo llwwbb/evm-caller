@@ -4,9 +4,10 @@ import { ParsedFunction, AbiInput } from '../types';
 /**
  * 解析 ABI 输入（支持 JSON ABI 和 Solidity 函数签名）
  * @param abiInput - JSON ABI 数组或 Solidity 函数签名字符串
- * @returns 解析后的 view/pure 函数列表
+ * @param includeStateMutating - 是否包含状态修改函数（payable/nonpayable）
+ * @returns 解析后的函数列表
  */
-export function parseAbi(abiInput: AbiInput): ParsedFunction[] {
+export function parseAbi(abiInput: AbiInput, includeStateMutating: boolean = false): ParsedFunction[] {
   try {
     let iface: Interface;
 
@@ -22,14 +23,22 @@ export function parseAbi(abiInput: AbiInput): ParsedFunction[] {
       // 构造一个临时的 Interface
       const fragments: string[] = [];
       for (const line of lines) {
-        // 只处理包含 view 或 pure 的函数
-        if (line.includes('view') || line.includes('pure')) {
-          fragments.push(line);
+        // 根据选项决定是否包含状态修改函数
+        if (includeStateMutating) {
+          // 包含所有 function 声明
+          if (line.includes('function')) {
+            fragments.push(line);
+          }
+        } else {
+          // 只处理包含 view 或 pure 的函数
+          if (line.includes('view') || line.includes('pure')) {
+            fragments.push(line);
+          }
         }
       }
 
       if (fragments.length === 0) {
-        throw new Error('未找到 view 或 pure 函数');
+        throw new Error(includeStateMutating ? '未找到有效的函数' : '未找到 view 或 pure 函数');
       }
 
       iface = new Interface(fragments);
@@ -42,8 +51,11 @@ export function parseAbi(abiInput: AbiInput): ParsedFunction[] {
     const functions: ParsedFunction[] = [];
     
     iface.forEachFunction((func: FunctionFragment) => {
-      // 只保留 view 和 pure 函数
-      if (func.stateMutability === 'view' || func.stateMutability === 'pure') {
+      // 根据选项决定是否包含状态修改函数
+      const isReadOnly = func.stateMutability === 'view' || func.stateMutability === 'pure';
+      const isStateMutating = func.stateMutability === 'nonpayable' || func.stateMutability === 'payable';
+      
+      if (isReadOnly || (includeStateMutating && isStateMutating)) {
         functions.push({
           name: func.name,
           inputs: func.inputs.map(input => ({
@@ -62,7 +74,7 @@ export function parseAbi(abiInput: AbiInput): ParsedFunction[] {
     });
 
     if (functions.length === 0) {
-      throw new Error('ABI 中没有找到 view 或 pure 函数');
+      throw new Error(includeStateMutating ? 'ABI 中没有找到有效的函数' : 'ABI 中没有找到 view 或 pure 函数');
     }
 
     return functions;
@@ -77,9 +89,10 @@ export function parseAbi(abiInput: AbiInput): ParsedFunction[] {
 /**
  * 验证 ABI 输入格式
  * @param abiInput - 用户输入的 ABI 字符串
+ * @param includeStateMutating - 是否包含状态修改函数
  * @returns 验证结果和错误信息
  */
-export function validateAbiInput(abiInput: string): { valid: boolean; error?: string } {
+export function validateAbiInput(abiInput: string, includeStateMutating: boolean = false): { valid: boolean; error?: string } {
   if (!abiInput || abiInput.trim() === '') {
     return { valid: false, error: 'ABI 不能为空' };
   }
@@ -101,11 +114,16 @@ export function validateAbiInput(abiInput: string): { valid: boolean; error?: st
 
   // 检查是否是 Solidity 函数签名
   if (trimmed.includes('function')) {
-    // 简单验证：检查是否包含 view 或 pure
-    if (trimmed.includes('view') || trimmed.includes('pure')) {
+    if (includeStateMutating) {
+      // 如果包含状态修改函数，只要有 function 关键字即可
       return { valid: true };
+    } else {
+      // 简单验证：检查是否包含 view 或 pure
+      if (trimmed.includes('view') || trimmed.includes('pure')) {
+        return { valid: true };
+      }
+      return { valid: false, error: '请确保函数签名包含 view 或 pure 关键字，或勾选"包含状态修改函数"' };
     }
-    return { valid: false, error: '请确保函数签名包含 view 或 pure 关键字' };
   }
 
   return { valid: false, error: '无法识别的 ABI 格式（支持 JSON ABI 或 Solidity 函数签名）' };
