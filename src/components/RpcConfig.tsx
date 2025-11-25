@@ -15,6 +15,8 @@ interface RpcConfigProps {
   initialRpcUrl?: string;
   initialContractAddress?: string;
   initialBlockTag?: string;
+  externalRpcUrl?: string; // 新增：从侧边栏选择时传入
+  externalContractAddress?: string; // 新增：从侧边栏选择时传入
   onPresetsSaved?: () => void;
 }
 
@@ -25,6 +27,8 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
   initialRpcUrl = '',
   initialContractAddress = '',
   initialBlockTag = 'latest',
+  externalRpcUrl, // 新增
+  externalContractAddress, // 新增
   onPresetsSaved,
 }) => {
   const [rpcUrl, setRpcUrl] = useState(initialRpcUrl);
@@ -32,6 +36,20 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
   const [blockTag, setBlockTag] = useState(initialBlockTag);
   const [isValidating, setIsValidating] = useState(false);
   const [validationMessage, setValidationMessage] = useState('');
+
+  // 监听外部 RPC URL 变化（从侧边栏选择时）
+  useEffect(() => {
+    if (externalRpcUrl && externalRpcUrl !== rpcUrl) {
+      setRpcUrl(externalRpcUrl);
+    }
+  }, [externalRpcUrl]);
+
+  // 监听外部合约地址变化（从侧边栏选择时）
+  useEffect(() => {
+    if (externalContractAddress && externalContractAddress !== contractAddress) {
+      setContractAddress(externalContractAddress);
+    }
+  }, [externalContractAddress]);
 
   // 自动保存到 localStorage 并通知父组件
   useEffect(() => {

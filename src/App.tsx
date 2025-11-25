@@ -170,6 +170,8 @@ function App() {
               initialRpcUrl={lastUsed.rpcUrl}
               initialContractAddress={lastUsed.contractAddress}
               initialBlockTag={lastUsed.blockTag}
+              externalRpcUrl={rpcUrl}
+              externalContractAddress={contractAddress}
               onPresetsSaved={() => window.location.reload()}
             />
 
