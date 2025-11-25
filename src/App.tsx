@@ -67,7 +67,8 @@ function App() {
         abiString,
         functionName,
         args,
-        func.outputs  // 传递输出定义，用于格式化带名称的返回值
+        func.outputs,  // 传递输出定义，用于格式化带名称的返回值
+        func.stateMutability  // 传递函数状态可变性，用于判断是否需要模拟调用
       );
 
       // 添加到调用历史（最新的在前面）

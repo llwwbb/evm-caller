@@ -2,12 +2,13 @@ import { JsonRpcProvider, Contract } from 'ethers';
 import { CallResult, RpcConfig, ParsedParam } from '../types';
 
 /**
- * 调用合约的 view 函数
+ * 调用合约的 view 函数或模拟执行状态修改函数
  * @param config - RPC 配置
  * @param abi - 合约 ABI
  * @param functionName - 函数名
  * @param args - 函数参数
  * @param outputs - 函数输出定义（用于格式化带名称的返回值）
+ * @param stateMutability - 函数的状态可变性（view/pure/nonpayable/payable）
  * @returns 调用结果
  */
 export async function callViewFunction(
@@ -15,11 +16,13 @@ export async function callViewFunction(
   abi: string | any[],
   functionName: string,
   args: any[],
-  outputs?: ParsedParam[]
+  outputs?: ParsedParam[],
+  stateMutability?: string
 ): Promise<CallResult> {
   try {
     console.log('🚀 开始调用函数:', functionName, 'args:', args);
     console.log('📋 outputs 定义:', outputs);
+    console.log('🔧 函数状态可变性:', stateMutability);
     
     // 创建 provider
     const provider = new JsonRpcProvider(config.rpcUrl);
@@ -37,8 +40,20 @@ export async function callViewFunction(
     
     console.log('🔖 使用区块标识:', blockTag, '类型:', typeof blockTag);
 
-    // 调用函数时指定 blockTag
-    const result = await contract[functionName](...args, { blockTag });
+    // 根据函数类型选择调用方式
+    let result: any;
+    const isStateMutating = stateMutability === 'nonpayable' || stateMutability === 'payable';
+    
+    if (isStateMutating) {
+      // 状态修改函数：使用 staticCall 模拟执行
+      console.log('⚠️ 使用 staticCall 模拟执行状态修改函数');
+      result = await contract[functionName].staticCall(...args, { blockTag });
+    } else {
+      // 只读函数：直接调用
+      console.log('👁️ 调用只读函数');
+      result = await contract[functionName](...args, { blockTag });
+    }
+    
     console.log('📥 原始返回结果:', result);
     console.log('🔍 结果类型检查:', {
       hasToArray: typeof result?.toArray === 'function',
