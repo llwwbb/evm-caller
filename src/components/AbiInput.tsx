@@ -26,6 +26,7 @@ const AbiInput: React.FC<AbiInputProps> = ({
   const [isParsing, setIsParsing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [includeStateMutating, setIncludeStateMutating] = useState(false); // 新增：是否包含状态修改函数
+  const [hasAutoParseInitial, setHasAutoParseInitial] = useState(false); // 标记是否已自动解析初始 ABI
 
   const exampleSolidityAbi = `function name() view returns (string)
 function symbol() view returns (string)
@@ -41,6 +42,34 @@ function balanceOf(address account) view returns (uint256)`;
     "outputs": [{"type": "string"}]
   }
 ]`;
+
+  // 初始化时，如果有 initialAbi，自动解析
+  useEffect(() => {
+    if (initialAbi && !hasAutoParseInitial) {
+      setHasAutoParseInitial(true);
+      const validation = validateAbiInput(initialAbi, includeStateMutating);
+      if (validation.valid) {
+        try {
+          const trimmed = initialAbi.trim();
+          let parsedInput: any;
+          
+          if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+            parsedInput = JSON.parse(trimmed);
+          } else {
+            parsedInput = trimmed;
+          }
+          
+          const functions = parseAbi(parsedInput, includeStateMutating);
+          
+          onAbiParsed(functions, initialAbi);
+          setError('');
+        } catch (err) {
+          console.error('初始化自动解析 ABI 失败:', err);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在初始化时执行一次
 
   // 当外部 ABI 变化时，自动更新并解析
   useEffect(() => {

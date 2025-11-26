@@ -20,6 +20,7 @@ interface PresetSidebarProps {
   currentRpcUrl?: string;
   currentContractAddress?: string;
   currentAbi?: string;
+  refreshTrigger?: number; // 用于触发刷新的计数器
 }
 
 const PresetSidebar: React.FC<PresetSidebarProps> = ({
@@ -30,6 +31,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   currentRpcUrl,
   currentContractAddress,
   currentAbi,
+  refreshTrigger,
 }) => {
   const [rpcPresets, setRpcPresets] = useState<RpcPreset[]>([]);
   const [contractPresets, setContractPresets] = useState<ContractPreset[]>([]);
@@ -41,6 +43,13 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   useEffect(() => {
     loadPresets();
   }, []);
+
+  // 监听刷新触发器
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      loadPresets();
+    }
+  }, [refreshTrigger]);
 
   const loadPresets = () => {
     // 按名称排序

@@ -1,4 +1,4 @@
-import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig } from '../types';
+import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory } from '../types';
 
 // localStorage 键名常量
 const STORAGE_KEYS = {
@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   LAST_CONTRACT_ADDRESS: 'evm-caller:last-contract-address',
   LAST_ABI: 'evm-caller:last-abi',
   LAST_BLOCK_TAG: 'evm-caller:last-block-tag',
+  CALL_HISTORY: 'evm-caller:call-history',
 };
 
 // 生成唯一 ID
@@ -439,6 +440,52 @@ export async function importPresetsFromFile(
       message: `文件读取失败: ${error instanceof Error ? error.message : '未知错误'}`,
       imported: { rpc: 0, contract: 0, abi: 0 },
     };
+  }
+}
+
+// ==================== 调用历史 ====================
+
+/**
+ * 保存调用历史
+ * @param history - 调用历史数组
+ */
+export function saveCallHistory(history: CallHistory[]): void {
+  try {
+    // 序列化时处理 BigInt
+    const json = JSON.stringify(history, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    localStorage.setItem(STORAGE_KEYS.CALL_HISTORY, json);
+  } catch (error) {
+    console.error('保存调用历史失败:', error);
+  }
+}
+
+/**
+ * 加载调用历史
+ * @returns 调用历史数组
+ */
+export function loadCallHistory(): CallHistory[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.CALL_HISTORY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载调用历史失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 清空调用历史
+ */
+export function clearCallHistory(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.CALL_HISTORY);
+  } catch (error) {
+    console.error('清空调用历史失败:', error);
   }
 }
 

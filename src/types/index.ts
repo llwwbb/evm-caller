@@ -64,3 +64,12 @@ export interface LastUsedConfig {
   blockTag?: string;
 }
 
+export interface CallHistory {
+  id: string;
+  functionName: string;
+  args: any[];
+  result: CallResult;
+  timestamp: number;
+  blockTag?: string | number; // 记录调用时使用的区块标识
+}
+

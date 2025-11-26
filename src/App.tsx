@@ -6,17 +6,13 @@ import ResultDisplay from './components/ResultDisplay';
 import ConfigManager from './components/ConfigManager';
 import PresetSidebar from './components/PresetSidebar';
 import { callViewFunction } from './utils/rpcCaller';
-import { RpcConfig as RpcConfigType, ParsedFunction, CallResult } from './types';
-import { initializeDefaultPresets, loadLastUsedConfig } from './utils/presetStorage';
-
-interface CallHistory {
-  id: string;
-  functionName: string;
-  args: any[];
-  result: CallResult;
-  timestamp: number;
-  blockTag?: string | number; // 记录调用时使用的区块标识
-}
+import { RpcConfig as RpcConfigType, ParsedFunction, CallHistory } from './types';
+import { 
+  initializeDefaultPresets, 
+  loadLastUsedConfig, 
+  saveCallHistory, 
+  loadCallHistory
+} from './utils/presetStorage';
 
 function App() {
   const [rpcUrl, setRpcUrl] = useState('');
@@ -24,9 +20,10 @@ function App() {
   const [blockTag, setBlockTag] = useState('latest');
   const [functions, setFunctions] = useState<ParsedFunction[]>([]);
   const [abiString, setAbiString] = useState('');
-  const [callHistory, setCallHistory] = useState<CallHistory[]>([]);
+  const [callHistory, setCallHistory] = useState<CallHistory[]>(() => loadCallHistory()); // 初始化时从 localStorage 加载
   const [isCallInProgress, setIsCallInProgress] = useState(false);
   const [selectedAbi, setSelectedAbi] = useState<string>(''); // 从侧边栏选择的 ABI
+  const [presetRefreshTrigger, setPresetRefreshTrigger] = useState(0); // 用于触发侧边栏刷新
   
   // 加载上次使用的配置
   const [lastUsed] = useState(() => loadLastUsedConfig());
@@ -35,6 +32,11 @@ function App() {
   useEffect(() => {
     initializeDefaultPresets();
   }, []);
+
+  // 监听调用历史变化，自动保存到 localStorage
+  useEffect(() => {
+    saveCallHistory(callHistory);
+  }, [callHistory]);
 
   const handleAbiParsed = (parsedFunctions: ParsedFunction[], abi: string) => {
     setFunctions(parsedFunctions);
@@ -150,17 +152,18 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
           {/* 最左列：预设侧边栏 */}
           <div className="flex flex-col min-h-0">
-            <PresetSidebar
+            <PresetSidebar 
               onRpcSelect={setRpcUrl}
               onContractSelect={setContractAddress}
               onAbiSelect={setSelectedAbi}
               onPresetsChanged={() => {
-                // 预设变化时刷新
-                window.location.reload();
+                // 预设变化时触发刷新
+                setPresetRefreshTrigger(prev => prev + 1);
               }}
               currentRpcUrl={rpcUrl}
               currentContractAddress={contractAddress}
               currentAbi={selectedAbi}
+              refreshTrigger={presetRefreshTrigger}
             />
           </div>
 
@@ -176,7 +179,7 @@ function App() {
               initialBlockTag={lastUsed.blockTag}
               externalRpcUrl={rpcUrl}
               externalContractAddress={contractAddress}
-              onPresetsSaved={() => window.location.reload()}
+              onPresetsSaved={() => setPresetRefreshTrigger(prev => prev + 1)}
             />
 
             {/* 步骤 2: ABI 输入 */}
@@ -185,7 +188,7 @@ function App() {
               disabled={false}
               initialAbi={lastUsed.abi}
               externalAbi={selectedAbi}
-              onPresetsSaved={() => window.location.reload()}
+              onPresetsSaved={() => setPresetRefreshTrigger(prev => prev + 1)}
             />
 
             {/* 进度提示 */}
