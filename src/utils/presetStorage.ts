@@ -10,6 +10,9 @@ const STORAGE_KEYS = {
   LAST_ABI: 'evm-caller:last-abi',
   LAST_BLOCK_TAG: 'evm-caller:last-block-tag',
   CALL_HISTORY: 'evm-caller:call-history',
+  TX_PARSER_RESULT: 'evm-caller:tx-parser-result',
+  HEX_PARSER_RESULT: 'evm-caller:hex-parser-result',
+  EVENT_QUERY_RESULTS: 'evm-caller:event-query-results',
 };
 
 // 生成唯一 ID
@@ -486,6 +489,98 @@ export function clearCallHistory(): void {
     localStorage.removeItem(STORAGE_KEYS.CALL_HISTORY);
   } catch (error) {
     console.error('清空调用历史失败:', error);
+  }
+}
+
+// ==================== Parser 结果持久化 ====================
+
+/**
+ * 保存交易解析结果
+ */
+export function saveTxParserResult(result: any): void {
+  try {
+    const json = JSON.stringify(result, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    localStorage.setItem(STORAGE_KEYS.TX_PARSER_RESULT, json);
+  } catch (error) {
+    console.error('保存交易解析结果失败:', error);
+  }
+}
+
+/**
+ * 加载交易解析结果
+ */
+export function loadTxParserResult(): any | null {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.TX_PARSER_RESULT);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('加载交易解析结果失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 保存 Hex 解析结果
+ */
+export function saveHexParserResult(result: any): void {
+  try {
+    const json = JSON.stringify(result, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    localStorage.setItem(STORAGE_KEYS.HEX_PARSER_RESULT, json);
+  } catch (error) {
+    console.error('保存 Hex 解析结果失败:', error);
+  }
+}
+
+/**
+ * 加载 Hex 解析结果
+ */
+export function loadHexParserResult(): any | null {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.HEX_PARSER_RESULT);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('加载 Hex 解析结果失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 保存 Event 查询结果
+ */
+export function saveEventQueryResults(results: any[]): void {
+  try {
+    const json = JSON.stringify(results, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    localStorage.setItem(STORAGE_KEYS.EVENT_QUERY_RESULTS, json);
+  } catch (error) {
+    console.error('保存 Event 查询结果失败:', error);
+  }
+}
+
+/**
+ * 加载 Event 查询结果
+ */
+export function loadEventQueryResults(): any[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EVENT_QUERY_RESULTS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载 Event 查询结果失败:', error);
+    return [];
   }
 }
 
