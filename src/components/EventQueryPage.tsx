@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { EventQueryParams, ParsedLog } from '../types';
 import { queryEvents, extractEvents, validateBlockRange } from '../utils/eventQuery';
 import { saveEventQueryResults, loadEventQueryResults } from '../utils/presetStorage';
-import { JsonRpcProvider } from 'ethers';
+import { JsonRpcProvider, Interface } from 'ethers';
 
 interface EventQueryPageProps {
   rpcUrl: string;
@@ -256,7 +256,6 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
     if (!mergedAbi || !selectedEvent) return null;
     
     try {
-      const { Interface } = require('ethers');
       const abi = JSON.parse(mergedAbi);
       const iface = new Interface(abi);
       const eventFragment = iface.getEvent(selectedEvent);
