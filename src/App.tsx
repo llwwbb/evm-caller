@@ -367,7 +367,7 @@ function App() {
 
           {activeTab === 'event-query' && (
             <div className="lg:col-span-3 min-h-0">
-              <EventQueryPage rpcUrl={rpcUrl} contractAddress={contractAddress} mergedAbi={mergedAbi} />
+              <EventQueryPage rpcUrl={rpcUrl} contractAddress={contractAddress} mergedAbi={mergedAbi} selectedAbiNames={selectedAbiNames} selectedAbis={selectedAbis} />
             </div>
           )}
         </div>

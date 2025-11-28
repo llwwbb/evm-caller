@@ -130,6 +130,7 @@ export interface EventQueryParams {
   fromBlock: number | string;
   toBlock: number | string;
   indexedParams?: Record<string, any>; // indexed 参数过滤
+  abiName?: string; // 该事件对应的 ABI 名称
 }
 
 // Event 查询结果

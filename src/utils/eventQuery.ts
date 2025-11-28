@@ -47,7 +47,7 @@ export async function queryEvents(params: EventQueryParams): Promise<EventQueryR
     });
 
     // 解析 logs
-    const parsedLogs = parseEventLogs(logs as Log[], iface, eventName);
+    const parsedLogs = parseEventLogs(logs as Log[], iface, eventName, params.abiName);
 
     return {
       success: true,
@@ -114,7 +114,8 @@ export function buildEventFilter(
 export function parseEventLogs(
   logs: Log[],
   iface: Interface,
-  eventName: string
+  eventName: string,
+  abiName?: string
 ): ParsedLog[] {
   return logs.map((log) => {
     const parsedLog: ParsedLog = {
@@ -145,7 +146,7 @@ export function parseEventLogs(
           args,
           signature: parsed.signature,
           topic: parsed.topic, // Event topic hash (topic[0])
-          abiName: 'Query ABI', // Event 查询使用单个 ABI
+          abiName: abiName || 'Query ABI',
         };
       } else {
         parsedLog.error = '事件名称不匹配';

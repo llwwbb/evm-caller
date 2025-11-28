@@ -8,10 +8,12 @@ interface EventQueryPageProps {
   rpcUrl: string;
   contractAddress: string;
   mergedAbi: string;
+  selectedAbiNames: string[];
+  selectedAbis: string[];
 }
 
-const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress, mergedAbi }) => {
-  const [events, setEvents] = useState<Array<{ name: string; inputs: any[] }>>([]);
+const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress, mergedAbi, selectedAbiNames, selectedAbis }) => {
+  const [events, setEvents] = useState<Array<{ name: string; inputs: any[]; abiName?: string }>>([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [fromBlock, setFromBlock] = useState('');
   const [toBlock, setToBlock] = useState('');
@@ -31,15 +33,45 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
     }
   }, []);
 
-  // 当 mergedAbi 变化时，重新提取事件
+  // 当 selectedAbis 变化时，重新提取事件
   useEffect(() => {
-    if (mergedAbi) {
+    if (selectedAbis.length > 0 && selectedAbiNames.length > 0) {
+      loadEventsFromAbis(selectedAbis, selectedAbiNames);
+    } else if (mergedAbi) {
       loadEventsFromAbi(mergedAbi);
     } else {
       setEvents([]);
       setSelectedEvent('');
     }
-  }, [mergedAbi]);
+  }, [selectedAbis, selectedAbiNames, mergedAbi]);
+
+  const loadEventsFromAbis = (abis: string[], abiNames: string[]) => {
+    try {
+      const allEvents: Array<{ name: string; inputs: any[]; abiName: string }> = [];
+      
+      abis.forEach((abi, index) => {
+        const extractedEvents = extractEvents(abi);
+        extractedEvents.forEach(event => {
+          allEvents.push({
+            ...event,
+            abiName: abiNames[index] || `ABI ${index + 1}`
+          });
+        });
+      });
+      
+      setEvents(allEvents);
+      if (allEvents.length > 0) {
+        setSelectedEvent(allEvents[0].name);
+        updateIndexedParams(allEvents[0]);
+      } else {
+        setSelectedEvent('');
+        setIndexedParams({});
+      }
+    } catch (err) {
+      console.error('提取事件失败:', err);
+      setEvents([]);
+    }
+  };
 
   const loadEventsFromAbi = (abi: string) => {
     try {
@@ -199,6 +231,10 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         }
       });
 
+      // 找到选中事件对应的 ABI 名称
+      const selectedEventObj = events.find(e => e.name === selectedEvent);
+      const eventAbiName = selectedEventObj?.abiName || selectedAbiNames.join(', ');
+
       const params: EventQueryParams = {
         rpcUrl: rpcUrl.trim(),
         contractAddress: contractAddress.trim(),
@@ -207,6 +243,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         fromBlock: isNaN(Number(from)) ? from : Number(from),
         toBlock: isNaN(Number(to)) ? to : Number(to),
         indexedParams: filteredIndexedParams,
+        abiName: eventAbiName,
       };
 
       const result = await queryEvents(params);
@@ -237,11 +274,6 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       newExpanded.add(index);
     }
     setExpandedResults(newExpanded);
-  };
-
-  const shortenHash = (hash: string) => {
-    if (hash.length < 10) return hash;
-    return `${hash.slice(0, 10)}...${hash.slice(-8)}`;
   };
 
   // 获取当前选中事件的 indexed 参数
@@ -288,22 +320,34 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 {events.length === 0 ? (
                   <option value="">ABI 中无 Event</option>
                 ) : (
-                  events.map((event) => (
-                    <option key={event.name} value={event.name}>
-                      {event.name}
+                  events.map((event, index) => (
+                    <option key={`${event.name}_${index}`} value={event.name}>
+                      {event.name}{event.abiName ? ` (${event.abiName})` : ''}
                     </option>
                   ))
                 )}
               </select>
               
-              {/* 显示选中事件的 topic */}
-              {selectedEvent && getEventTopic() && (
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <span className="text-xs font-medium text-gray-600 block mb-1">Topic Hash:</span>
-                  <span className="text-xs text-blue-600 font-mono break-all">
-                    {getEventTopic()}
-                  </span>
-                </div>
+              {/* 显示选中事件的 ABI 和 topic */}
+              {selectedEvent && (
+                <>
+                  {events.find(e => e.name === selectedEvent)?.abiName && (
+                    <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded-md">
+                      <span className="text-xs font-medium text-gray-600 block mb-1">来自 ABI:</span>
+                      <span className="text-xs text-purple-600 font-medium">
+                        {events.find(e => e.name === selectedEvent)?.abiName}
+                      </span>
+                    </div>
+                  )}
+                  {getEventTopic() && (
+                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                      <span className="text-xs font-medium text-gray-600 block mb-1">Topic Hash:</span>
+                      <span className="text-xs text-blue-600 font-mono break-all">
+                        {getEventTopic()}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -490,8 +534,8 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                             Log #{result.logIndex}
                           </span>
                         </div>
-                        <div className="text-xs text-gray-600 mt-1 font-mono">
-                          Tx: {shortenHash(result.transactionHash)}
+                        <div className="text-xs text-gray-600 mt-1 font-mono break-all">
+                          Tx: {result.transactionHash}
                         </div>
                       </div>
                       
