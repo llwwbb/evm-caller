@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   loadRpcPresets, 
   loadContractPresets, 
@@ -50,6 +51,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   currentAbis = [],
   refreshTrigger,
 }) => {
+  const { t } = useTranslation();
   const [rpcPresets, setRpcPresets] = useState<RpcPreset[]>([]);
   const [contractPresets, setContractPresets] = useState<ContractPreset[]>([]);
   const [abiPresets, setAbiPresets] = useState<AbiPreset[]>([]);
@@ -124,6 +126,9 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
       onAbisSelect(allAbis, allNames);
     }
   };
+  
+  // 翻译后的选中状态文本
+  const allAbiSelected = currentAbis.length === abiPresets.length && abiPresets.length > 0;
 
   // 打开新增弹窗
   const openAddModal = (type: ModalType, e: React.MouseEvent) => {
@@ -219,14 +224,14 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
       const formatted = JSON.stringify(parsed, null, 2);
       setModal({ ...modal, value: formatted });
     } catch (error) {
-      alert('❌ JSON 格式无效，无法格式化');
+      alert(t('modal.invalidJson'));
     }
   };
 
   // 保存弹窗数据
   const handleModalSave = () => {
     if (!modal.name.trim() || !modal.value.trim()) {
-      alert('请填写完整信息');
+      alert(t('modal.fillComplete'));
       return;
     }
 
@@ -235,7 +240,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
       try {
         JSON.parse(modal.value);
       } catch {
-        alert('❌ ABI 格式无效，请输入有效的 JSON');
+        alert(t('modal.invalidAbi'));
         return;
       }
     }
@@ -272,14 +277,14 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
       closeModal();
     } catch (error) {
       console.error('保存失败:', error);
-      alert('❌ 保存失败');
+      alert(t('modal.saveFailed'));
     }
   };
 
   // 删除预设
   const handleDelete = (type: ModalType, id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm(`确定要删除"${name}"吗？`)) {
+    if (window.confirm(t('preset.confirmDelete', { name }))) {
       if (type === 'rpc') {
         // 如果删除的 RPC 正是当前选中的，清空选中状态
         const preset = rpcPresets.find(p => p.id === id);
@@ -314,8 +319,8 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
 
   // 获取弹窗标题
   const getModalTitle = () => {
-    const typeMap = { rpc: 'RPC', contract: '合约', abi: 'ABI' };
-    const modeMap = { add: '新增', edit: '编辑', view: '查看' };
+    const typeMap = { rpc: 'RPC', contract: t('preset.contract'), abi: 'ABI' };
+    const modeMap = { add: t('modal.add'), edit: t('modal.edit'), view: t('modal.view') };
     return `${modeMap[modal.mode]} ${typeMap[modal.type]}`;
   };
 
@@ -347,8 +352,8 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
       <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex-shrink-0">
-        <h2 className="text-lg font-bold">预设配置</h2>
-        <p className="text-xs text-indigo-100 mt-1">点击快速切换</p>
+        <h2 className="text-lg font-bold">{t('preset.title')}</h2>
+        <p className="text-xs text-indigo-100 mt-1">{t('preset.subtitle')}</p>
       </div>
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -363,7 +368,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                 </svg>
-                <span className="font-semibold text-gray-700">RPC 节点</span>
+                <span className="font-semibold text-gray-700">{t('preset.rpc')}</span>
                 <span className="text-xs text-gray-500">({rpcPresets.length})</span>
               </div>
               <svg
@@ -378,7 +383,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
             <button
               onClick={(e) => openAddModal('rpc', e)}
               className="px-3 py-3 hover:bg-blue-50 transition-colors flex-shrink-0"
-              title="新增 RPC"
+              title={t('preset.addRpc')}
             >
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -389,7 +394,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           {expandedSections.has('rpc') && (
             <div className="overflow-y-auto px-2 pb-2 space-y-1 max-h-64">
               {rpcPresets.length === 0 ? (
-                <p className="text-xs text-gray-500 px-2 py-2">暂无预设</p>
+                <p className="text-xs text-gray-500 px-2 py-2">{t('preset.noPresets')}</p>
               ) : (
                 rpcPresets.map((preset) => (
                   <div
@@ -410,7 +415,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       <button
                         onClick={(e) => openEditModal('rpc', preset.id, e)}
                         className="p-1 bg-white rounded shadow-sm hover:bg-blue-50"
-                        title="编辑"
+                        title={t('preset.edit')}
                       >
                         <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -419,7 +424,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       <button
                         onClick={(e) => handleDelete('rpc', preset.id, preset.name, e)}
                         className="p-1 bg-white rounded shadow-sm hover:bg-red-50"
-                        title="删除"
+                        title={t('preset.delete')}
                       >
                         <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -444,7 +449,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span className="font-semibold text-gray-700">合约地址</span>
+                <span className="font-semibold text-gray-700">{t('preset.contract')}</span>
                 <span className="text-xs text-gray-500">({contractPresets.length})</span>
               </div>
               <svg
@@ -459,7 +464,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
             <button
               onClick={(e) => openAddModal('contract', e)}
               className="px-3 py-3 hover:bg-green-50 transition-colors flex-shrink-0"
-              title="新增合约"
+              title={t('preset.addContract')}
             >
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -528,14 +533,14 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                 <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                <span className="font-semibold text-gray-700">ABI 接口</span>
+                <span className="font-semibold text-gray-700">{t('preset.abi')}</span>
                 <span className="text-xs text-gray-500">({currentAbis.length}/{abiPresets.length})</span>
                 {abiPresets.length > 0 && (
                   <button
                     onClick={handleSelectAllAbis}
                     className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    {currentAbis.length === abiPresets.length && abiPresets.length > 0 ? '取消全选' : '全选'}
+                    {allAbiSelected ? t('preset.deselectAll') : t('preset.selectAll')}
                   </button>
                 )}
               </div>
@@ -551,7 +556,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
             <button
               onClick={(e) => openAddModal('abi', e)}
               className="px-3 py-3 hover:bg-purple-50 transition-colors flex-shrink-0"
-              title="新增 ABI"
+              title={t('preset.addAbi')}
             >
               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -590,7 +595,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       <button
                         onClick={(e) => openViewModal(preset.id, e)}
                         className="p-1 bg-white rounded shadow-sm hover:bg-blue-50"
-                        title="查看/编辑"
+                        title={t('preset.view')}
                       >
                         <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -640,13 +645,13 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                   {/* 名称 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      名称
+                      {t('modal.name')}
                     </label>
                     <input
                       type="text"
                       value={modal.name}
                       onChange={(e) => setModal({ ...modal, name: e.target.value })}
-                      placeholder="请输入名称"
+                      placeholder={t('modal.namePlaceholder')}
                       disabled={modal.mode === 'view'}
                       className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 ${styles.inputRing} focus:border-transparent ${
                         modal.mode === 'view' ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -658,14 +663,14 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">
-                        {modal.type === 'rpc' ? 'RPC URL' : modal.type === 'contract' ? '合约地址' : 'ABI 内容'}
+                        {modal.type === 'rpc' ? t('modal.rpcUrl') : modal.type === 'contract' ? t('modal.contractAddress') : t('modal.abiContent')}
                       </label>
                       {modal.type === 'abi' && modal.mode !== 'view' && (
                         <button
                           onClick={handleFormatJson}
                           className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
                         >
-                          ✨ 格式化
+                          ✨ {t('modal.format')}
                         </button>
                       )}
                     </div>
@@ -673,7 +678,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       <textarea
                         value={modal.value}
                         onChange={(e) => setModal({ ...modal, value: e.target.value })}
-                        placeholder="请输入 ABI JSON"
+                        placeholder={modal.type === 'abi' ? 'ABI JSON' : ''}
                         disabled={modal.mode === 'view'}
                         rows={15}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 ${styles.inputRing} focus:border-transparent ${
@@ -698,13 +703,13 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                   {modal.type === 'contract' && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        描述（可选）
+                        {t('modal.description')}
                       </label>
                       <input
                         type="text"
                         value={modal.description || ''}
                         onChange={(e) => setModal({ ...modal, description: e.target.value })}
-                        placeholder="请输入描述"
+                        placeholder={t('modal.descriptionPlaceholder')}
                         disabled={modal.mode === 'view'}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 ${styles.inputRing} focus:border-transparent ${
                           modal.mode === 'view' ? 'bg-gray-50 cursor-not-allowed' : ''
@@ -722,13 +727,13 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       onClick={() => setModal({ ...modal, mode: 'edit' })}
                       className={`flex-1 px-4 py-2 text-white rounded-lg ${styles.buttonBg}`}
                     >
-                      编辑
+                      {t('modal.edit')}
                     </button>
                     <button
                       onClick={closeModal}
                       className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
                     >
-                      关闭
+                      {t('modal.close')}
                     </button>
                   </>
                 ) : (
@@ -737,13 +742,13 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       onClick={handleModalSave}
                       className={`flex-1 px-4 py-2 text-white rounded-lg ${styles.buttonBg}`}
                     >
-                      保存
+                      {t('modal.save')}
                     </button>
                     <button
                       onClick={closeModal}
                       className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
                     >
-                      取消
+                      {t('modal.cancel')}
                     </button>
                   </>
                 )}

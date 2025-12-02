@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ParsedFunction, ParsedParam, RpcConfig } from '../types';
 import { parseParamValue } from '../utils/rpcCaller';
 
@@ -15,6 +16,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
   abiString: _abiString,
   onFunctionCall,
 }) => {
+  const { t } = useTranslation();
   const [expandedFunction, setExpandedFunction] = useState<string | null>(null);
   // 改用嵌套路径的方式存储值，例如 "functionName.0.field1"
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
@@ -166,7 +168,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        函数列表
+        {t('functionList.title')}
       </h2>
 
       <div className="space-y-3">
@@ -181,7 +183,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
               {isFirstSimulateCall && (
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 border-t border-gray-300"></div>
-                  <span className="text-xs text-gray-500 font-medium">模拟调用函数</span>
+                  <span className="text-xs text-gray-500 font-medium">{t('functionList.writeFunctions')}</span>
                   <div className="flex-1 border-t border-gray-300"></div>
                 </div>
               )}
@@ -230,7 +232,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
             {expandedFunction === func.name && (
               <div className="p-4 bg-white">
                 {func.inputs.length === 0 ? (
-                  <p className="text-sm text-gray-500 mb-4">此函数无需参数</p>
+                  <p className="text-sm text-gray-500 mb-4">{t('functionList.noFunctions')}</p>
                 ) : (
                   <div className="space-y-4 mb-4">
                     {func.inputs.map((input, index) => 
@@ -243,7 +245,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
                   onClick={() => handleCall(func)}
                   className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
                 >
-                  调用函数
+                  {t('functionList.call')}
                 </button>
 
                 {errors[func.name] && (

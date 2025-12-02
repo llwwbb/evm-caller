@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CallResult } from '../types';
 
 interface ResultDisplayProps {
@@ -16,6 +17,7 @@ interface ResultDisplayProps {
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDeleteResult }) => {
+  const { t } = useTranslation();
   const [expandedParams, setExpandedParams] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -52,16 +54,16 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
       console.error('复制失败:', error);
-      alert('复制失败，请手动复制');
+      alert(t('result.copyFailed'));
     }
   };
 
   if (results.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">调用结果</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">{t('result.title')}</h2>
         <p className="text-gray-500 text-center py-8">
-          暂无调用结果。请在左侧选择函数并调用。
+          {t('result.noResults')}
         </p>
       </div>
     );
@@ -71,13 +73,13 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-800">
-          调用结果 ({results.length})
+          {t('result.title')} ({results.length})
         </h2>
         <button
           onClick={onClearAll}
           className="px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm font-medium"
         >
-          🗑️ 清空所有
+          🗑️ {t('result.clearAll')}
         </button>
       </div>
       
@@ -95,7 +97,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
             <button
               onClick={() => onDeleteResult(item.id)}
               className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors"
-              title="删除此结果"
+              title={t('result.delete')}
             >
               ×
             </button>
@@ -112,7 +114,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                       onClick={() => toggleParams(item.id)}
                       className="text-xs text-blue-600 hover:text-blue-800 underline"
                     >
-                      {expandedParams.has(item.id) ? '收起参数' : '查看参数'}
+                      {expandedParams.has(item.id) ? t('result.args') : t('result.args')}
                     </button>
                   )}
                 </div>
@@ -120,14 +122,14 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                 {/* 简短参数显示 */}
                 {!expandedParams.has(item.id) && item.args.length > 0 && (
                   <p className="text-sm text-gray-600 mt-1 truncate">
-                    参数: {item.args.map((arg) => formatArgDisplay(arg)).join(', ')}
+                    {t('result.args')}: {item.args.map((arg) => formatArgDisplay(arg)).join(', ')}
                   </p>
                 )}
                 
                 {/* 展开的完整参数 */}
                 {expandedParams.has(item.id) && item.args.length > 0 && (
                   <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
-                    <p className="text-xs font-medium text-gray-700 mb-1">输入参数：</p>
+                    <p className="text-xs font-medium text-gray-700 mb-1">{t('result.args')}：</p>
                     <pre className="text-xs text-gray-800 whitespace-pre-wrap break-all font-mono">
                       {safeStringify(item.args)}
                     </pre>
@@ -140,12 +142,12 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                   </p>
                   {item.rpcName && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                      🌐 RPC: {item.rpcName}
+                      🌐 {t('result.rpcNode')}: {item.rpcName}
                     </span>
                   )}
                   {item.blockTag && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
-                      🔖 区块: {item.blockTag}
+                      🔖 {t('result.blockTag')}: {item.blockTag}
                     </span>
                   )}
                 </div>
@@ -158,7 +160,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                     : 'bg-red-100 text-red-800'
                 }`}
               >
-                {item.result.success ? '成功' : '失败'}
+                {item.result.success ? '✓' : '✗'}
               </span>
             </div>
 
@@ -167,7 +169,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
               {item.result.success ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-700">返回值：</p>
+                    <p className="text-sm font-medium text-gray-700">{t('result.result')}：</p>
                     <button
                       onClick={() => copyResult(item.id, item.result.data)}
                       className={`px-3 py-1 text-xs rounded transition-colors ${
@@ -176,7 +178,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                           : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                       }`}
                     >
-                      {copiedId === item.id ? '✓ 已复制' : '📋 复制'}
+                      {copiedId === item.id ? `✓ ${t('result.copySuccess')}` : `📋 ${t('result.copy')}`}
                     </button>
                   </div>
                   <pre className="text-sm text-gray-800 whitespace-pre-wrap break-all font-mono">
@@ -185,7 +187,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm font-medium text-red-700 mb-2">错误信息：</p>
+                  <p className="text-sm font-medium text-red-700 mb-2">{t('result.result')}：</p>
                   <p className="text-sm text-red-600">{item.result.error}</p>
                 </div>
               )}

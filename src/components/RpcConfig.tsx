@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ethers } from 'ethers';
 import {
   saveLastRpcUrl,
@@ -31,6 +32,7 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
   selectedAbiNames = [],
   functionsCount = 0,
 }) => {
+  const { t } = useTranslation();
   const [rpcUrl, setRpcUrl] = useState(initialRpcUrl);
   const [contractAddress, setContractAddress] = useState(initialContractAddress);
   const [blockTag, setBlockTag] = useState(initialBlockTag);
@@ -73,12 +75,12 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
 
   const handleTestConnection = async () => {
     if (!rpcUrl.trim()) {
-      setValidationMessage('❌ 请输入 RPC URL');
+      setValidationMessage(`❌ ${t('alert.enterRpcUrl')}`);
       return;
     }
 
     setIsValidating(true);
-    setValidationMessage('🔄 正在测试连接...');
+    setValidationMessage(`🔄 ${t('functionList.calling')}...`);
 
     try {
       const provider = new ethers.JsonRpcProvider(rpcUrl.trim());
@@ -86,11 +88,11 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
       const blockNumber = await provider.getBlockNumber();
       
       setValidationMessage(
-        `✅ 连接成功！Chain ID: ${network.chainId}, 最新区块: ${blockNumber}`
+        `✅ ${t('result.copySuccess')}! Chain ID: ${network.chainId}, Block: ${blockNumber}`
       );
     } catch (error) {
       console.error('RPC 连接测试失败:', error);
-      setValidationMessage(`❌ 连接失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      setValidationMessage(`❌ ${t('result.copyFailed')}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsValidating(false);
     }
@@ -101,7 +103,7 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800">
-          配置信息
+          {t('rpcConfig.title')}
         </h2>
       </div>
 
@@ -109,30 +111,30 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
         {/* RPC URL */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            RPC URL
+            {t('rpcConfig.rpcUrl')}
           </label>
           <input
             type="text"
             value={rpcUrl}
             readOnly
-            placeholder="从左侧选择 RPC 预设"
+            placeholder={t('rpcConfig.rpcUrlPlaceholder')}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
           />
           <p className="mt-1 text-xs text-gray-500">
-            👈 从左侧预设中选择或新增 RPC
+            👈 {t('rpcConfig.selectFromLeft')}
           </p>
         </div>
 
         {/* 合约地址 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            合约地址
+            {t('rpcConfig.contractAddress')}
           </label>
           <input
             type="text"
             value={contractAddress}
             onChange={(e) => setContractAddress(e.target.value)}
-            placeholder="0x..."
+            placeholder={t('rpcConfig.contractAddressPlaceholder')}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           />
         </div>
@@ -140,17 +142,17 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
         {/* 区块标识 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            区块标识 (Block Tag)
+            {t('rpcConfig.blockTag')}
           </label>
           <input
             type="text"
             value={blockTag}
             onChange={(e) => setBlockTag(e.target.value)}
-            placeholder="latest"
+            placeholder={t('rpcConfig.blockTagPlaceholder')}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
           />
           <p className="mt-1 text-xs text-gray-500">
-            可选值: latest (最新), earliest (最早), pending (待确认), 或具体区块号
+            {t('rpcConfig.blockTagPlaceholder')}
           </p>
         </div>
 
@@ -163,10 +165,10 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
           {isValidating ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-              测试中...
+              {t('functionList.calling')}...
             </>
           ) : (
-            '🔌 测试 RPC 连接（可选）'
+            `🔌 ${t('rpcConfig.title')}`
           )}
         </button>
 
@@ -186,12 +188,12 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
         {/* ABI 选择状态 */}
         <div className="pt-4 border-t border-gray-200">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            ABI 接口
+            {t('preset.abi')}
           </label>
           {selectedAbiNames.length === 0 ? (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
-                👈 请从左侧选择至少一个 ABI 接口
+                👈 {t('functionList.selectAbi')}
               </p>
             </div>
           ) : (
@@ -202,11 +204,11 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                   <span className="text-sm font-medium text-purple-800">
-                    已选择 {selectedAbiNames.length} 个 ABI
+                    {t('rpcConfig.selectedAbis', { count: selectedAbiNames.length })}
                   </span>
                 </div>
                 <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
-                  {functionsCount} 个函数
+                  {t('rpcConfig.functionsCount', { count: functionsCount })}
                 </span>
               </div>
               

@@ -1,0 +1,147 @@
+{
+  "header": {
+    "title": "Web3 RPC Caller",
+    "subtitle": "Quick call smart contract read-only functions + Simulate state-changing functions + Parser tools",
+    "badges": {
+      "viewPure": "View/Pure",
+      "simulation": "Simulation",
+      "noWallet": "No Wallet"
+    }
+  },
+  "tabs": {
+    "functionCall": "Function Call",
+    "transactionParser": "Transaction Parser",
+    "hexParser": "Hex Parser",
+    "eventQuery": "Event Query"
+  },
+  "preset": {
+    "title": "Presets",
+    "subtitle": "Click to switch quickly",
+    "rpc": "RPC Nodes",
+    "contract": "Contract Addresses",
+    "abi": "ABI Interfaces",
+    "addRpc": "Add RPC",
+    "addContract": "Add Contract",
+    "addAbi": "Add ABI",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "noPresets": "No presets",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View/Edit",
+    "confirmDelete": "Are you sure to delete \"{name}\"?"
+  },
+  "modal": {
+    "add": "Add",
+    "edit": "Edit",
+    "view": "View",
+    "name": "Name",
+    "namePlaceholder": "Enter name",
+    "rpcUrl": "RPC URL",
+    "contractAddress": "Contract Address",
+    "abiContent": "ABI Content",
+    "description": "Description (Optional)",
+    "descriptionPlaceholder": "Enter description",
+    "format": "Format",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "fillComplete": "Please fill in complete information",
+    "invalidAbi": "Invalid ABI format, please enter valid JSON",
+    "invalidJson": "Invalid JSON format, cannot format",
+    "saveFailed": "Save failed"
+  },
+  "rpcConfig": {
+    "title": "RPC Configuration",
+    "rpcUrl": "RPC URL",
+    "rpcUrlPlaceholder": "https://...",
+    "contractAddress": "Contract Address",
+    "contractAddressPlaceholder": "0x...",
+    "blockTag": "Block Tag",
+    "blockTagPlaceholder": "latest | earliest | pending | block number",
+    "selectedAbis": "{count} ABI(s) selected",
+    "functionsCount": "{count} function(s) parsed",
+    "selectFromLeft": "Please select or configure RPC and contract address from the left"
+  },
+  "functionList": {
+    "title": "Function List",
+    "viewFunctions": "View/Pure Functions",
+    "writeFunctions": "Write Functions (Simulation)",
+    "noFunctions": "No available functions",
+    "call": "Call",
+    "calling": "Calling contract function...",
+    "selectAbi": "Please select at least one ABI interface from the left"
+  },
+  "result": {
+    "title": "Call Results",
+    "clearAll": "Clear All",
+    "confirmClearAll": "Are you sure to clear all call results?",
+    "noResults": "No call results",
+    "function": "Function",
+    "args": "Arguments",
+    "result": "Result",
+    "blockTag": "Block",
+    "rpcNode": "RPC Node",
+    "time": "Time",
+    "copy": "Copy",
+    "delete": "Delete",
+    "copySuccess": "Copied to clipboard",
+    "copyFailed": "Copy failed"
+  },
+  "transactionParser": {
+    "title": "Transaction Parser",
+    "description": "Parse transaction input data on-chain",
+    "rpcUrl": "RPC URL",
+    "rpcUrlPlaceholder": "https://...",
+    "txHash": "Transaction Hash",
+    "txHashPlaceholder": "0x...",
+    "parse": "Parse",
+    "parsing": "Parsing...",
+    "result": "Parse Result",
+    "function": "Function",
+    "args": "Arguments",
+    "noResult": "No parse result",
+    "selectAbi": "{count} ABI interface(s) selected",
+    "selectRpc": "Please select RPC from the left"
+  },
+  "hexParser": {
+    "title": "Hex Data Parser",
+    "description": "Parse hexadecimal data (e.g. transaction input data)",
+    "hexData": "Hex Data",
+    "hexDataPlaceholder": "0x...",
+    "parse": "Parse",
+    "result": "Parse Result",
+    "function": "Function",
+    "args": "Arguments",
+    "noResult": "No parse result",
+    "selectAbi": "{count} ABI interface(s) selected"
+  },
+  "eventQuery": {
+    "title": "Event Log Query",
+    "description": "Query smart contract event logs",
+    "rpcUrl": "RPC URL",
+    "rpcUrlPlaceholder": "https://...",
+    "contractAddress": "Contract Address",
+    "contractAddressPlaceholder": "0x...",
+    "fromBlock": "From Block",
+    "toBlock": "To Block",
+    "blockPlaceholder": "latest | earliest | block number",
+    "selectedEvents": "Selected Events",
+    "selectEvent": "Select Event",
+    "query": "Query",
+    "querying": "Querying...",
+    "result": "Query Result",
+    "foundEvents": "Found {count} event(s)",
+    "noResult": "No query result",
+    "selectAbi": "{count} ABI interface(s) selected",
+    "selectRpcAndContract": "Please select RPC and contract address from the left"
+  },
+  "footer": {
+    "text": "Support JSON ABI and Solidity function signature · Based on ethers.js v6 · Only support view/pure functions"
+  },
+  "alert": {
+    "enterRpcUrl": "Please enter RPC URL",
+    "enterContractAddress": "Please enter contract address"
+  }
+}
+

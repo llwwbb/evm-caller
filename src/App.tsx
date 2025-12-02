@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import RpcConfig from './components/RpcConfig';
 import FunctionList from './components/FunctionList';
 import ResultDisplay from './components/ResultDisplay';
@@ -7,6 +8,7 @@ import PresetSidebar from './components/PresetSidebar';
 import TransactionParserPage from './components/TransactionParserPage';
 import HexParserPage from './components/HexParserPage';
 import EventQueryPage from './components/EventQueryPage';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import { callViewFunction } from './utils/rpcCaller';
 import { parseAbi } from './utils/abiParser';
 import { RpcConfig as RpcConfigType, ParsedFunction, CallHistory } from './types';
@@ -21,6 +23,7 @@ import {
 type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query';
 
 function App() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('function-call');
   const [rpcUrl, setRpcUrl] = useState('');
   const [contractAddress, setContractAddress] = useState('');
@@ -99,12 +102,12 @@ function App() {
   const handleFunctionCall = async (functionName: string, args: any[], func: ParsedFunction) => {
     // 验证必填项
     if (!rpcUrl.trim()) {
-      alert('请输入 RPC URL');
+      alert(t('alert.enterRpcUrl'));
       return;
     }
     
     if (!contractAddress.trim()) {
-      alert('请输入合约地址');
+      alert(t('alert.enterContractAddress'));
       return;
     }
 
@@ -160,7 +163,7 @@ function App() {
   };
 
   const handleClearAllResults = () => {
-    if (window.confirm('确定要清空所有调用结果吗？')) {
+    if (window.confirm(t('result.confirmClearAll'))) {
       setCallHistory([]);
     }
   };
@@ -175,10 +178,10 @@ function App() {
   };
 
   const tabs = [
-    { id: 'function-call' as TabType, name: '函数调用', icon: '🔧' },
-    { id: 'transaction-parser' as TabType, name: '交易解析', icon: '📝' },
-    { id: 'hex-parser' as TabType, name: 'Hex 解析', icon: '🔍' },
-    { id: 'event-query' as TabType, name: 'Event 查询', icon: '📊' },
+    { id: 'function-call' as TabType, name: t('tabs.functionCall'), icon: '🔧' },
+    { id: 'transaction-parser' as TabType, name: t('tabs.transactionParser'), icon: '📝' },
+    { id: 'hex-parser' as TabType, name: t('tabs.hexParser'), icon: '🔍' },
+    { id: 'event-query' as TabType, name: t('tabs.eventQuery'), icon: '📊' },
   ];
 
   return (
@@ -189,24 +192,25 @@ function App() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Web3 RPC 调用工具
+                {t('header.title')}
               </h1>
               <p className="mt-0.5 text-xs text-gray-600">
-                快速调用智能合约的只读函数 + 模拟执行状态修改函数 + Parser 解析工具
+                {t('header.subtitle')}
               </p>
             </div>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                  👁️ View/Pure
+                  👁️ {t('header.badges.viewPure')}
                 </div>
                 <div className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-medium">
-                  ⚠️ 模拟调用
+                  ⚠️ {t('header.badges.simulation')}
                 </div>
                 <div className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
-                  无需钱包
+                  {t('header.badges.noWallet')}
                 </div>
               </div>
+              <LanguageSwitcher />
               <ConfigManager onImportComplete={handleImportComplete} />
             </div>
           </div>
@@ -278,7 +282,7 @@ function App() {
                 {(!rpcUrl || !contractAddress) && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      👆 请先从左侧选择或配置 RPC 和合约地址
+                      👆 {t('rpcConfig.selectFromLeft')}
                     </p>
                   </div>
                 )}
@@ -295,10 +299,10 @@ function App() {
                   />
                 ) : rpcUrl && contractAddress && selectedAbis.length === 0 ? (
                   <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800">函数列表</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-gray-800">{t('functionList.title')}</h2>
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <p className="text-sm text-yellow-800">
-                        👈 请从左侧选择至少一个 ABI 接口
+                        👈 {t('functionList.selectAbi')}
                       </p>
                     </div>
                   </div>
@@ -309,7 +313,7 @@ function App() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-shrink-0">
                     <div className="flex items-center space-x-3">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                      <p className="text-sm text-blue-800">正在调用合约函数...</p>
+                      <p className="text-sm text-blue-800">{t('functionList.calling')}</p>
                     </div>
                   </div>
                 )}
@@ -351,7 +355,7 @@ function App() {
       {/* 页脚信息 */}
       <footer className="bg-white border-t border-gray-200 py-2 text-center text-xs text-gray-500 flex-shrink-0">
         <p>
-          支持 JSON ABI 和 Solidity 函数签名两种格式 · 基于 ethers.js v6 · 仅支持 view/pure 函数
+          {t('footer.text')}
         </p>
       </footer>
     </div>
