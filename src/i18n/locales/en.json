@@ -29,7 +29,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "view": "View/Edit",
-    "confirmDelete": "Are you sure to delete \"{name}\"?"
+    "confirmDelete": "Are you sure to delete \"{{name}}\"?"
   },
   "modal": {
     "add": "Add",
@@ -59,8 +59,8 @@
     "contractAddressPlaceholder": "0x...",
     "blockTag": "Block Tag",
     "blockTagPlaceholder": "latest | earliest | pending | block number",
-    "selectedAbis": "{count} ABI(s) selected",
-    "functionsCount": "{count} function(s) parsed",
+    "selectedAbis": "{{count}} ABI(s) selected",
+    "functionsCount": "{{count}} function(s) parsed",
     "selectFromLeft": "Please select or configure RPC and contract address from the left"
   },
   "functionList": {
@@ -101,7 +101,7 @@
     "function": "Function",
     "args": "Arguments",
     "noResult": "No parse result",
-    "selectAbi": "{count} ABI interface(s) selected",
+    "selectAbi": "{{count}} ABI interface(s) selected",
     "selectRpc": "Please select RPC from the left"
   },
   "hexParser": {
@@ -114,7 +114,7 @@
     "function": "Function",
     "args": "Arguments",
     "noResult": "No parse result",
-    "selectAbi": "{count} ABI interface(s) selected"
+    "selectAbi": "{{count}} ABI interface(s) selected"
   },
   "eventQuery": {
     "title": "Event Log Query",
@@ -131,9 +131,9 @@
     "query": "Query",
     "querying": "Querying...",
     "result": "Query Result",
-    "foundEvents": "Found {count} event(s)",
+    "foundEvents": "Found {{count}} event(s)",
     "noResult": "No query result",
-    "selectAbi": "{count} ABI interface(s) selected",
+    "selectAbi": "{{count}} ABI interface(s) selected",
     "selectRpcAndContract": "Please select RPC and contract address from the left"
   },
   "footer": {

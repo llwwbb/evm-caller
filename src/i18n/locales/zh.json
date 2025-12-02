@@ -29,7 +29,7 @@
     "edit": "编辑",
     "delete": "删除",
     "view": "查看/编辑",
-    "confirmDelete": "确定要删除「{name}」吗？"
+    "confirmDelete": "确定要删除「{{name}}」吗？"
   },
   "modal": {
     "add": "新增",
@@ -59,8 +59,8 @@
     "contractAddressPlaceholder": "0x...",
     "blockTag": "区块标识",
     "blockTagPlaceholder": "latest | earliest | pending | 区块号",
-    "selectedAbis": "已选择 {count} 个 ABI",
-    "functionsCount": "解析出 {count} 个函数",
+    "selectedAbis": "已选择 {{count}} 个 ABI",
+    "functionsCount": "解析出 {{count}} 个函数",
     "selectFromLeft": "请先从左侧选择或配置 RPC 和合约地址"
   },
   "functionList": {
@@ -101,7 +101,7 @@
     "function": "函数",
     "args": "参数",
     "noResult": "暂无解析结果",
-    "selectAbi": "已选择 {count} 个 ABI 接口",
+    "selectAbi": "已选择 {{count}} 个 ABI 接口",
     "selectRpc": "请从左侧选择 RPC"
   },
   "hexParser": {
@@ -114,7 +114,7 @@
     "function": "函数",
     "args": "参数",
     "noResult": "暂无解析结果",
-    "selectAbi": "已选择 {count} 个 ABI 接口"
+    "selectAbi": "已选择 {{count}} 个 ABI 接口"
   },
   "eventQuery": {
     "title": "Event 日志查询",
@@ -131,9 +131,9 @@
     "query": "查询",
     "querying": "正在查询...",
     "result": "查询结果",
-    "foundEvents": "找到 {count} 个事件",
+    "foundEvents": "找到 {{count}} 个事件",
     "noResult": "暂无查询结果",
-    "selectAbi": "已选择 {count} 个 ABI 接口",
+    "selectAbi": "已选择 {{count}} 个 ABI 接口",
     "selectRpcAndContract": "请从左侧选择 RPC 和合约地址"
   },
   "footer": {
