@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import {
-  saveRpcPreset,
-  saveContractPreset,
   saveLastRpcUrl,
   saveLastContractAddress,
   saveLastBlockTag,
@@ -17,7 +15,8 @@ interface RpcConfigProps {
   initialBlockTag?: string;
   externalRpcUrl?: string; // 新增：从侧边栏选择时传入
   externalContractAddress?: string; // 新增：从侧边栏选择时传入
-  onPresetsSaved?: () => void;
+  selectedAbiNames?: string[]; // 选中的 ABI 名称列表
+  functionsCount?: number; // 解析出的函数数量
 }
 
 const RpcConfig: React.FC<RpcConfigProps> = ({ 
@@ -29,7 +28,8 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
   initialBlockTag = 'latest',
   externalRpcUrl, // 新增
   externalContractAddress, // 新增
-  onPresetsSaved,
+  selectedAbiNames = [],
+  functionsCount = 0,
 }) => {
   const [rpcUrl, setRpcUrl] = useState(initialRpcUrl);
   const [contractAddress, setContractAddress] = useState(initialContractAddress);
@@ -96,92 +96,38 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
     }
   };
 
-  const handleSaveRpc = () => {
-    if (!rpcUrl.trim()) {
-      alert('请输入 RPC URL');
-      return;
-    }
-
-    const name = prompt('请为这个 RPC 预设命名：');
-    if (!name?.trim()) return;
-
-    try {
-      saveRpcPreset(name.trim(), rpcUrl.trim());
-      alert('✅ RPC 预设已保存');
-      onPresetsSaved?.();
-    } catch (error) {
-      console.error('保存 RPC 预设失败:', error);
-      alert('❌ 保存失败');
-    }
-  };
-
-  const handleSaveContract = () => {
-    if (!contractAddress.trim()) {
-      alert('请输入合约地址');
-      return;
-    }
-
-    const name = prompt('请为这个合约预设命名：');
-    if (!name?.trim()) return;
-
-    const description = prompt('（可选）添加描述：');
-
-    try {
-      saveContractPreset(name.trim(), contractAddress.trim(), description?.trim());
-      alert('✅ 合约预设已保存');
-      onPresetsSaved?.();
-    } catch (error) {
-      console.error('保存合约预设失败:', error);
-      alert('❌ 保存失败');
-    }
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800">
-          ① RPC 配置
+          配置信息
         </h2>
       </div>
 
       <div className="space-y-4">
         {/* RPC URL */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              RPC URL
-            </label>
-            <button
-              onClick={handleSaveRpc}
-              disabled={!rpcUrl.trim()}
-              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              💾 保存为预设
-            </button>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            RPC URL
+          </label>
           <input
             type="text"
             value={rpcUrl}
-            onChange={(e) => setRpcUrl(e.target.value)}
-            placeholder="https://eth.llamarpc.com"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            readOnly
+            placeholder="从左侧选择 RPC 预设"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            👈 从左侧预设中选择或新增 RPC
+          </p>
         </div>
 
         {/* 合约地址 */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              合约地址
-            </label>
-            <button
-              onClick={handleSaveContract}
-              disabled={!contractAddress.trim()}
-              className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              💾 保存为预设
-            </button>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            合约地址
+          </label>
           <input
             type="text"
             value={contractAddress}
@@ -236,6 +182,48 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
             {validationMessage}
           </div>
         )}
+
+        {/* ABI 选择状态 */}
+        <div className="pt-4 border-t border-gray-200">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            ABI 接口
+          </label>
+          {selectedAbiNames.length === 0 ? (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                👈 请从左侧选择至少一个 ABI 接口
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-purple-800">
+                    已选择 {selectedAbiNames.length} 个 ABI
+                  </span>
+                </div>
+                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                  {functionsCount} 个函数
+                </span>
+              </div>
+              
+              {/* ABI 列表 */}
+              <div className="space-y-1">
+                {selectedAbiNames.map((name, index) => (
+                  <div key={index} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded text-sm">
+                    <svg className="w-4 h-4 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    <span className="text-gray-700 truncate">{name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

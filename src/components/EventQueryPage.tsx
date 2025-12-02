@@ -220,7 +220,6 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
 
     setIsLoading(true);
     setError(null);
-    setResults([]);
 
     try {
       // 过滤空的 indexed 参数
@@ -249,13 +248,15 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       const result = await queryEvents(params);
 
       if (result.success && result.events) {
-        setResults(result.events);
+        // 追加新结果到历史记录（最新的在前面）
+        setResults(prev => [...result.events!, ...prev]);
         // 记录当前查询的区块范围
         setCurrentFromBlock(isNaN(Number(from)) ? null : Number(from));
         setCurrentToBlock(isNaN(Number(to)) ? null : Number(to));
         
         // 保存结果
-        saveEventQueryResults(result.events);
+        const updatedResults = [...result.events!, ...results];
+        saveEventQueryResults(updatedResults);
       } else {
         setError(result.error || '查询失败');
       }
@@ -274,6 +275,36 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       newExpanded.add(index);
     }
     setExpandedResults(newExpanded);
+  };
+
+  // 删除单个结果
+  const handleDeleteResult = (index: number) => {
+    const newResults = results.filter((_, i) => i !== index);
+    setResults(newResults);
+    saveEventQueryResults(newResults);
+    
+    // 同时从展开列表中移除
+    const newExpanded = new Set(expandedResults);
+    newExpanded.delete(index);
+    // 调整其他展开项的索引
+    const adjustedExpanded = new Set<number>();
+    newExpanded.forEach(i => {
+      if (i > index) {
+        adjustedExpanded.add(i - 1);
+      } else if (i < index) {
+        adjustedExpanded.add(i);
+      }
+    });
+    setExpandedResults(adjustedExpanded);
+  };
+
+  // 清空所有结果
+  const handleClearAllResults = () => {
+    if (window.confirm('确定要清空所有查询结果吗？')) {
+      setResults([]);
+      setExpandedResults(new Set());
+      saveEventQueryResults([]);
+    }
   };
 
   // 获取当前选中事件的 indexed 参数
@@ -299,9 +330,9 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
-      {/* 左列：查询参数 */}
-      <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+      {/* 左列：查询参数 + 查询控制 */}
+      <div className="flex flex-col overflow-y-auto pr-2">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800">Event 查询</h2>
 
@@ -419,112 +450,130 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* 中列：查询控制 */}
-      <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-4 text-gray-800">查询控制</h3>
+            {/* 分隔线 */}
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="text-base font-semibold text-gray-700 mb-3">查询控制</h3>
 
-          <button
-            onClick={handleQuery}
-            disabled={isLoading || !mergedAbi}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium mb-4"
-          >
-            {isLoading ? '查询中...' : '查询 Events'}
-          </button>
-
-          {/* 翻页按钮 */}
-          {currentFromBlock !== null && currentToBlock !== null && (
-            <div className="grid grid-cols-2 gap-2 mb-4">
               <button
-                onClick={handleQueryPrevious}
-                disabled={isLoading || currentFromBlock === 0}
-                className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                onClick={handleQuery}
+                disabled={isLoading || !mergedAbi}
+                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium mb-3"
               >
-                ← 前 1000 块
+                {isLoading ? '查询中...' : '查询 Events'}
               </button>
-              <button
-                onClick={handleQueryNext}
-                disabled={isLoading}
-                className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-              >
-                后 1000 块 →
-              </button>
-            </div>
-          )}
 
-          {!mergedAbi && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-4">
-              <p className="text-sm text-yellow-800">
-                👈 请在左侧选择至少一个 ABI
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-4">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            </div>
-          )}
-
-          {!isLoading && results.length > 0 && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-green-800">查询完成</span>
-                  <span className="text-2xl font-bold text-green-700">{results.length}</span>
+              {/* 翻页按钮 */}
+              {currentFromBlock !== null && currentToBlock !== null && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <button
+                    onClick={handleQueryPrevious}
+                    disabled={isLoading || currentFromBlock === 0}
+                    className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                  >
+                    ← 前 1000 块
+                  </button>
+                  <button
+                    onClick={handleQueryNext}
+                    disabled={isLoading}
+                    className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                  >
+                    后 1000 块 →
+                  </button>
                 </div>
-                <p className="text-xs text-green-700">找到 {results.length} 个事件</p>
+              )}
+
+              {!mergedAbi && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
+                  <p className="text-sm text-yellow-800">
+                    👈 请在左侧选择至少一个 ABI
+                  </p>
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-3">
+                  <p className="text-sm text-red-800">{error}</p>
+                </div>
+              )}
+
+              {isLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                </div>
+              )}
+
+              {!isLoading && results.length > 0 && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-800">查询完成</span>
+                      <span className="text-2xl font-bold text-green-700">{results.length}</span>
+                    </div>
+                    <p className="text-xs text-green-700">找到 {results.length} 个事件</p>
+                  </div>
+                </div>
+              )}
+
+              {!isLoading && results.length === 0 && fromBlock && toBlock && !error && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">在指定区块范围内未找到事件</p>
+                </div>
+              )}
+
+              <div className="mt-4 pt-3 border-t border-gray-200">
+                <h4 className="text-xs font-semibold text-gray-700 mb-2">使用提示</h4>
+                <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                  <li>区块范围建议不超过 10000 个区块</li>
+                  <li>Indexed 参数可以用于精确过滤</li>
+                  <li>留空 indexed 参数表示不过滤该参数</li>
+                </ul>
               </div>
             </div>
-          )}
-
-          {!isLoading && results.length === 0 && fromBlock && toBlock && !error && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-sm text-yellow-800">在指定区块范围内未找到事件</p>
-            </div>
-          )}
-
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">使用提示</h4>
-            <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-              <li>区块范围建议不超过 10000 个区块</li>
-              <li>Indexed 参数可以用于精确过滤</li>
-              <li>留空 indexed 参数表示不过滤该参数</li>
-            </ul>
           </div>
         </div>
       </div>
 
       {/* 右列：结果列表 */}
       <div className="flex flex-col overflow-y-auto pr-2">
-        {results.length > 0 && (
+        {results.length > 0 ? (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">
-              查询结果
-              <span className="ml-2 text-sm text-gray-500">({results.length})</span>
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">
+                查询结果
+                <span className="ml-2 text-sm text-gray-500">({results.length})</span>
+              </h3>
+              <button
+                onClick={handleClearAllResults}
+                className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
+              >
+                🗑️ 清空所有
+              </button>
+            </div>
 
             <div className="space-y-3">
               {results.map((result, index) => (
                 <div
-                  key={index}
-                  className="border-2 border-green-200 rounded-lg overflow-hidden bg-green-50"
+                  key={`${result.transactionHash}-${result.logIndex}-${index}`}
+                  className="border-2 border-green-200 rounded-lg overflow-hidden bg-green-50 relative group"
                 >
+                  {/* 删除按钮 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteResult(index);
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors opacity-0 group-hover:opacity-100 z-10"
+                    title="删除此结果"
+                  >
+                    ×
+                  </button>
+
                   <div
                     onClick={() => toggleResult(index)}
                     className="px-4 py-3 cursor-pointer hover:bg-green-100 transition-colors"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-8">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono text-gray-500">
@@ -607,6 +656,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 </div>
               ))}
             </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-bold mb-4 text-gray-800">查询结果</h3>
+            <p className="text-sm text-gray-500 text-center py-8">
+              暂无查询结果。请配置查询参数并点击查询按钮。
+            </p>
           </div>
         )}
       </div>

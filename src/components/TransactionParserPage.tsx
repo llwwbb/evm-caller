@@ -200,8 +200,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
-      {/* 左列：输入区 */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+      {/* 左列：输入区 + 交易基本信息 */}
       <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800">交易解析</h2>
@@ -266,10 +266,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
             )}
           </div>
         </div>
-      </div>
 
-      {/* 中列：交易基本信息 */}
-      <div className="flex flex-col overflow-y-auto pr-2">
+        {/* 交易基本信息 */}
         {parsedTx && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-bold mb-4 text-gray-800">交易信息</h3>

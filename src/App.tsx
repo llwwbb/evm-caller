@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import RpcConfig from './components/RpcConfig';
-import AbiInput from './components/AbiInput';
 import FunctionList from './components/FunctionList';
 import ResultDisplay from './components/ResultDisplay';
 import ConfigManager from './components/ConfigManager';
@@ -15,7 +14,8 @@ import {
   initializeDefaultPresets, 
   loadLastUsedConfig, 
   saveCallHistory, 
-  loadCallHistory
+  loadCallHistory,
+  loadRpcPresets
 } from './utils/presetStorage';
 
 type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query';
@@ -95,13 +95,6 @@ function App() {
     saveCallHistory(callHistory);
   }, [callHistory]);
 
-  const handleAbiParsed = (parsedFunctions: ParsedFunction[], abi: string) => {
-    // 只有在没有选择多个 ABI 时，才使用手动输入的 ABI
-    if (selectedAbis.length === 0) {
-      setFunctions(parsedFunctions);
-      setAbiString(abi);
-    }
-  };
 
   const handleFunctionCall = async (functionName: string, args: any[], func: ParsedFunction) => {
     // 验证必填项
@@ -133,6 +126,11 @@ function App() {
         func.stateMutability  // 传递函数状态可变性，用于判断是否需要模拟调用
       );
 
+      // 查找当前 RPC URL 对应的预设名称
+      const rpcPresets = loadRpcPresets();
+      const currentRpcPreset = rpcPresets.find(p => p.rpcUrl === rpcUrl.trim());
+      const rpcName = currentRpcPreset?.name;
+
       // 添加到调用历史（最新的在前面）
       setCallHistory(prev => [
         {
@@ -142,6 +140,7 @@ function App() {
           result,
           timestamp: Date.now(),
           blockTag: config.blockTag, // 记录使用的区块标识
+          rpcName, // 记录使用的 RPC 名称
         },
         ...prev,
       ]);
@@ -260,9 +259,8 @@ function App() {
           {/* 右侧内容区域（根据标签显示不同内容） */}
           {activeTab === 'function-call' && (
             <>
-              {/* 左中列：配置和 ABI 输入 */}
+              {/* 左中列：配置信息 */}
               <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
-                {/* 步骤 1: RPC 配置 */}
                 <RpcConfig 
                   onRpcUrlChange={setRpcUrl}
                   onContractAddressChange={setContractAddress}
@@ -272,62 +270,39 @@ function App() {
                   initialBlockTag={lastUsed.blockTag}
                   externalRpcUrl={rpcUrl}
                   externalContractAddress={contractAddress}
-                  onPresetsSaved={() => setPresetRefreshTrigger(prev => prev + 1)}
+                  selectedAbiNames={selectedAbiNames}
+                  functionsCount={functions.length}
                 />
 
-            {/* 步骤 2: ABI 输入 */}
-            {selectedAbis.length > 0 ? (
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
-                  ② ABI 已选择
-                </h2>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    ✅ 已从侧边栏选择 {selectedAbis.length} 个 ABI
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    已解析 {functions.length} 个函数
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <AbiInput
-                onAbiParsed={handleAbiParsed}
-                disabled={false}
-                initialAbi={lastUsed.abi}
-                externalAbi=""
-                onPresetsSaved={() => setPresetRefreshTrigger(prev => prev + 1)}
-              />
-            )}
-
-            {/* 进度提示 */}
-            {(!rpcUrl || !contractAddress) && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  👆 请先完成步骤 1：配置 RPC 和合约地址
-                </p>
-              </div>
-            )}
-
-            {rpcUrl && contractAddress && functions.length === 0 && selectedAbis.length === 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  👈 请在左侧选择至少一个 ABI，或在下方输入 ABI
-                </p>
-              </div>
-            )}
+                {/* 进度提示 */}
+                {(!rpcUrl || !contractAddress) && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p className="text-sm text-yellow-800">
+                      👆 请先从左侧选择或配置 RPC 和合约地址
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* 右中列：函数列表 */}
               <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
-                {functions.length > 0 && rpcUrl && contractAddress && (
+                {functions.length > 0 && rpcUrl && contractAddress ? (
                   <FunctionList
                     functions={functions}
                     config={{ rpcUrl, contractAddress }}
                     abiString={abiString}
                     onFunctionCall={handleFunctionCall}
                   />
-                )}
+                ) : rpcUrl && contractAddress && selectedAbis.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-2xl font-bold mb-4 text-gray-800">函数列表</h2>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800">
+                        👈 请从左侧选择至少一个 ABI 接口
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* 调用中提示 */}
                 {isCallInProgress && (

@@ -71,6 +71,7 @@ export interface CallHistory {
   result: CallResult;
   timestamp: number;
   blockTag?: string | number; // 记录调用时使用的区块标识
+  rpcName?: string; // 记录调用时使用的 RPC 名称
 }
 
 // Parser 相关类型

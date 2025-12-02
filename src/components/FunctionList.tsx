@@ -20,6 +20,25 @@ const FunctionList: React.FC<FunctionListProps> = ({
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // 对函数进行排序：view/pure 在前，payable/nonpayable 在后，同类型内按名称排序
+  const sortedFunctions = [...functions].sort((a, b) => {
+    // 定义优先级：view/pure = 1, 其他 = 2
+    const getPriority = (func: ParsedFunction) => {
+      return func.stateMutability === 'view' || func.stateMutability === 'pure' ? 1 : 2;
+    };
+
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+
+    // 先按优先级排序
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // 优先级相同时，按名称排序
+    return a.name.localeCompare(b.name);
+  });
+
   // 获取函数类型的样式和标签
   const getFunctionTypeBadge = (stateMutability: string) => {
     switch (stateMutability) {
@@ -147,15 +166,26 @@ const FunctionList: React.FC<FunctionListProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">
-        步骤 3: 调用函数
+        函数列表
       </h2>
 
       <div className="space-y-3">
-        {functions.map((func) => (
-          <div
-            key={func.name}
-            className="border border-gray-200 rounded-lg overflow-hidden"
-          >
+        {sortedFunctions.map((func, index) => {
+          // 检查是否需要在这里插入分隔线
+          const isFirstSimulateCall = index > 0 && 
+            (sortedFunctions[index - 1].stateMutability === 'view' || sortedFunctions[index - 1].stateMutability === 'pure') &&
+            (func.stateMutability !== 'view' && func.stateMutability !== 'pure');
+
+          return (
+            <React.Fragment key={func.name}>
+              {isFirstSimulateCall && (
+                <div className="flex items-center gap-3 py-2">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="text-xs text-gray-500 font-medium">模拟调用函数</span>
+                  <div className="flex-1 border-t border-gray-300"></div>
+                </div>
+              )}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
             {/* 函数头部 */}
             <div
               onClick={() => toggleFunction(func.name)}
@@ -223,8 +253,10 @@ const FunctionList: React.FC<FunctionListProps> = ({
                 )}
               </div>
             )}
-          </div>
-        ))}
+              </div>
+            </React.Fragment>
+          );
+        })}
       </div>
     </div>
   );
