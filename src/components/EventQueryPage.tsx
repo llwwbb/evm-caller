@@ -671,4 +671,3 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
 };
 
 export default EventQueryPage;
-
