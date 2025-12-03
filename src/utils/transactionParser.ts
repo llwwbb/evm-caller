@@ -1,4 +1,4 @@
-import { JsonRpcProvider, TransactionResponse, TransactionReceipt, Interface, Log } from 'ethers';
+import { JsonRpcProvider, TransactionResponse, TransactionReceipt, Interface, Log, EventFragment } from 'ethers';
 import { ParsedTransaction, ParsedLog } from '../types';
 
 /**
@@ -99,8 +99,8 @@ export function parseTransactionLogs(
           
           // 遍历 ABI 中的所有 event，检查是否有 topic 匹配
           for (const fragment of iface.fragments) {
-            if (fragment.type === 'event') {
-              const eventTopic = iface.getEvent(fragment.name)?.topicHash;
+            if (EventFragment.isFragment(fragment)) {
+              const eventTopic = fragment.topicHash;
               if (eventTopic && eventTopic === logTopic0) {
                 // topic 匹配但解析失败，记录错误
                 const errorMsg = error instanceof Error ? error.message : String(error);
