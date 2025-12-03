@@ -67,6 +67,9 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
     description: '',
   });
 
+  // 拖拽状态
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
     loadPresets();
   }, []);
@@ -215,17 +218,87 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
     });
   };
 
+  // 解析 JS 对象或 JSON
+  const parseJsObjectOrJson = (str: string): unknown => {
+    // 先尝试标准 JSON 解析
+    try {
+      return JSON.parse(str);
+    } catch {
+      // 如果 JSON 解析失败，尝试作为 JS 对象解析
+      try {
+        // 使用 Function 构造函数安全地解析 JS 对象语法
+        // eslint-disable-next-line no-new-func
+        const result = new Function('return (' + str + ')')();
+        return result;
+      } catch {
+        throw new Error('Invalid format');
+      }
+    }
+  };
+
   // 格式化 JSON
   const handleFormatJson = () => {
     if (modal.type !== 'abi') return;
     
     try {
-      const parsed = JSON.parse(modal.value);
+      const parsed = parseJsObjectOrJson(modal.value);
       const formatted = JSON.stringify(parsed, null, 2);
       setModal({ ...modal, value: formatted });
     } catch (error) {
       alert(t('modal.invalidJson'));
     }
+  };
+
+  // 拖拽处理函数
+  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (modal.mode === 'view') return;
+
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+
+    const file = files[0];
+    
+    // 读取文件内容
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        // 尝试解析和格式化 JSON 或 JS 对象
+        try {
+          const parsed = parseJsObjectOrJson(content);
+          const formatted = JSON.stringify(parsed, null, 2);
+          setModal({ ...modal, value: formatted });
+        } catch {
+          // 如果无法解析，直接使用原始内容
+          setModal({ ...modal, value: content });
+        }
+      }
+    };
+    reader.onerror = () => {
+      alert(t('modal.fileReadError'));
+    };
+    reader.readAsText(file);
   };
 
   // 保存弹窗数据
@@ -675,16 +748,36 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       )}
                     </div>
                     {modal.type === 'abi' ? (
-                      <textarea
-                        value={modal.value}
-                        onChange={(e) => setModal({ ...modal, value: e.target.value })}
-                        placeholder={modal.type === 'abi' ? 'ABI JSON' : ''}
-                        disabled={modal.mode === 'view'}
-                        rows={15}
-                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs focus:ring-2 ${styles.inputRing} focus:border-transparent ${
-                          modal.mode === 'view' ? 'bg-gray-50 cursor-not-allowed' : ''
-                        }`}
-                      />
+                      <div className="relative">
+                        <textarea
+                          value={modal.value}
+                          onChange={(e) => setModal({ ...modal, value: e.target.value })}
+                          placeholder={modal.mode !== 'view' ? t('modal.dragDropHint') : 'ABI JSON'}
+                          disabled={modal.mode === 'view'}
+                          rows={15}
+                          onDragOver={handleDragOver}
+                          onDragEnter={handleDragEnter}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                          className={`w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 ${styles.inputRing} focus:border-transparent transition-all ${
+                            modal.mode === 'view' 
+                              ? 'bg-gray-50 cursor-not-allowed border-gray-300' 
+                              : isDragging 
+                                ? 'border-purple-500 border-2 bg-purple-50 border-dashed' 
+                                : 'border-gray-300'
+                          }`}
+                        />
+                        {isDragging && modal.mode !== 'view' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-purple-100 bg-opacity-90 rounded-lg pointer-events-none">
+                            <div className="text-center">
+                              <svg className="w-12 h-12 mx-auto text-purple-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              <p className="text-purple-700 font-medium">{t('modal.dropFileHere')}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <input
                         type="text"
