@@ -11,6 +11,60 @@ interface TransactionParserPageProps {
   mergedAbi: string;
 }
 
+type ParseType = 'hex' | 'address' | 'number' | 'text';
+
+// 将 hex data 按 32 bytes 分割
+const splitInto32Bytes = (data: string): string[] => {
+  const hex = data.startsWith('0x') ? data.slice(2) : data;
+  if (!hex || hex === '') return [];
+  const chunks: string[] = [];
+  for (let i = 0; i < hex.length; i += 64) {
+    chunks.push('0x' + hex.slice(i, i + 64).padEnd(64, '0'));
+  }
+  return chunks;
+};
+
+// 解析 32 bytes 数据为不同类型
+const parse32Bytes = (chunk: string, type: ParseType): string => {
+  const hex = chunk.startsWith('0x') ? chunk.slice(2) : chunk;
+  
+  switch (type) {
+    case 'hex':
+      return '0x' + hex;
+    
+    case 'address':
+      // 取后 40 个字符 (20 bytes)
+      return '0x' + hex.slice(-40);
+    
+    case 'number':
+      try {
+        const bn = BigInt('0x' + hex);
+        return bn.toString();
+      } catch {
+        return 'Invalid number';
+      }
+    
+    case 'text':
+      try {
+        // 尝试将 hex 解码为 UTF-8 文本
+        const bytes = hex.match(/.{2}/g)?.map(b => parseInt(b, 16)) || [];
+        // 过滤掉 0x00（padding）
+        const filtered = bytes.filter(b => b !== 0);
+        const text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(filtered));
+        // 检查是否有可打印字符
+        if (/^[\x20-\x7E]*$/.test(text) && text.length > 0) {
+          return text;
+        }
+        return '(non-printable)';
+      } catch {
+        return '(decode error)';
+      }
+    
+    default:
+      return chunk;
+  }
+};
+
 const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, selectedAbis, selectedAbiNames }) => {
   const [txHash, setTxHash] = useState('');
   const [rawTx, setRawTx] = useState<TransactionResponse | null>(null);
@@ -19,6 +73,10 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
+  // 存储每个 log 的每个数据块的解析类型: { logIndex: { chunkIndex: type } }
+  const [dataParseTypes, setDataParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
+  // 存储每个 log 的每个 topic 的解析类型
+  const [topicParseTypes, setTopicParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
 
   // 加载保存的结果
   useEffect(() => {
@@ -479,21 +537,114 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                                   {log.error}
                                 </div>
                               )}
+                              
+                              {/* Topics 智能解析 */}
                               <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">Topics：</span>
-                                <div className="bg-white p-2 rounded border border-gray-200 space-y-1">
-                                  {log.topics.map((topic, i) => (
-                                    <div key={i} className="text-xs font-mono break-all text-gray-700">
-                                      [{i}] {topic}
-                                    </div>
-                                  ))}
+                                <span className="text-xs font-medium text-gray-600 block mb-1">
+                                  Topics：
+                                  <span className="text-gray-400 ml-1">(每个 32 bytes)</span>
+                                </span>
+                                <div className="bg-white p-2 rounded border border-gray-200 space-y-2">
+                                  {log.topics.map((topic, i) => {
+                                    const selectedType = topicParseTypes[index]?.[i] || 'hex';
+                                    return (
+                                      <div key={i} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-xs text-gray-500">[{i}]</span>
+                                          {i > 0 && ( // topic[0] 是 event signature，不需要解析
+                                            <div className="flex gap-1">
+                                              {(['hex', 'address', 'number', 'text'] as ParseType[]).map(type => (
+                                                <button
+                                                  key={type}
+                                                  onClick={() => {
+                                                    setTopicParseTypes(prev => ({
+                                                      ...prev,
+                                                      [index]: { ...prev[index], [i]: type }
+                                                    }));
+                                                  }}
+                                                  className={`px-1.5 py-0.5 text-xs rounded ${
+                                                    selectedType === type
+                                                      ? 'bg-blue-500 text-white'
+                                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                  }`}
+                                                >
+                                                  {type}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="text-xs font-mono break-all text-gray-700 pl-4">
+                                          {i === 0 ? (
+                                            <span className="text-purple-600">{topic}</span>
+                                          ) : (
+                                            <span className={selectedType === 'address' ? 'text-blue-600' : selectedType === 'number' ? 'text-green-600' : ''}>
+                                              {parse32Bytes(topic, selectedType)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
+
+                              {/* Data 智能解析 */}
                               <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">Data：</span>
-                                <div className="bg-white p-2 rounded border border-gray-200 text-xs font-mono break-all text-gray-700">
-                                  {log.data}
-                                </div>
+                                <span className="text-xs font-medium text-gray-600 block mb-1">
+                                  Data：
+                                  <span className="text-gray-400 ml-1">
+                                    ({splitInto32Bytes(log.data).length} × 32 bytes)
+                                  </span>
+                                </span>
+                                {log.data && log.data !== '0x' ? (
+                                  <div className="bg-white p-2 rounded border border-gray-200 space-y-2">
+                                    {splitInto32Bytes(log.data).map((chunk, i) => {
+                                      const selectedType = dataParseTypes[index]?.[i] || 'hex';
+                                      return (
+                                        <div key={i} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-xs text-gray-500">[{i}]</span>
+                                            <div className="flex gap-1">
+                                              {(['hex', 'address', 'number', 'text'] as ParseType[]).map(type => (
+                                                <button
+                                                  key={type}
+                                                  onClick={() => {
+                                                    setDataParseTypes(prev => ({
+                                                      ...prev,
+                                                      [index]: { ...prev[index], [i]: type }
+                                                    }));
+                                                  }}
+                                                  className={`px-1.5 py-0.5 text-xs rounded ${
+                                                    selectedType === type
+                                                      ? 'bg-blue-500 text-white'
+                                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                  }`}
+                                                >
+                                                  {type}
+                                                </button>
+                                              ))}
+                                            </div>
+                                          </div>
+                                          <div className="text-xs font-mono break-all pl-4">
+                                            <span className={
+                                              selectedType === 'address' ? 'text-blue-600' : 
+                                              selectedType === 'number' ? 'text-green-600' : 
+                                              selectedType === 'text' ? 'text-orange-600' :
+                                              'text-gray-700'
+                                            }>
+                                              {parse32Bytes(chunk, selectedType)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="bg-white p-2 rounded border border-gray-200 text-xs text-gray-400">
+                                    (empty)
+                                  </div>
+                                )}
                               </div>
                             </>
                           )}
