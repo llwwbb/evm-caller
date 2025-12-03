@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ParsedTransaction } from '../types';
 import { fetchTransaction, fetchTransactionReceipt, formatTransactionInfo, parseTransactionLogs, decodeInputData } from '../utils/transactionParser';
 import { saveTxParserResult, loadTxParserResult } from '../utils/presetStorage';
@@ -66,6 +67,7 @@ const parse32Bytes = (chunk: string, type: ParseType): string => {
 };
 
 const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, selectedAbis, selectedAbiNames }) => {
+  const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
   const [rawTx, setRawTx] = useState<TransactionResponse | null>(null);
   const [rawReceipt, setRawReceipt] = useState<TransactionReceipt | null>(null);
@@ -148,12 +150,12 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
 
   const handleFetch = async () => {
     if (!txHash.trim()) {
-      setError('请输入交易 Hash');
+      setError(t('transactionParser.enterTxHash'));
       return;
     }
 
     if (!rpcUrl.trim()) {
-      setError('请先配置 RPC URL');
+      setError(t('transactionParser.configureRpc'));
       return;
     }
 
@@ -175,7 +177,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
         await parseTransactionWithData(tx, receipt);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取交易失败');
+      setError(err instanceof Error ? err.message : t('transactionParser.fetchFailed'));
       setRawTx(null);
       setRawReceipt(null);
     } finally {
@@ -233,7 +235,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
         parsedTx: parsed,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '解析失败');
+      setError(err instanceof Error ? err.message : t('transactionParser.parseFailed'));
     }
   };
 
@@ -248,8 +250,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
   };
 
   const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return '未知';
-    return new Date(timestamp * 1000).toLocaleString('zh-CN');
+    if (!timestamp) return t('transactionParser.unknown');
+    return new Date(timestamp * 1000).toLocaleString(t('transactionParser.locale'));
   };
 
   const shortenAddress = (address: string) => {
@@ -262,18 +264,18 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
       {/* 左列：输入区 + 交易基本信息 */}
       <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">交易解析</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800">{t('transactionParser.title')}</h2>
           
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                交易 Hash
+                {t('transactionParser.txHash')}
               </label>
               <input
                 type="text"
                 value={txHash}
                 onChange={(e) => setTxHash(e.target.value)}
-                placeholder="0x..."
+                placeholder={t('transactionParser.txHashPlaceholder')}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               />
             </div>
@@ -283,13 +285,13 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
               disabled={isFetching}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
             >
-              {isFetching ? '获取中...' : '获取交易'}
+              {isFetching ? t('transactionParser.fetching') : t('transactionParser.fetchTransaction')}
             </button>
 
             {rawTx && selectedAbis.length === 0 && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
-                  👈 请在左侧选择至少一个 ABI 以解析交易
+                  👈 {t('transactionParser.selectAbiToParseHint')}
                 </p>
               </div>
             )}
@@ -299,7 +301,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                 onClick={parseTransaction}
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium"
               >
-                解析交易
+                {t('transactionParser.parseTransaction')}
               </button>
             )}
 
@@ -312,13 +314,13 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
             {rawTx && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <p className="text-sm text-green-800">
-                  ✅ 交易已获取
+                  ✅ {t('transactionParser.transactionFetched')}
                   {selectedAbis.length > 0 && parsedTx && (
-                    <span className="ml-2">· 已解析</span>
+                    <span className="ml-2">· {t('transactionParser.parsed')}</span>
                   )}
                 </p>
                 <p className="text-xs text-green-600 mt-1">
-                  使用 {selectedAbis.length} 个 ABI
+                  {t('transactionParser.usingAbis', { count: selectedAbis.length })}
                 </p>
               </div>
             )}
@@ -328,59 +330,59 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
         {/* 交易基本信息 */}
         {parsedTx && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">交易信息</h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('transactionParser.transactionInfo')}</h3>
             
             <div className="space-y-3 text-sm">
               <div>
-                <span className="font-medium text-gray-600">状态：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.status')}：</span>
                 <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
                   parsedTx.status === 1 
                     ? 'bg-green-100 text-green-800' 
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {parsedTx.status === 1 ? '成功' : '失败'}
+                  {parsedTx.status === 1 ? t('transactionParser.success') : t('transactionParser.failed')}
                 </span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">区块号：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.blockNumber')}：</span>
                 <span className="ml-2 text-gray-800 font-mono">{parsedTx.blockNumber}</span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">时间：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.time')}：</span>
                 <span className="ml-2 text-gray-800">{formatTimestamp(parsedTx.timestamp)}</span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">From：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.from')}：</span>
                 <span className="ml-2 text-gray-800 font-mono text-xs" title={parsedTx.from}>
                   {shortenAddress(parsedTx.from)}
                 </span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">To：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.to')}：</span>
                 <span className="ml-2 text-gray-800 font-mono text-xs" title={parsedTx.to || ''}>
-                  {parsedTx.to ? shortenAddress(parsedTx.to) : '合约创建'}
+                  {parsedTx.to ? shortenAddress(parsedTx.to) : t('transactionParser.contractCreation')}
                 </span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">Value：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.value')}：</span>
                 <span className="ml-2 text-gray-800 font-mono">
                   {(BigInt(parsedTx.value) / BigInt(10 ** 18)).toString()} ETH
                 </span>
               </div>
 
               <div>
-                <span className="font-medium text-gray-600">Gas Limit：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.gasLimit')}：</span>
                 <span className="ml-2 text-gray-800 font-mono">{parsedTx.gasLimit}</span>
               </div>
 
               {parsedTx.gasPrice && (
                 <div>
-                  <span className="font-medium text-gray-600">Gas Price：</span>
+                  <span className="font-medium text-gray-600">{t('transactionParser.gasPrice')}：</span>
                   <span className="ml-2 text-gray-800 font-mono">
                     {(BigInt(parsedTx.gasPrice) / BigInt(10 ** 9)).toString()} Gwei
                   </span>
@@ -388,12 +390,12 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
               )}
 
               <div>
-                <span className="font-medium text-gray-600">Nonce：</span>
+                <span className="font-medium text-gray-600">{t('transactionParser.nonce')}：</span>
                 <span className="ml-2 text-gray-800 font-mono">{parsedTx.nonce}</span>
               </div>
 
               <div className="pt-3 border-t border-gray-200">
-                <span className="font-medium text-gray-600 block mb-2">Input Data：</span>
+                <span className="font-medium text-gray-600 block mb-2">{t('transactionParser.inputData')}：</span>
                 <div className="bg-gray-50 p-2 rounded font-mono text-xs break-all max-h-32 overflow-y-auto">
                   {parsedTx.inputData}
                 </div>
@@ -410,25 +412,25 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
             {/* Input Data 解析 */}
             {parsedTx.decodedInput && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold mb-4 text-gray-800">函数调用</h3>
+                <h3 className="text-lg font-bold mb-4 text-gray-800">{t('transactionParser.functionCall')}</h3>
                 
                 <div className="space-y-3">
                   <div>
-                    <span className="font-medium text-gray-600">函数：</span>
+                    <span className="font-medium text-gray-600">{t('transactionParser.function')}：</span>
                     <span className="ml-2 text-blue-700 font-mono text-sm font-semibold">
                       {parsedTx.decodedInput.functionName}
                     </span>
                   </div>
 
                   <div>
-                    <span className="font-medium text-gray-600">签名：</span>
+                    <span className="font-medium text-gray-600">{t('transactionParser.signature')}：</span>
                     <span className="ml-2 text-gray-600 font-mono text-xs">
                       {parsedTx.decodedInput.signature}
                     </span>
                   </div>
 
                   <div>
-                    <span className="font-medium text-gray-600 block mb-2">参数：</span>
+                    <span className="font-medium text-gray-600 block mb-2">{t('transactionParser.parameters')}：</span>
                     <div className="bg-gray-50 p-3 rounded">
                       <pre className="text-xs overflow-x-auto">
                         {JSON.stringify(parsedTx.decodedInput.args, null, 2)}
@@ -442,14 +444,14 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
             {/* Logs 解析 */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-bold mb-4 text-gray-800">
-                事件日志
+                {t('transactionParser.eventLogs')}
                 <span className="ml-2 text-sm text-gray-500">
                   ({parsedTx.logs.length})
                 </span>
               </h3>
 
               {parsedTx.logs.length === 0 ? (
-                <p className="text-sm text-gray-500">此交易没有产生事件日志</p>
+                <p className="text-sm text-gray-500">{t('transactionParser.noLogs')}</p>
               ) : (
                 <div className="space-y-3">
                   {parsedTx.logs.map((log, index) => (
@@ -477,7 +479,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                                 </span>
                               ) : (
                                 <span className="text-sm text-gray-500">
-                                  未解析
+                                  {t('transactionParser.unparsed')}
                                 </span>
                               )}
                             </div>
@@ -504,7 +506,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                           {log.parsed ? (
                             <>
                               <div>
-                                <span className="text-xs font-medium text-gray-600">签名：</span>
+                                <span className="text-xs font-medium text-gray-600">{t('transactionParser.signature')}：</span>
                                 <span className="ml-2 text-xs text-gray-600 font-mono">
                                   {log.parsed.signature}
                                 </span>
@@ -516,13 +518,13 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                                 </span>
                               </div>
                               <div>
-                                <span className="text-xs font-medium text-gray-600">ABI：</span>
+                                <span className="text-xs font-medium text-gray-600">{t('transactionParser.abiSource')}：</span>
                                 <span className="ml-2 text-xs text-purple-600 font-medium">
                                   {log.parsed.abiName}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">参数：</span>
+                                <span className="text-xs font-medium text-gray-600 block mb-1">{t('transactionParser.parameters')}：</span>
                                 <div className="bg-white p-2 rounded border border-gray-200">
                                   <pre className="text-xs overflow-x-auto">
                                     {JSON.stringify(log.parsed.args, null, 2)}
@@ -541,8 +543,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                               {/* Topics 智能解析 */}
                               <div>
                                 <span className="text-xs font-medium text-gray-600 block mb-1">
-                                  Topics：
-                                  <span className="text-gray-400 ml-1">(每个 32 bytes)</span>
+                                  {t('transactionParser.topics')}：
+                                  <span className="text-gray-400 ml-1">({t('transactionParser.each32Bytes')})</span>
                                 </span>
                                 <div className="bg-white p-2 rounded border border-gray-200 space-y-2">
                                   {log.topics.map((topic, i) => {
@@ -592,9 +594,9 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                               {/* Data 智能解析 */}
                               <div>
                                 <span className="text-xs font-medium text-gray-600 block mb-1">
-                                  Data：
+                                  {t('transactionParser.data')}：
                                   <span className="text-gray-400 ml-1">
-                                    ({splitInto32Bytes(log.data).length} × 32 bytes)
+                                    ({t('transactionParser.bytes32Count', { count: splitInto32Bytes(log.data).length })})
                                   </span>
                                 </span>
                                 {log.data && log.data !== '0x' ? (
@@ -642,7 +644,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                                   </div>
                                 ) : (
                                   <div className="bg-white p-2 rounded border border-gray-200 text-xs text-gray-400">
-                                    (empty)
+                                    {t('transactionParser.empty')}
                                   </div>
                                 )}
                               </div>

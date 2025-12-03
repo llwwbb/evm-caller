@@ -127,9 +127,9 @@ export function parseTransactionLogs(
         const errorDetails = matchingErrors.map(e => 
           `[${e.abiName}] ${e.eventName}: ${e.error}`
         ).join('\n');
-        parsedLog.error = `ABI 中存在匹配的 event 但解析失败:\n${errorDetails}`;
+        parsedLog.error = `ABI matching event found but parsing failed:\n${errorDetails}`;
       } else {
-        parsedLog.error = '无法使用提供的 ABI 解析此日志';
+        parsedLog.error = 'Cannot parse this log with provided ABIs';
       }
     }
 
