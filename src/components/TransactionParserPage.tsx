@@ -475,7 +475,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
                           ) : (
                             <>
                               {log.error && (
-                                <div className="text-xs text-red-600 mb-2">
+                                <div className="text-xs text-red-600 mb-2 whitespace-pre-wrap bg-red-50 p-2 rounded border border-red-200">
                                   {log.error}
                                 </div>
                               )}

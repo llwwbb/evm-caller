@@ -54,6 +54,9 @@ export function parseTransactionLogs(
       topics: log.topics.slice(), // 复制数组
     };
 
+    const logTopic0 = log.topics[0]; // 日志的第一个 topic（event signature hash）
+    const matchingErrors: { abiName: string; eventName: string; error: string }[] = [];
+
     // 尝试使用每个 ABI 解析
     for (let i = 0; i < abis.length; i++) {
       const abiString = abis[i];
@@ -89,14 +92,45 @@ export function parseTransactionLogs(
           break;
         }
       } catch (error) {
-        // 这个 ABI 无法解析，继续尝试下一个
+        // 检查是否有 event 的 topic 与日志的 topic[0] 匹配
+        try {
+          const abi = typeof abiString === 'string' ? JSON.parse(abiString) : abiString;
+          const iface = new Interface(abi);
+          
+          // 遍历 ABI 中的所有 event，检查是否有 topic 匹配
+          for (const fragment of iface.fragments) {
+            if (fragment.type === 'event') {
+              const eventTopic = iface.getEvent(fragment.name)?.topicHash;
+              if (eventTopic && eventTopic === logTopic0) {
+                // topic 匹配但解析失败，记录错误
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                matchingErrors.push({
+                  abiName,
+                  eventName: fragment.name,
+                  error: errorMsg,
+                });
+                break; // 这个 ABI 中已找到匹配的 event
+              }
+            }
+          }
+        } catch {
+          // 忽略解析 ABI 时的错误
+        }
         continue;
       }
     }
 
     // 如果所有 ABI 都无法解析
     if (!parsedLog.parsed) {
-      parsedLog.error = '无法使用提供的 ABI 解析此日志';
+      if (matchingErrors.length > 0) {
+        // 有 topic 匹配但解析失败的情况，显示具体错误
+        const errorDetails = matchingErrors.map(e => 
+          `[${e.abiName}] ${e.eventName}: ${e.error}`
+        ).join('\n');
+        parsedLog.error = `ABI 中存在匹配的 event 但解析失败:\n${errorDetails}`;
+      } else {
+        parsedLog.error = '无法使用提供的 ABI 解析此日志';
+      }
     }
 
     return parsedLog;
