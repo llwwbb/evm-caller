@@ -26,7 +26,7 @@ export async function queryEvents(params: EventQueryParams): Promise<EventQueryR
     if (!eventFragment) {
       return {
         success: false,
-        error: `事件 "${eventName}" 在 ABI 中不存在`,
+        error: `Event "${eventName}" does not exist in ABI`,
       };
     }
 
@@ -55,10 +55,10 @@ export async function queryEvents(params: EventQueryParams): Promise<EventQueryR
       count: parsedLogs.length,
     };
   } catch (error) {
-    console.error('查询事件失败:', error);
+    console.error('Event query failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : '查询失败',
+      error: error instanceof Error ? error.message : 'Query failed',
     };
   }
 }
@@ -92,7 +92,7 @@ export function buildEventFilter(
             
             topics.push(encodedValue as string);
           } catch (error) {
-            console.error(`编码参数 ${paramName} 失败:`, error);
+            console.error(`Failed to encode parameter ${paramName}:`, error);
             topics.push(null);
           }
         } else {
@@ -149,10 +149,10 @@ export function parseEventLogs(
           abiName: abiName || 'Query ABI',
         };
       } else {
-        parsedLog.error = '事件名称不匹配';
+        parsedLog.error = 'Event name mismatch';
       }
     } catch (error) {
-      parsedLog.error = error instanceof Error ? error.message : '解析失败';
+      parsedLog.error = error instanceof Error ? error.message : 'Parse failed';
     }
 
     return parsedLog;
@@ -183,7 +183,7 @@ export function extractEvents(abi: string): ParsedEvent[] {
     
     return events;
   } catch (error) {
-    console.error('提取事件定义失败:', error);
+    console.error('Failed to extract events:', error);
     return [];
   }
 }
@@ -243,7 +243,7 @@ export function validateBlockRange(
     if (fromNum > toNum) {
       return {
         valid: false,
-        error: '起始区块不能大于结束区块',
+        error: 'From block cannot be greater than to block',
       };
     }
     
@@ -252,7 +252,7 @@ export function validateBlockRange(
     if (range > 10000) {
       return {
         valid: false,
-        error: '区块范围过大（最多 10000 个区块），可能导致查询超时',
+        error: 'Block range too large (max 10000 blocks), may cause query timeout',
       };
     }
   }

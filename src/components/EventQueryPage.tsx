@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { EventQueryParams, ParsedLog } from '../types';
 import { queryEvents, extractEvents, validateBlockRange } from '../utils/eventQuery';
 import { saveEventQueryResults, loadEventQueryResults } from '../utils/presetStorage';
@@ -13,6 +14,7 @@ interface EventQueryPageProps {
 }
 
 const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress, mergedAbi, selectedAbiNames, selectedAbis }) => {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<Array<{ name: string; inputs: any[]; abiName?: string }>>([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [fromBlock, setFromBlock] = useState('');
@@ -68,7 +70,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         setIndexedParams({});
       }
     } catch (err) {
-      console.error('提取事件失败:', err);
+      console.error(t('errors.extractEventsFailed'), err);
       setEvents([]);
     }
   };
@@ -85,7 +87,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         setIndexedParams({});
       }
     } catch (err) {
-      console.error('提取事件失败:', err);
+      console.error(t('errors.extractEventsFailed'), err);
       setEvents([]);
     }
   };
@@ -118,7 +120,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
   // 快速查询最近 1000 个区块
   const handleQuickQuery = async () => {
     if (!rpcUrl.trim()) {
-      setError('请先配置 RPC URL');
+      setError(t('eventQuery.configureRpcFirst'));
       return;
     }
 
@@ -135,7 +137,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       // 自动触发查询
       await performQuery(from.toString(), latestBlock.toString());
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取最新区块失败');
+      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
     }
   };
 
@@ -166,7 +168,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       const newTo = Math.min(latestBlock, newFrom + 999);
       
       if (newFrom > latestBlock) {
-        setError('已经是最新区块');
+        setError(t('eventQuery.alreadyLatest'));
         return;
       }
       
@@ -177,13 +179,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       
       await performQuery(newFrom.toString(), newTo.toString());
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取最新区块失败');
+      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
     }
   };
 
   const handleQuery = async () => {
     if (!fromBlock.trim() || !toBlock.trim()) {
-      setError('请输入区块范围或使用快速查询');
+      setError(t('eventQuery.enterBlockRange'));
       return;
     }
 
@@ -192,29 +194,29 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
 
   const performQuery = async (from: string, to: string) => {
     if (!rpcUrl.trim()) {
-      setError('请先配置 RPC URL');
+      setError(t('eventQuery.configureRpcFirst'));
       return;
     }
 
     if (!contractAddress.trim()) {
-      setError('请先配置合约地址');
+      setError(t('eventQuery.configureContractFirst'));
       return;
     }
 
     if (!mergedAbi) {
-      setError('请在左侧选择至少一个 ABI');
+      setError(t('eventQuery.selectAbiFirst'));
       return;
     }
 
     if (!selectedEvent) {
-      setError('请选择事件');
+      setError(t('eventQuery.selectEventFirst'));
       return;
     }
 
     // 验证区块范围
     const validation = validateBlockRange(from, to);
     if (!validation.valid) {
-      setError(validation.error || '区块范围无效');
+      setError(validation.error || t('eventQuery.blockRangeInvalid'));
       return;
     }
 
@@ -258,10 +260,10 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         const updatedResults = [...result.events!, ...results];
         saveEventQueryResults(updatedResults);
       } else {
-        setError(result.error || '查询失败');
+        setError(result.error || t('errors.queryEventFailed'));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '查询失败');
+      setError(err instanceof Error ? err.message : t('errors.queryEventFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -300,7 +302,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
 
   // 清空所有结果
   const handleClearAllResults = () => {
-    if (window.confirm('确定要清空所有查询结果吗？')) {
+    if (window.confirm(t('eventQuery.confirmClearAll'))) {
       setResults([]);
       setExpandedResults(new Set());
       saveEventQueryResults([]);
@@ -324,7 +326,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       const eventFragment = iface.getEvent(selectedEvent);
       return eventFragment?.topicHash || null;
     } catch (error) {
-      console.error('获取 event topic 失败:', error);
+      console.error(t('errors.getEventTopicFailed'), error);
       return null;
     }
   };
@@ -334,13 +336,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
       {/* 左列：查询参数 + 查询控制 */}
       <div className="flex flex-col overflow-y-auto pr-2">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Event 查询</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800">{t('eventQuery.eventQuery')}</h2>
 
           <div className="space-y-4">
             {/* Event 选择 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                选择 Event
+                {t('eventQuery.selectEvent')}
               </label>
               <select
                 value={selectedEvent}
@@ -349,7 +351,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 disabled={events.length === 0}
               >
                 {events.length === 0 ? (
-                  <option value="">ABI 中无 Event</option>
+                  <option value="">{t('eventQuery.noEvents')}</option>
                 ) : (
                   events.map((event, index) => (
                     <option key={`${event.name}_${index}`} value={event.name}>
@@ -364,7 +366,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 <>
                   {events.find(e => e.name === selectedEvent)?.abiName && (
                     <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded-md">
-                      <span className="text-xs font-medium text-gray-600 block mb-1">来自 ABI:</span>
+                      <span className="text-xs font-medium text-gray-600 block mb-1">{t('eventQuery.fromAbi')}</span>
                       <span className="text-xs text-purple-600 font-medium">
                         {events.find(e => e.name === selectedEvent)?.abiName}
                       </span>
@@ -385,10 +387,10 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
             {/* 合约地址显示 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                合约地址
+                {t('eventQuery.contractAddress')}
               </label>
               <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 font-mono text-xs text-gray-700">
-                {contractAddress || '未设置'}
+                {contractAddress || t('eventQuery.notSet')}
               </div>
             </div>
 
@@ -399,28 +401,28 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 disabled={isLoading || !rpcUrl}
                 className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
               >
-                快速查询最近 1000 个区块
+                {t('eventQuery.quickQuery')}
               </button>
             </div>
 
             {/* 区块范围 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                区块范围
+                {t('eventQuery.blockRange')}
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
                   value={fromBlock}
                   onChange={(e) => setFromBlock(e.target.value)}
-                  placeholder="起始区块"
+                  placeholder={t('eventQuery.fromBlockPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
                 <input
                   type="text"
                   value={toBlock}
                   onChange={(e) => setToBlock(e.target.value)}
-                  placeholder="结束区块"
+                  placeholder={t('eventQuery.toBlockPlaceholder')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
@@ -430,7 +432,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
             {getIndexedInputs().length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Indexed 参数过滤（可选）
+                  {t('eventQuery.indexedParams')}
                 </label>
                 <div className="space-y-2">
                   {getIndexedInputs().map((input) => (
@@ -442,7 +444,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                         type="text"
                         value={indexedParams[input.name] || ''}
                         onChange={(e) => handleIndexedParamChange(input.name, e.target.value)}
-                        placeholder={`留空表示不过滤`}
+                        placeholder={t('eventQuery.filterPlaceholder')}
                         className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -453,14 +455,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
 
             {/* 分隔线 */}
             <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-base font-semibold text-gray-700 mb-3">查询控制</h3>
+              <h3 className="text-base font-semibold text-gray-700 mb-3">{t('eventQuery.queryControl')}</h3>
 
               <button
                 onClick={handleQuery}
                 disabled={isLoading || !mergedAbi}
                 className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium mb-3"
               >
-                {isLoading ? '查询中...' : '查询 Events'}
+                {isLoading ? t('eventQuery.querying') : t('eventQuery.queryEvents')}
               </button>
 
               {/* 翻页按钮 */}
@@ -471,14 +473,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                     disabled={isLoading || currentFromBlock === 0}
                     className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                   >
-                    ← 前 1000 块
+                    {t('eventQuery.previous1000')}
                   </button>
                   <button
                     onClick={handleQueryNext}
                     disabled={isLoading}
                     className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                   >
-                    后 1000 块 →
+                    {t('eventQuery.next1000')}
                   </button>
                 </div>
               )}
@@ -486,7 +488,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
               {!mergedAbi && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
                   <p className="text-sm text-yellow-800">
-                    👈 请在左侧选择至少一个 ABI
+                    {t('eventQuery.selectAbiHint')}
                   </p>
                 </div>
               )}
@@ -507,26 +509,26 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                 <div className="p-4 bg-green-50 border border-green-200 rounded-md">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-green-800">查询完成</span>
+                      <span className="text-sm font-medium text-green-800">{t('eventQuery.queryComplete')}</span>
                       <span className="text-2xl font-bold text-green-700">{results.length}</span>
                     </div>
-                    <p className="text-xs text-green-700">找到 {results.length} 个事件</p>
+                    <p className="text-xs text-green-700">{t('eventQuery.foundEvents', { count: results.length })}</p>
                   </div>
                 </div>
               )}
 
               {!isLoading && results.length === 0 && fromBlock && toBlock && !error && (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-800">在指定区块范围内未找到事件</p>
+                  <p className="text-sm text-yellow-800">{t('eventQuery.noEventsFound')}</p>
                 </div>
               )}
 
               <div className="mt-4 pt-3 border-t border-gray-200">
-                <h4 className="text-xs font-semibold text-gray-700 mb-2">使用提示</h4>
+                <h4 className="text-xs font-semibold text-gray-700 mb-2">{t('eventQuery.usageTips')}</h4>
                 <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-                  <li>区块范围建议不超过 10000 个区块</li>
-                  <li>Indexed 参数可以用于精确过滤</li>
-                  <li>留空 indexed 参数表示不过滤该参数</li>
+                  <li>{t('eventQuery.tip1')}</li>
+                  <li>{t('eventQuery.tip2')}</li>
+                  <li>{t('eventQuery.tip3')}</li>
                 </ul>
               </div>
             </div>
@@ -540,14 +542,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-800">
-                查询结果
+                {t('eventQuery.queryResult')}
                 <span className="ml-2 text-sm text-gray-500">({results.length})</span>
               </h3>
               <button
                 onClick={handleClearAllResults}
                 className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
               >
-                🗑️ 清空所有
+                {t('eventQuery.clearAll')}
               </button>
             </div>
 
@@ -564,7 +566,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                       handleDeleteResult(index);
                     }}
                     className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors opacity-0 group-hover:opacity-100 z-10"
-                    title="删除此结果"
+                    title={t('eventQuery.deleteItem')}
                   >
                     ×
                   </button>
@@ -606,13 +608,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                       {result.parsed ? (
                         <>
                           <div>
-                            <span className="text-xs font-medium text-gray-600">事件名称：</span>
+                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.eventNameLabel')}</span>
                             <span className="ml-2 text-sm font-semibold text-green-700">
                               {result.parsed.eventName}
                             </span>
                           </div>
                           <div>
-                            <span className="text-xs font-medium text-gray-600">签名：</span>
+                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.signatureLabel')}</span>
                             <span className="ml-2 text-xs text-gray-600 font-mono">
                               {result.parsed.signature}
                             </span>
@@ -624,7 +626,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                             </span>
                           </div>
                           <div>
-                            <span className="text-xs font-medium text-gray-600">合约地址：</span>
+                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.contractAddressLabel')}</span>
                             <span className="ml-2 text-xs font-mono text-gray-700 break-all">
                               {result.address}
                             </span>
@@ -638,7 +640,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                             </div>
                           )}
                           <div>
-                            <span className="text-xs font-medium text-gray-600 block mb-1">参数：</span>
+                            <span className="text-xs font-medium text-gray-600 block mb-1">{t('eventQuery.parametersLabel')}</span>
                             <div className="bg-gray-50 p-2 rounded border border-gray-200">
                               <pre className="text-xs overflow-x-auto">
                                 {JSON.stringify(result.parsed.args, null, 2)}
@@ -648,7 +650,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
                         </>
                       ) : (
                         <div className="text-xs text-red-600">
-                          {result.error || '解析失败'}
+                          {result.error || t('eventQuery.parseError')}
                         </div>
                       )}
                     </div>
@@ -659,9 +661,9 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
           </div>
         ) : (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">查询结果</h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('eventQuery.queryResult')}</h3>
             <p className="text-sm text-gray-500 text-center py-8">
-              暂无查询结果。请配置查询参数并点击查询按钮。
+              {t('eventQuery.noResults')}
             </p>
           </div>
         )}

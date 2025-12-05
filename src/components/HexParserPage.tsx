@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DecodedData } from '../types';
 import {
   autoDetectAndDecode,
@@ -15,6 +16,7 @@ interface HexParserPageProps {
 }
 
 const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
+  const { t } = useTranslation();
   const [hexData, setHexData] = useState('');
   const [decodeType, setDecodeType] = useState<DecodeType>('auto');
   const [result, setResult] = useState<DecodedData | null>(null);
@@ -32,12 +34,12 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
 
   const handleDecode = () => {
     if (!hexData.trim()) {
-      setError('请输入 Hex 数据');
+      setError(t('hexParser.enterHexData'));
       return;
     }
 
     if (!mergedAbi) {
-      setError('请在左侧选择至少一个 ABI');
+      setError(t('hexParser.selectAbiFirst'));
       return;
     }
 
@@ -72,20 +74,20 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         result: decoded,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '解析失败');
+      setError(err instanceof Error ? err.message : t('hexParser.parseFailed'));
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'function':
-        return '函数调用';
+        return t('hexParser.functionCall');
       case 'event':
-        return '事件';
+        return t('hexParser.eventType');
       case 'error':
-        return '错误';
+        return t('hexParser.errorType');
       case 'unknown':
-        return '未知类型';
+        return t('hexParser.unknownType');
       default:
         return type;
     }
@@ -111,18 +113,18 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
       {/* 左列：输入区 */}
       <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Hex 数据解析</h2>
+          <h2 className="text-xl font-bold mb-4 text-gray-800">{t('hexParser.title')}</h2>
 
           <div className="space-y-4">
             {/* Hex 数据输入 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hex 数据
+                {t('hexParser.hexDataLabel')}
               </label>
               <textarea
                 value={hexData}
                 onChange={(e) => setHexData(e.target.value)}
-                placeholder="0x..."
+                placeholder={t('hexParser.hexDataPlaceholder')}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               />
@@ -131,14 +133,14 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
             {/* 解析类型选择 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                解析类型
+                {t('hexParser.parseTypeLabel')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: 'auto', label: '自动检测' },
-                  { value: 'function', label: '函数' },
-                  { value: 'event', label: '事件' },
-                  { value: 'error', label: '错误' },
+                  { value: 'auto', label: t('hexParser.autoDetect') },
+                  { value: 'function', label: t('hexParser.function') },
+                  { value: 'event', label: t('hexParser.event') },
+                  { value: 'error', label: t('hexParser.error') },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -159,7 +161,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
             {!mergedAbi && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                 <p className="text-sm text-yellow-800">
-                  👈 请在左侧选择至少一个 ABI
+                  {t('hexParser.selectAbiHint')}
                 </p>
               </div>
             )}
@@ -167,7 +169,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
             {mergedAbi && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                 <p className="text-sm text-green-800">
-                  ✅ 已选择 ABI（已合并）
+                  {t('hexParser.abiSelected')}
                 </p>
               </div>
             )}
@@ -177,7 +179,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
               onClick={handleDecode}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
             >
-              解析
+              {t('hexParser.parseButton')}
             </button>
 
             {/* 错误提示 */}
@@ -194,12 +196,12 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
       <div className="flex flex-col overflow-y-auto pr-2">
         {result && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">解析结果</h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('hexParser.parseResult')}</h3>
 
             <div className="space-y-4">
               {/* 类型 */}
               <div>
-                <span className="text-sm font-medium text-gray-600">类型：</span>
+                <span className="text-sm font-medium text-gray-600">{t('hexParser.typeLabel')}</span>
                 <span className={`ml-2 px-3 py-1 rounded text-sm font-medium ${getTypeBadgeColor(result.type)}`}>
                   {getTypeLabel(result.type)}
                 </span>
@@ -209,10 +211,10 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                 // 无法识别
                 <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
                   <p className="text-sm text-gray-700">
-                    {result.error || '无法识别数据类型'}
+                    {result.error || t('hexParser.cannotRecognize')}
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    提示：请确保 Hex 数据格式正确，并且选择了正确的 ABI
+                    {t('hexParser.checkFormat')}
                   </p>
                 </div>
               ) : (
@@ -220,7 +222,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                   {/* 名称 */}
                   {result.name && (
                     <div>
-                      <span className="text-sm font-medium text-gray-600">名称：</span>
+                      <span className="text-sm font-medium text-gray-600">{t('hexParser.nameLabel')}</span>
                       <span className="ml-2 text-blue-700 font-mono text-base font-semibold">
                         {result.name}
                       </span>
@@ -230,7 +232,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                   {/* 签名 */}
                   {result.signature && (
                     <div>
-                      <span className="text-sm font-medium text-gray-600">签名：</span>
+                      <span className="text-sm font-medium text-gray-600">{t('hexParser.signatureLabel')}</span>
                       <span className="ml-2 text-gray-600 font-mono text-xs">
                         {result.signature}
                       </span>
@@ -241,7 +243,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                   {result.args && (
                     <div>
                       <span className="text-sm font-medium text-gray-600 block mb-2">
-                        参数：
+                        {t('hexParser.parametersLabel')}
                       </span>
                       <div className="bg-gray-50 p-4 rounded border border-gray-200">
                         <pre className="text-xs overflow-x-auto">
@@ -255,21 +257,21 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                   {result.fragment && (
                     <div>
                       <span className="text-sm font-medium text-gray-600 block mb-2">
-                        Fragment 详情：
+                        {t('hexParser.fragmentDetails')}
                       </span>
                       <div className="bg-blue-50 p-4 rounded border border-blue-200">
                         <div className="space-y-2 text-sm">
                           <div>
-                            <span className="font-medium text-gray-700">名称：</span>
+                            <span className="font-medium text-gray-700">{t('hexParser.nameLabel')}</span>
                             <span className="ml-2 text-gray-800">{result.fragment.name}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">类型：</span>
+                            <span className="font-medium text-gray-700">{t('hexParser.typeFragmentLabel')}</span>
                             <span className="ml-2 text-gray-800">{result.fragment.type}</span>
                           </div>
                           {result.fragment.inputs && result.fragment.inputs.length > 0 && (
                             <div>
-                              <span className="font-medium text-gray-700 block mb-1">输入参数：</span>
+                              <span className="font-medium text-gray-700 block mb-1">{t('hexParser.inputParameters')}</span>
                               <div className="ml-4 space-y-1">
                                 {result.fragment.inputs.map((input: any, i: number) => (
                                   <div key={i} className="text-xs font-mono text-gray-700">
@@ -292,7 +294,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                   {/* 原始数据对照 */}
                   <div>
                     <span className="text-sm font-medium text-gray-600 block mb-2">
-                      原始 Hex 数据：
+                      {t('hexParser.rawHexData')}
                     </span>
                     <div className="bg-gray-50 p-3 rounded border border-gray-200">
                       <div className="text-xs font-mono break-all text-gray-700">

@@ -12,7 +12,7 @@ export async function fetchTransaction(
   const tx = await provider.getTransaction(txHash);
   
   if (!tx) {
-    throw new Error(`交易 ${txHash} 不存在`);
+    throw new Error(`Transaction ${txHash} does not exist`);
   }
   
   return tx;
@@ -29,7 +29,7 @@ export async function fetchTransactionReceipt(
   const receipt = await provider.getTransactionReceipt(txHash);
   
   if (!receipt) {
-    throw new Error(`交易回执 ${txHash} 不存在`);
+    throw new Error(`Transaction receipt ${txHash} does not exist`);
   }
   
   return receipt;
@@ -171,7 +171,7 @@ export function decodeInputData(
       signature: parsed.signature,
     };
   } catch (error) {
-    console.error('解析 input data 失败:', error);
+    console.error('Failed to parse input data:', error);
     return null;
   }
 }
@@ -239,7 +239,7 @@ export async function parseFullTransaction(
       timestamp = block?.timestamp;
     }
   } catch (error) {
-    console.error('获取区块时间戳失败:', error);
+    console.error('Failed to get block timestamp:', error);
   }
 
   return {

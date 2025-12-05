@@ -53,7 +53,7 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ results, onClearAll, onDe
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
-      console.error('复制失败:', error);
+      console.error('Copy failed:', error);
       alert(t('result.copyFailed'));
     }
   };

@@ -49,9 +49,9 @@ const FunctionList: React.FC<FunctionListProps> = ({
       case 'pure':
         return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-medium">🔒 PURE</span>;
       case 'payable':
-        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">💰 PAYABLE (模拟)</span>;
+        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">{t('functionList.payable')}</span>;
       case 'nonpayable':
-        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">⚠️ 模拟调用</span>;
+        return <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-medium">{t('functionList.simulation')}</span>;
       default:
         return <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs font-medium">{stateMutability}</span>;
     }
@@ -127,7 +127,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
         <div key={basePath} className={`${depth > 0 ? 'ml-4 pl-4 border-l-2 border-gray-200' : ''}`}>
           <div className="mb-2">
             <label className="block text-sm font-medium text-gray-700">
-              {param.name || '参数'}
+              {param.name || t('functionList.paramName')}
               <span className="ml-2 text-xs text-gray-500 font-mono">
                 ({param.type})
               </span>
@@ -149,7 +149,7 @@ const FunctionList: React.FC<FunctionListProps> = ({
     return (
       <div key={basePath} className={depth > 0 ? 'mb-2' : ''}>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {param.name || '字段'}
+          {param.name || t('functionList.fieldName')}
           <span className="ml-2 text-xs text-gray-500 font-mono">
             ({param.type})
           </span>
@@ -266,14 +266,16 @@ const FunctionList: React.FC<FunctionListProps> = ({
 
 // 根据参数类型提供占位符提示
 function getPlaceholder(type: string): string {
+  // Import useTranslation here is not possible in regular function
+  // We'll use simple strings as placeholders are UI hints, not critical translations
   if (type === 'address') return '0x...';
-  if (type.startsWith('uint') || type.startsWith('int')) return '数字';
-  if (type === 'bool') return 'true 或 false';
-  if (type === 'string') return '文本';
+  if (type.startsWith('uint') || type.startsWith('int')) return 'Number';
+  if (type === 'bool') return 'true or false';
+  if (type === 'string') return 'Text';
   if (type.startsWith('bytes')) return '0x...';
-  if (type.startsWith('tuple')) return '展开填写各字段';
+  if (type.startsWith('tuple')) return 'Expand fields';
   if (type.endsWith('[]')) return '["item1", "item2"]';
-  return '输入值';
+  return 'Input value';
 }
 
 export default FunctionList;
