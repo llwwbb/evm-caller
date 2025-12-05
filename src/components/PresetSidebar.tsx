@@ -25,8 +25,6 @@ interface PresetSidebarProps {
   currentContractAddress?: string;
   currentAbis?: string[];
   refreshTrigger?: number;
-  isPinned: boolean;
-  onTogglePin: () => void;
   isOpen?: boolean; // 添加 isOpen 属性
 }
 
@@ -53,8 +51,6 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   currentContractAddress,
   currentAbis = [],
   refreshTrigger,
-  isPinned,
-  onTogglePin,
   isOpen = true, // 默认为 true
 }) => {
   const { t } = useTranslation();

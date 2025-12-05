@@ -223,11 +223,6 @@ function App() {
             currentContractAddress={contractAddress}
             currentAbis={selectedAbis}
             refreshTrigger={presetRefreshTrigger}
-            isPinned={isPresetPinned}
-            onTogglePin={() => {
-              setIsPresetPinned(prev => !prev);
-              setIsPresetHoverOpen(true);
-            }}
             isOpen={presetDrawerOpen}
           />
         </div>
