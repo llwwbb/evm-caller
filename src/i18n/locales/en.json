@@ -12,7 +12,8 @@
     "functionCall": "Function Call",
     "transactionParser": "Transaction Parser",
     "hexParser": "Hex Parser",
-    "eventQuery": "Event Query"
+    "eventQuery": "Event Query",
+    "abiEncoder": "ABI Encoder"
   },
   "preset": {
     "title": "Presets",
@@ -348,6 +349,46 @@
     "replaceMode": "Replace Mode",
     "replaceModeDescription": "Clear existing config, completely replace",
     "importStats": "RPC: {{rpc}} | Contract: {{contract}} | ABI: {{abi}}"
+  },
+  "abiEncoder": {
+    "title": "ABI Encoder",
+    "typePresets": "Type Definition Presets",
+    "saveAsPreset": "Save as Preset",
+    "noPresets": "No presets, click the button above to save current type definition",
+    "confirmDeletePreset": "Are you sure to delete this preset?",
+    "encodingMode": "Encoding Mode",
+    "standardAbi": "Standard ABI",
+    "solidityPacked": "Packed (Compact)",
+    "operationType": "Operation Type",
+    "encode": "Encode",
+    "decode": "Decode",
+    "packedDecodeNote": "Note: Packed decode only supports fixed-length types (uint/int/address/bool/bytesN/fixed arrays)",
+    "typeList": "Type List",
+    "addType": "Add Type",
+    "typePlaceholder": "Enter type, e.g. uint256",
+    "valuePlaceholder": "Enter value",
+    "hexInput": "Hex Data Input",
+    "executeEncode": "Execute Encode",
+    "executeDecode": "Execute Decode",
+    "result": "Result",
+    "outputAsHex": "Output as Hex",
+    "copy": "Copy",
+    "noResult": "Execute encode or decode, result will be shown here",
+    "history": "History",
+    "clearHistory": "Clear History",
+    "confirmClearHistory": "Are you sure to clear all history?",
+    "noHistory": "No history",
+    "typesLabel": "Types",
+    "outputLabel": "Output",
+    "savePresetTitle": "Save as Preset",
+    "presetName": "Preset Name",
+    "presetNamePlaceholder": "Enter preset name",
+    "cancel": "Cancel",
+    "save": "Save",
+    "invalidType": "Invalid type: {{type}}",
+    "encodeFailed": "Encode failed",
+    "decodeFailed": "Decode failed",
+    "packedDecodeError": "Packed decode does not support dynamic-length types: {{types}}"
   }
 }
 

@@ -159,3 +159,31 @@ export interface ParsedEvent {
   anonymous?: boolean;
 }
 
+// ==================== ABI 编码器相关类型 ====================
+
+// 编码模式
+export type EncodingMode = 'abi' | 'packed';
+
+// 操作类型
+export type OperationType = 'encode' | 'decode';
+
+// 类型定义预设
+export interface TypeDefPreset {
+  id: string;
+  name: string;           // 预设名称，如 "Swap 参数"
+  types: string[];        // 类型列表，如 ['uint64', 'uint8', 'address']
+  createdAt: number;
+}
+
+// ABI 编码器历史记录
+export interface AbiEncoderHistory {
+  id: string;
+  encodingMode: EncodingMode;   // 编码模式
+  operationType: OperationType;  // 操作类型
+  types: string[];              // 使用的类型定义
+  inputValues: string[];        // 输入值（encode 时是各字段的值，decode 时是 hex）
+  output: string;               // 输出结果（成功时为结果，失败时为错误信息）
+  success: boolean;             // 是否成功
+  timestamp: number;            // 时间戳
+}
+

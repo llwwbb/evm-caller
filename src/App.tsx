@@ -8,6 +8,7 @@ import PresetSidebar from './components/PresetSidebar';
 import TransactionParserPage from './components/TransactionParserPage';
 import HexParserPage from './components/HexParserPage';
 import EventQueryPage from './components/EventQueryPage';
+import AbiEncoderPage from './components/AbiEncoderPage';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { callViewFunction } from './utils/rpcCaller';
 import { parseAbi } from './utils/abiParser';
@@ -20,7 +21,7 @@ import {
   loadRpcPresets
 } from './utils/presetStorage';
 
-type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query';
+type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query' | 'abi-encoder';
 
 function App() {
   const { t } = useTranslation();
@@ -182,6 +183,7 @@ function App() {
     { id: 'transaction-parser' as TabType, name: t('tabs.transactionParser'), icon: '📝' },
     { id: 'hex-parser' as TabType, name: t('tabs.hexParser'), icon: '🔍' },
     { id: 'event-query' as TabType, name: t('tabs.eventQuery'), icon: '📊' },
+    { id: 'abi-encoder' as TabType, name: t('tabs.abiEncoder'), icon: '⚙️' },
   ];
 
   return (
@@ -347,6 +349,12 @@ function App() {
           {activeTab === 'event-query' && (
             <div className="lg:col-span-3 min-h-0">
               <EventQueryPage rpcUrl={rpcUrl} contractAddress={contractAddress} mergedAbi={mergedAbi} selectedAbiNames={selectedAbiNames} selectedAbis={selectedAbis} />
+            </div>
+          )}
+
+          {activeTab === 'abi-encoder' && (
+            <div className="lg:col-span-3 min-h-0">
+              <AbiEncoderPage />
             </div>
           )}
         </div>

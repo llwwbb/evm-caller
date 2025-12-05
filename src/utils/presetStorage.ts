@@ -1,4 +1,4 @@
-import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory } from '../types';
+import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory } from '../types';
 
 // localStorage 键名常量
 const STORAGE_KEYS = {
@@ -13,6 +13,8 @@ const STORAGE_KEYS = {
   TX_PARSER_RESULT: 'evm-caller:tx-parser-result',
   HEX_PARSER_RESULT: 'evm-caller:hex-parser-result',
   EVENT_QUERY_RESULTS: 'evm-caller:event-query-results',
+  TYPE_DEF_PRESETS: 'evm-caller:type-def-presets',
+  ABI_ENCODER_HISTORY: 'evm-caller:abi-encoder-history',
 };
 
 // 生成唯一 ID
@@ -581,6 +583,126 @@ export function loadEventQueryResults(): any[] {
   } catch (error) {
     console.error('加载 Event 查询结果失败:', error);
     return [];
+  }
+}
+
+// ==================== 类型定义预设 ====================
+
+/**
+ * 加载类型定义预设
+ */
+export function loadTypeDefPresets(): TypeDefPreset[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.TYPE_DEF_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载类型定义预设失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 保存类型定义预设
+ */
+export function saveTypeDefPreset(name: string, types: string[]): TypeDefPreset {
+  const presets = loadTypeDefPresets();
+  const newPreset: TypeDefPreset = {
+    id: generateId(),
+    name,
+    types,
+    createdAt: Date.now(),
+  };
+  
+  presets.unshift(newPreset);
+  localStorage.setItem(STORAGE_KEYS.TYPE_DEF_PRESETS, JSON.stringify(presets));
+  return newPreset;
+}
+
+/**
+ * 更新类型定义预设
+ */
+export function updateTypeDefPreset(id: string, updates: Partial<Omit<TypeDefPreset, 'id' | 'createdAt'>>): boolean {
+  const presets = loadTypeDefPresets();
+  const index = presets.findIndex(p => p.id === id);
+  
+  if (index === -1) return false;
+  
+  presets[index] = { ...presets[index], ...updates };
+  localStorage.setItem(STORAGE_KEYS.TYPE_DEF_PRESETS, JSON.stringify(presets));
+  return true;
+}
+
+/**
+ * 删除类型定义预设
+ */
+export function deleteTypeDefPreset(id: string): boolean {
+  const presets = loadTypeDefPresets();
+  const filtered = presets.filter(p => p.id !== id);
+  
+  if (filtered.length === presets.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.TYPE_DEF_PRESETS, JSON.stringify(filtered));
+  return true;
+}
+
+// ==================== ABI 编码器历史记录 ====================
+
+const MAX_ENCODER_HISTORY = 50; // 最多保留 50 条历史记录
+
+/**
+ * 加载 ABI 编码器历史记录
+ */
+export function loadAbiEncoderHistory(): AbiEncoderHistory[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.ABI_ENCODER_HISTORY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载 ABI 编码器历史记录失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 保存 ABI 编码器历史记录（添加一条）
+ */
+export function addAbiEncoderHistory(history: Omit<AbiEncoderHistory, 'id' | 'timestamp'>): AbiEncoderHistory {
+  const histories = loadAbiEncoderHistory();
+  const newHistory: AbiEncoderHistory = {
+    ...history,
+    id: generateId(),
+    timestamp: Date.now(),
+  };
+  
+  histories.unshift(newHistory);
+  
+  // 限制历史记录数量
+  const trimmed = histories.slice(0, MAX_ENCODER_HISTORY);
+  
+  localStorage.setItem(STORAGE_KEYS.ABI_ENCODER_HISTORY, JSON.stringify(trimmed));
+  return newHistory;
+}
+
+/**
+ * 删除单条 ABI 编码器历史记录
+ */
+export function deleteAbiEncoderHistory(id: string): boolean {
+  const histories = loadAbiEncoderHistory();
+  const filtered = histories.filter(h => h.id !== id);
+  
+  if (filtered.length === histories.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.ABI_ENCODER_HISTORY, JSON.stringify(filtered));
+  return true;
+}
+
+/**
+ * 清空 ABI 编码器历史记录
+ */
+export function clearAbiEncoderHistory(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ABI_ENCODER_HISTORY);
+  } catch (error) {
+    console.error('清空 ABI 编码器历史记录失败:', error);
   }
 }
 
