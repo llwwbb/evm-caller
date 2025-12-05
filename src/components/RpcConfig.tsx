@@ -80,7 +80,7 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
     }
 
     setIsValidating(true);
-    setValidationMessage(`🔄 ${t('functionList.calling')}...`);
+    setValidationMessage(`🔄 ${t('rpcConfig.testing')}...`);
 
     try {
       const provider = new ethers.JsonRpcProvider(rpcUrl.trim());
@@ -88,11 +88,11 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
       const blockNumber = await provider.getBlockNumber();
       
       setValidationMessage(
-        `✅ ${t('result.copySuccess')}! Chain ID: ${network.chainId}, Block: ${blockNumber}`
+        `✅ ${t('rpcConfig.testSuccess')}! Chain ID: ${network.chainId}, Block: ${blockNumber}`
       );
     } catch (error) {
-      console.error('RPC 连接测试失败:', error);
-      setValidationMessage(`❌ ${t('result.copyFailed')}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('RPC connection test failed:', error);
+      setValidationMessage(`❌ ${t('rpcConfig.testFailed')}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsValidating(false);
     }
@@ -165,10 +165,10 @@ const RpcConfig: React.FC<RpcConfigProps> = ({
           {isValidating ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-              {t('functionList.calling')}...
+              {t('rpcConfig.testing')}...
             </>
           ) : (
-            `🔌 ${t('rpcConfig.title')}`
+            `🔌 ${t('rpcConfig.testConnection')}`
           )}
         </button>
 

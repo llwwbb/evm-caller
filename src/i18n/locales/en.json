@@ -64,7 +64,11 @@
     "blockTagPlaceholder": "latest | earliest | pending | block number",
     "selectedAbis": "{{count}} ABI(s) selected",
     "functionsCount": "{{count}} function(s) parsed",
-    "selectFromLeft": "Please select or configure RPC and contract address from the left"
+    "selectFromLeft": "Please select or configure RPC and contract address from the left",
+    "testing": "Testing connection",
+    "testConnection": "Test Connection",
+    "testSuccess": "Connected successfully",
+    "testFailed": "Connection failed"
   },
   "functionList": {
     "title": "Function List",

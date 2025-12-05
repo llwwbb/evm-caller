@@ -64,7 +64,11 @@
     "blockTagPlaceholder": "latest | earliest | pending | 区块号",
     "selectedAbis": "已选择 {{count}} 个 ABI",
     "functionsCount": "解析出 {{count}} 个函数",
-    "selectFromLeft": "请先从左侧选择或配置 RPC 和合约地址"
+    "selectFromLeft": "请先从左侧选择或配置 RPC 和合约地址",
+    "testing": "测试连接中",
+    "testConnection": "测试连接",
+    "testSuccess": "连接成功",
+    "testFailed": "连接失败"
   },
   "functionList": {
     "title": "函数列表",
