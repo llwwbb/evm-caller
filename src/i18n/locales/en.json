@@ -305,7 +305,9 @@
     "close": "Close",
     "fillComplete": "Please fill in complete information",
     "invalidAbi": "Invalid ABI format, please enter valid JSON",
-    "saveError": "Save failed:"
+    "saveError": "Save failed:",
+    "pin": "Pin drawer",
+    "unpin": "Unpin drawer"
   },
   "languageSwitcher": {
     "switchToEnglish": "Switch to English",

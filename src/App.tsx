@@ -37,6 +37,10 @@ function App() {
   const [selectedAbiNames, setSelectedAbiNames] = useState<string[]>([]); // 多选的 ABI 名称
   const [mergedAbi, setMergedAbi] = useState<string>(''); // 合并后的 ABI
   const [presetRefreshTrigger, setPresetRefreshTrigger] = useState(0); // 用于触发侧边栏刷新
+  const drawerWidth = 320;
+  const [isPresetPinned, setIsPresetPinned] = useState(false);
+  const [isPresetHoverOpen, setIsPresetHoverOpen] = useState(false);
+  const presetDrawerOpen = isPresetPinned || isPresetHoverOpen;
   
   // 加载上次使用的配置
   const [lastUsed] = useState(() => loadLastUsedConfig());
@@ -99,6 +103,12 @@ function App() {
     saveCallHistory(callHistory);
   }, [callHistory]);
 
+  const handleDrawerMouseEnter = () => setIsPresetHoverOpen(true);
+  const handleDrawerMouseLeave = () => {
+    if (!isPresetPinned) {
+      setIsPresetHoverOpen(false);
+    }
+  };
 
   const handleFunctionCall = async (functionName: string, args: any[], func: ParsedFunction) => {
     // 验证必填项
@@ -187,9 +197,67 @@ function App() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden">
+    <div
+      className="h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden"
+    >
+      {/* 全局预设抽屉 */}
+      <div
+        className="fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out"
+        style={{ width: drawerWidth, transform: presetDrawerOpen ? 'translateX(0)' : `translateX(${12 - drawerWidth}px)` }}
+        onMouseEnter={handleDrawerMouseEnter}
+        onMouseLeave={handleDrawerMouseLeave}
+      >
+        {/* 抽屉内容区 - 添加 overflow-hidden 并在展开时允许滚动 */}
+        <div className={`h-full bg-white/95 backdrop-blur-sm shadow-2xl border-r border-gray-200 rounded-r-2xl transition-all duration-300 ${presetDrawerOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
+          <PresetSidebar 
+            onRpcSelect={setRpcUrl}
+            onContractSelect={setContractAddress}
+            onAbisSelect={(abis, names) => {
+              setSelectedAbis(abis);
+              setSelectedAbiNames(names);
+            }}
+            onPresetsChanged={() => {
+              setPresetRefreshTrigger(prev => prev + 1);
+            }}
+            currentRpcUrl={rpcUrl}
+            currentContractAddress={contractAddress}
+            currentAbis={selectedAbis}
+            refreshTrigger={presetRefreshTrigger}
+            isPinned={isPresetPinned}
+            onTogglePin={() => {
+              setIsPresetPinned(prev => !prev);
+              setIsPresetHoverOpen(true);
+            }}
+            isOpen={presetDrawerOpen}
+          />
+        </div>
+        
+        {/* 抽屉把手/按钮 */}
+        <button
+          className={`absolute top-1/2 -translate-y-1/2 bg-white border border-gray-200 shadow-lg flex items-center justify-center transition-all duration-300 cursor-pointer hover:bg-gray-50 z-50
+            ${presetDrawerOpen ? 'right-[-12px] w-6 h-12 rounded-r-lg opacity-100' : 'right-[-24px] w-8 h-16 rounded-r-xl opacity-80 hover:opacity-100'}
+          `}
+          onMouseEnter={handleDrawerMouseEnter}
+          onClick={() => setIsPresetPinned(prev => !prev)}
+          title={isPresetPinned ? t('presetSidebar.unpin') : t('presetSidebar.pin')}
+        >
+          <div className="flex flex-col items-center gap-1 text-gray-400">
+            {presetDrawerOpen ? (
+              <>
+                {isPresetPinned ? <span className="text-[10px]">🔒</span> : <span className="text-[10px]">📌</span>}
+              </>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            )}
+          </div>
+        </button>
+      </div>
+
       {/* 头部 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
+      <header 
+        className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0 transition-all duration-300 ease-in-out"
+        style={{ paddingLeft: isPresetPinned ? drawerWidth : 0 }}
+      >
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -240,128 +308,116 @@ function App() {
       </header>
 
       {/* 主内容 */}
-      <main className="flex-1 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-hidden w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
-          {/* 最左列：预设侧边栏（所有标签共享） */}
-          <div className="flex flex-col min-h-0">
-            <PresetSidebar 
-              onRpcSelect={setRpcUrl}
-              onContractSelect={setContractAddress}
-              onAbisSelect={(abis, names) => {
-                setSelectedAbis(abis);
-                setSelectedAbiNames(names);
-              }}
-              onPresetsChanged={() => {
-                // 预设变化时触发刷新
-                setPresetRefreshTrigger(prev => prev + 1);
-              }}
-              currentRpcUrl={rpcUrl}
-              currentContractAddress={contractAddress}
-              currentAbis={selectedAbis}
-              refreshTrigger={presetRefreshTrigger}
-            />
-          </div>
-
-          {/* 右侧内容区域（根据标签显示不同内容） */}
-          {activeTab === 'function-call' && (
-            <>
-              {/* 左中列：配置信息 */}
-              <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
-                <RpcConfig 
-                  onRpcUrlChange={setRpcUrl}
-                  onContractAddressChange={setContractAddress}
-                  onBlockTagChange={setBlockTag}
-                  initialRpcUrl={lastUsed.rpcUrl}
-                  initialContractAddress={lastUsed.contractAddress}
-                  initialBlockTag={lastUsed.blockTag}
-                  externalRpcUrl={rpcUrl}
-                  externalContractAddress={contractAddress}
-                  selectedAbiNames={selectedAbiNames}
-                  functionsCount={functions.length}
-                />
-
-                {/* 进度提示 */}
-                {(!rpcUrl || !contractAddress) && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      👆 {t('rpcConfig.selectFromLeft')}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* 右中列：函数列表 */}
-              <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2">
-                {functions.length > 0 && rpcUrl && contractAddress ? (
-                  <FunctionList
-                    functions={functions}
-                    config={{ rpcUrl, contractAddress }}
-                    abiString={abiString}
-                    onFunctionCall={handleFunctionCall}
+      <main 
+        className="flex-1 overflow-hidden w-full transition-all duration-300 ease-in-out"
+        style={{ paddingLeft: isPresetPinned ? drawerWidth : 0 }}
+      >
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-4 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+            {/* 内容区域（根据标签显示不同内容） */}
+            {activeTab === 'function-call' && (
+              <>
+                {/* 左列：配置信息 */}
+                <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2 lg:col-span-3">
+                  <RpcConfig 
+                    onRpcUrlChange={setRpcUrl}
+                    onContractAddressChange={setContractAddress}
+                    onBlockTagChange={setBlockTag}
+                    initialRpcUrl={lastUsed.rpcUrl}
+                    initialContractAddress={lastUsed.contractAddress}
+                    initialBlockTag={lastUsed.blockTag}
+                    externalRpcUrl={rpcUrl}
+                    externalContractAddress={contractAddress}
+                    selectedAbiNames={selectedAbiNames}
+                    functionsCount={functions.length}
                   />
-                ) : rpcUrl && contractAddress && selectedAbis.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-md p-6">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800">{t('functionList.title')}</h2>
+
+                  {/* 进度提示 */}
+                  {(!rpcUrl || !contractAddress) && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                       <p className="text-sm text-yellow-800">
-                        👈 {t('functionList.selectAbi')}
+                        👆 {t('rpcConfig.selectFromLeft')}
                       </p>
                     </div>
-                  </div>
-                ) : null}
-
-                {/* 调用中提示 */}
-                {isCallInProgress && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-shrink-0">
-                    <div className="flex items-center space-x-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                      <p className="text-sm text-blue-800">{t('functionList.calling')}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 最右列：调用结果 */}
-              <div className="flex flex-col overflow-y-auto min-h-0 pr-2">
-                <div id="results-section">
-                  <ResultDisplay 
-                    results={callHistory}
-                    onClearAll={handleClearAllResults}
-                    onDeleteResult={handleDeleteResult}
-                  />
+                  )}
                 </div>
+
+                {/* 中列：函数列表 */}
+                <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2 lg:col-span-4">
+                  {functions.length > 0 && rpcUrl && contractAddress ? (
+                    <FunctionList
+                      functions={functions}
+                      config={{ rpcUrl, contractAddress }}
+                      abiString={abiString}
+                      onFunctionCall={handleFunctionCall}
+                    />
+                  ) : rpcUrl && contractAddress && selectedAbis.length === 0 ? (
+                    <div className="bg-white rounded-lg shadow-md p-6">
+                      <h2 className="text-2xl font-bold mb-4 text-gray-800">{t('functionList.title')}</h2>
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <p className="text-sm text-yellow-800">
+                          👈 {t('functionList.selectAbi')}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* 调用中提示 */}
+                  {isCallInProgress && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex-shrink-0">
+                      <div className="flex items-center space-x-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <p className="text-sm text-blue-800">{t('functionList.calling')}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 右列：调用结果 */}
+                <div className="flex flex-col overflow-y-auto min-h-0 pr-2 lg:col-span-5">
+                  <div id="results-section">
+                    <ResultDisplay 
+                      results={callHistory}
+                      onClearAll={handleClearAllResults}
+                      onDeleteResult={handleDeleteResult}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'transaction-parser' && (
+              <div className="lg:col-span-12 min-h-0">
+                <TransactionParserPage rpcUrl={rpcUrl} selectedAbis={selectedAbis} selectedAbiNames={selectedAbiNames} mergedAbi={mergedAbi} />
               </div>
-            </>
-          )}
+            )}
 
-          {activeTab === 'transaction-parser' && (
-            <div className="lg:col-span-3 min-h-0">
-              <TransactionParserPage rpcUrl={rpcUrl} selectedAbis={selectedAbis} selectedAbiNames={selectedAbiNames} mergedAbi={mergedAbi} />
-            </div>
-          )}
+            {activeTab === 'hex-parser' && (
+              <div className="lg:col-span-12 min-h-0">
+                <HexParserPage mergedAbi={mergedAbi} />
+              </div>
+            )}
 
-          {activeTab === 'hex-parser' && (
-            <div className="lg:col-span-3 min-h-0">
-              <HexParserPage mergedAbi={mergedAbi} />
-            </div>
-          )}
+            {activeTab === 'event-query' && (
+              <div className="lg:col-span-12 min-h-0">
+                <EventQueryPage rpcUrl={rpcUrl} contractAddress={contractAddress} mergedAbi={mergedAbi} selectedAbiNames={selectedAbiNames} selectedAbis={selectedAbis} />
+              </div>
+            )}
 
-          {activeTab === 'event-query' && (
-            <div className="lg:col-span-3 min-h-0">
-              <EventQueryPage rpcUrl={rpcUrl} contractAddress={contractAddress} mergedAbi={mergedAbi} selectedAbiNames={selectedAbiNames} selectedAbis={selectedAbis} />
-            </div>
-          )}
-
-          {activeTab === 'abi-encoder' && (
-            <div className="lg:col-span-3 min-h-0">
-              <AbiEncoderPage />
-            </div>
-          )}
+            {activeTab === 'abi-encoder' && (
+              <div className="lg:col-span-12 min-h-0">
+                <AbiEncoderPage />
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
       {/* 页脚信息 */}
-      <footer className="bg-white border-t border-gray-200 py-2 text-center text-xs text-gray-500 flex-shrink-0">
+      <footer 
+        className="bg-white border-t border-gray-200 py-2 text-center text-xs text-gray-500 flex-shrink-0 transition-all duration-300 ease-in-out"
+        style={{ paddingLeft: isPresetPinned ? drawerWidth : 0 }}
+      >
         <p>
           {t('footer.text')}
         </p>
@@ -371,4 +427,3 @@ function App() {
 }
 
 export default App;
-

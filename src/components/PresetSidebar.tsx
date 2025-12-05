@@ -25,6 +25,9 @@ interface PresetSidebarProps {
   currentContractAddress?: string;
   currentAbis?: string[];
   refreshTrigger?: number;
+  isPinned: boolean;
+  onTogglePin: () => void;
+  isOpen?: boolean; // 添加 isOpen 属性
 }
 
 // 弹窗类型
@@ -50,6 +53,9 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
   currentContractAddress,
   currentAbis = [],
   refreshTrigger,
+  isPinned,
+  onTogglePin,
+  isOpen = true, // 默认为 true
 }) => {
   const { t } = useTranslation();
   const [rpcPresets, setRpcPresets] = useState<RpcPreset[]>([]);
@@ -424,9 +430,12 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
-      <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex-shrink-0">
-        <h2 className="text-lg font-bold">{t('preset.title')}</h2>
-        <p className="text-xs text-indigo-100 mt-1">{t('preset.subtitle')}</p>
+      <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex-shrink-0 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold">{t('preset.title')}</h2>
+          <p className="text-xs text-indigo-100 mt-1">{t('preset.subtitle')}</p>
+        </div>
+        {/* 移除内部的 Pin 按钮，由外部控制 */}
       </div>
 
       <div className="flex-1 flex flex-col min-h-0">
@@ -465,7 +474,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </div>
           
           {expandedSections.has('rpc') && (
-            <div className="overflow-y-auto px-2 pb-2 space-y-1 max-h-64">
+            <div className={`px-2 pb-2 space-y-1 max-h-64 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'}`}>
               {rpcPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">{t('preset.noPresets')}</p>
               ) : (
@@ -546,7 +555,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </div>
           
           {expandedSections.has('contract') && (
-            <div className="overflow-y-auto px-2 pb-2 space-y-1 max-h-64">
+            <div className={`px-2 pb-2 space-y-1 max-h-64 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'}`}>
               {contractPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">{t('presetSidebar.noPresets')}</p>
               ) : (
@@ -600,25 +609,25 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           <div className="flex items-center">
             <button
               onClick={() => toggleSection('abi')}
-              className="flex-1 px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors min-w-0"
             >
-              <div className="flex items-center gap-2 flex-1">
-                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <svg className="w-5 h-5 text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                <span className="font-semibold text-gray-700">{t('preset.abi')}</span>
-                <span className="text-xs text-gray-500">({currentAbis.length}/{abiPresets.length})</span>
+                <span className="font-semibold text-gray-700 truncate">{t('preset.abi')}</span>
+                <span className="text-xs text-gray-500 flex-shrink-0">({currentAbis.length}/{abiPresets.length})</span>
                 {abiPresets.length > 0 && (
-                  <button
+                  <span
                     onClick={handleSelectAllAbis}
-                    className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    className="ml-auto text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer flex-shrink-0"
                   >
                     {allAbiSelected ? t('preset.deselectAll') : t('preset.selectAll')}
-                  </button>
+                  </span>
                 )}
               </div>
               <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${expandedSections.has('abi') ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${expandedSections.has('abi') ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -638,7 +647,7 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
           </div>
           
           {expandedSections.has('abi') && (
-            <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 min-h-0">
+            <div className={`flex-1 px-2 pb-2 space-y-1 min-h-0 ${isOpen ? 'overflow-y-auto' : 'overflow-hidden'}`}>
               {abiPresets.length === 0 ? (
                 <p className="text-xs text-gray-500 px-2 py-2">{t('presetSidebar.noPresets')}</p>
               ) : (
@@ -655,11 +664,11 @@ const PresetSidebar: React.FC<PresetSidebarProps> = ({
                       className="flex items-center px-3 py-2 w-full"
                       onClick={(e) => handleAbiToggle(preset.abi, e)}
                     >
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="font-medium truncate">{preset.name}</div>
                       </div>
                       {isAbiActive(preset.abi) && (
-                        <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 ml-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}

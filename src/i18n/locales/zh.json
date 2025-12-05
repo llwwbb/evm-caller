@@ -305,7 +305,9 @@
     "close": "关闭",
     "fillComplete": "请填写完整信息",
     "invalidAbi": "ABI 格式无效，请输入有效的 JSON",
-    "saveError": "保存失败:"
+    "saveError": "保存失败:",
+    "pin": "固定抽屉",
+    "unpin": "取消固定"
   },
   "languageSwitcher": {
     "switchToEnglish": "Switch to English",
