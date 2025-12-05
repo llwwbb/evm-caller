@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { downloadPresetsAsJson, importPresetsFromFile } from '../utils/presetStorage';
 
 interface ConfigManagerProps {
@@ -6,6 +7,7 @@ interface ConfigManagerProps {
 }
 
 const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [importResult, setImportResult] = useState<{
@@ -18,10 +20,10 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
   const handleExport = () => {
     try {
       downloadPresetsAsJson();
-      alert('✅ 配置已导出成功！');
+      alert(t('configManager.exportSuccess'));
     } catch (error) {
-      console.error('导出失败:', error);
-      alert('❌ 导出失败，请查看控制台');
+      console.error('Export failed:', error);
+      alert(t('configManager.exportFailed'));
     }
   };
 
@@ -48,10 +50,10 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
         }, 3000);
       }
     } catch (error) {
-      console.error('导入失败:', error);
+      console.error('Import failed:', error);
       setImportResult({
         success: false,
-        message: '导入失败，请检查文件格式',
+        message: t('configManager.importFailed'),
         imported: { rpc: 0, contract: 0, abi: 0 },
       });
     }
@@ -66,12 +68,12 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-        title="导入/导出配置"
+        title={t('configManager.titleTooltip')}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
-        配置管理
+        {t('configManager.title')}
       </button>
 
       {/* 弹窗 */}
@@ -79,7 +81,7 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-800">配置管理</h2>
+              <h2 className="text-xl font-bold text-gray-800">{t('configManager.title')}</h2>
               <button
                 onClick={() => {
                   setIsOpen(false);
@@ -100,16 +102,16 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                   <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
-                  导出配置
+                  {t('configManager.exportTitle')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  将所有 RPC、合约地址和 ABI 预设导出为 JSON 文件
+                  {t('configManager.exportDescription')}
                 </p>
                 <button
                   onClick={handleExport}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  导出配置文件
+                  {t('configManager.exportButton')}
                 </button>
               </div>
 
@@ -119,10 +121,10 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                   </svg>
-                  导入配置
+                  {t('configManager.importTitle')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
-                  从 JSON 文件导入配置
+                  {t('configManager.importDescription')}
                 </p>
 
                 {/* 导入模式选择 */}
@@ -137,7 +139,7 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                       className="w-4 h-4 text-green-600"
                     />
                     <span className="text-sm text-gray-700">
-                      <span className="font-medium">合并模式</span> - 保留现有配置，添加新配置（去重）
+                      <span className="font-medium">{t('configManager.mergeMode')}</span> - {t('configManager.mergeModeDescription')}
                     </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -150,7 +152,7 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                       className="w-4 h-4 text-green-600"
                     />
                     <span className="text-sm text-gray-700">
-                      <span className="font-medium">替换模式</span> - 清空现有配置，完全替换
+                      <span className="font-medium">{t('configManager.replaceMode')}</span> - {t('configManager.replaceModeDescription')}
                     </span>
                   </label>
                 </div>
@@ -159,7 +161,7 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                   onClick={handleImportClick}
                   className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  选择文件导入
+                  {t('configManager.importButton')}
                 </button>
                 <input
                   ref={fileInputRef}
@@ -195,9 +197,11 @@ const ConfigManager: React.FC<ConfigManagerProps> = ({ onImportComplete }) => {
                       </p>
                       {importResult.success && (
                         <p className="text-sm text-gray-600 mt-1">
-                          RPC: {importResult.imported.rpc} 个 | 
-                          合约: {importResult.imported.contract} 个 | 
-                          ABI: {importResult.imported.abi} 个
+                          {t('configManager.importStats', { 
+                            rpc: importResult.imported.rpc,
+                            contract: importResult.imported.contract,
+                            abi: importResult.imported.abi
+                          })}
                         </p>
                       )}
                     </div>

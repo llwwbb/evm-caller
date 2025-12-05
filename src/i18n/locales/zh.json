@@ -341,6 +341,24 @@
   },
   "resultDisplay": {
     "copyFailed": "复制失败"
+  },
+  "configManager": {
+    "title": "配置管理",
+    "titleTooltip": "导入/导出配置",
+    "exportTitle": "导出配置",
+    "exportDescription": "将所有 RPC、合约地址和 ABI 预设导出为 JSON 文件",
+    "exportButton": "导出配置文件",
+    "exportSuccess": "✅ 配置已导出成功！",
+    "exportFailed": "❌ 导出失败，请查看控制台",
+    "importTitle": "导入配置",
+    "importDescription": "从 JSON 文件导入配置",
+    "importButton": "选择文件导入",
+    "importFailed": "导入失败，请检查文件格式",
+    "mergeMode": "合并模式",
+    "mergeModeDescription": "保留现有配置，添加新配置（去重）",
+    "replaceMode": "替换模式",
+    "replaceModeDescription": "清空现有配置，完全替换",
+    "importStats": "RPC: {{rpc}} 个 | 合约: {{contract}} 个 | ABI: {{abi}} 个"
   }
 }
 
