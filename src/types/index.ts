@@ -187,3 +187,36 @@ export interface AbiEncoderHistory {
   timestamp: number;            // 时间戳
 }
 
+// ==================== Debug Trace 相关类型 ====================
+
+// callTracer 返回的原始结构
+export interface CallTrace {
+  from: string;
+  to?: string;
+  gas: string;
+  gasUsed: string;
+  input: string;
+  output?: string;
+  error?: string;
+  value?: string;
+  type: 'CALL' | 'DELEGATECALL' | 'STATICCALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT';
+  calls?: CallTrace[]; // 嵌套调用
+}
+
+// 解析后的 CallTrace 结构
+export interface ParsedCallTrace extends CallTrace {
+  decodedInput?: {
+    functionName: string;
+    args: any;
+    signature: string;
+  };
+  decodedOutput?: any; // 解析后的返回值
+  decodedError?: {
+    errorName?: string;
+    args?: any;
+    signature?: string;
+    message?: string;
+  };
+  calls?: ParsedCallTrace[]; // 递归嵌套
+}
+

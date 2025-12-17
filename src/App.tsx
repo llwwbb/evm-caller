@@ -9,6 +9,7 @@ import TransactionParserPage from './components/TransactionParserPage';
 import HexParserPage from './components/HexParserPage';
 import EventQueryPage from './components/EventQueryPage';
 import AbiEncoderPage from './components/AbiEncoderPage';
+import DebugTracePage from './components/DebugTracePage';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { callViewFunction } from './utils/rpcCaller';
 import { parseAbi } from './utils/abiParser';
@@ -21,7 +22,7 @@ import {
   loadRpcPresets
 } from './utils/presetStorage';
 
-type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query' | 'abi-encoder';
+type TabType = 'function-call' | 'transaction-parser' | 'hex-parser' | 'event-query' | 'abi-encoder' | 'debug-trace';
 
 function App() {
   const { t } = useTranslation();
@@ -191,6 +192,7 @@ function App() {
   const tabs = [
     { id: 'function-call' as TabType, name: t('tabs.functionCall'), icon: '🔧' },
     { id: 'transaction-parser' as TabType, name: t('tabs.transactionParser'), icon: '📝' },
+    { id: 'debug-trace' as TabType, name: t('tabs.debugTrace'), icon: '🔬' },
     { id: 'hex-parser' as TabType, name: t('tabs.hexParser'), icon: '🔍' },
     { id: 'event-query' as TabType, name: t('tabs.eventQuery'), icon: '📊' },
     { id: 'abi-encoder' as TabType, name: t('tabs.abiEncoder'), icon: '⚙️' },
@@ -384,6 +386,12 @@ function App() {
             {activeTab === 'transaction-parser' && (
               <div className="lg:col-span-12 min-h-0">
                 <TransactionParserPage rpcUrl={rpcUrl} selectedAbis={selectedAbis} selectedAbiNames={selectedAbiNames} mergedAbi={mergedAbi} />
+              </div>
+            )}
+
+            {activeTab === 'debug-trace' && (
+              <div className="lg:col-span-12 min-h-0">
+                <DebugTracePage rpcUrl={rpcUrl} selectedAbis={selectedAbis} selectedAbiNames={selectedAbiNames} />
               </div>
             )}
 
