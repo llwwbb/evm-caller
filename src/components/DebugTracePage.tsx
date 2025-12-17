@@ -13,7 +13,6 @@ import {
 interface DebugTracePageProps {
   rpcUrl: string;
   selectedAbis: string[];
-  selectedAbiNames: string[];
 }
 
 interface TraceCallNodeProps {
@@ -299,8 +298,7 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
 
 const DebugTracePage: React.FC<DebugTracePageProps> = ({ 
   rpcUrl, 
-  selectedAbis, 
-  selectedAbiNames 
+  selectedAbis
 }) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
