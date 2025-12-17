@@ -198,6 +198,7 @@ export interface CallTrace {
   input: string;
   output?: string;
   error?: string;
+  revertReason?: string; // 回滚原因
   value?: string;
   type: 'CALL' | 'DELEGATECALL' | 'STATICCALL' | 'CREATE' | 'CREATE2' | 'SELFDESTRUCT';
   calls?: CallTrace[]; // 嵌套调用

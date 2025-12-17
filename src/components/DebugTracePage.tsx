@@ -4,11 +4,11 @@ import { ParsedCallTrace, CallTrace } from '../types';
 import { 
   fetchDebugTrace, 
   parseTraceWithAbi, 
-  formatAddress, 
   formatGas, 
   calculateGasPercentage, 
   getCallTypeIcon 
 } from '../utils/debugTrace';
+import { loadContractPresets } from '../utils/presetStorage';
 
 interface DebugTracePageProps {
   rpcUrl: string;
@@ -18,12 +18,30 @@ interface DebugTracePageProps {
 interface TraceCallNodeProps {
   trace: ParsedCallTrace;
   depth: number;
+  expandedNodes: Set<string>;
+  toggleNode: (path: string) => void;
+  nodePath: string;
+  showAddressNames: boolean;
+  addressNameMap: Map<string, string>;
 }
 
+// 复制到剪贴板
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
+
 // 递归渲染调用节点
-const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
+const TraceCallNode: React.FC<TraceCallNodeProps> = ({ 
+  trace, 
+  depth, 
+  expandedNodes, 
+  toggleNode, 
+  nodePath,
+  showAddressNames,
+  addressNameMap
+}) => {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(depth === 0); // 默认展开第一层
+  const expanded = expandedNodes.has(nodePath);
   const [showRawInput, setShowRawInput] = useState(false);
   const [showRawOutput, setShowRawOutput] = useState(false);
   
@@ -32,11 +50,32 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
   const hasCalls = trace.calls && trace.calls.length > 0;
   const gasPercentage = calculateGasPercentage(trace.gasUsed, trace.gas);
   
-  // 计算缩进
-  const indentClass = depth > 0 ? `ml-${Math.min(depth * 4, 12)}` : '';
+  // 获取地址显示名称
+  const getAddressDisplay = (address: string): string => {
+    if (showAddressNames && addressNameMap.has(address.toLowerCase())) {
+      return addressNameMap.get(address.toLowerCase())!;
+    }
+    return address;
+  };
+
+  // 层级缩进样式
+  const indentPx = depth * 24; // 每层 24px 缩进
   
   return (
-    <div className={`${indentClass} mb-3`}>
+    <div className="mb-2" style={{ marginLeft: `${indentPx}px` }}>
+      {/* 层级连接线 */}
+      {depth > 0 && (
+        <div 
+          className="absolute border-l-2 border-gray-300" 
+          style={{ 
+            left: `${indentPx - 12}px`, 
+            top: 0, 
+            bottom: '50%',
+            width: '2px'
+          }} 
+        />
+      )}
+      
       <div
         className={`border-2 rounded-lg overflow-hidden ${
           hasError 
@@ -48,7 +87,7 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
       >
         {/* 节点头部 - 可点击展开/折叠 */}
         <div
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => toggleNode(nodePath)}
           className="px-4 py-3 cursor-pointer hover:bg-opacity-80 transition-colors"
         >
           <div className="flex items-center justify-between">
@@ -60,14 +99,40 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
                 </span>
                 
                 {/* From -> To */}
-                <div className="flex items-center gap-2 font-mono text-sm">
-                  <span className="text-gray-600" title={trace.from}>
-                    {formatAddress(trace.from)}
-                  </span>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-gray-600 font-mono" title={trace.from}>
+                      {getAddressDisplay(trace.from)}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard(trace.from);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title={t('result.copy')}
+                    >
+                      📋
+                    </button>
+                  </div>
                   <span className="text-gray-400">→</span>
-                  <span className="text-blue-700 font-semibold" title={trace.to || 'Contract Creation'}>
-                    {trace.to ? formatAddress(trace.to) : t('debugTrace.contractCreation')}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-blue-700 font-semibold font-mono" title={trace.to || 'Contract Creation'}>
+                      {trace.to ? getAddressDisplay(trace.to) : t('debugTrace.contractCreation')}
+                    </span>
+                    {trace.to && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(trace.to!);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        title={t('result.copy')}
+                      >
+                        📋
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* 函数名（如果已解析） */}
@@ -230,45 +295,55 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
                   {t('debugTrace.error')}
                 </span>
                 
-                {trace.decodedError ? (
-                  <div className="bg-red-100 p-3 rounded border border-red-300">
-                    {trace.decodedError.errorName && (
-                      <div className="mb-2">
-                        <span className="text-xs text-red-700">{t('debugTrace.errorName')}:</span>
-                        <span className="ml-2 text-sm font-mono text-red-800 font-semibold">
-                          {trace.decodedError.errorName}
-                        </span>
+                <div className="bg-red-100 p-3 rounded border border-red-300">
+                  {/* 显示 revertReason */}
+                  {trace.revertReason && (
+                    <div className="mb-3 p-2 bg-red-200 rounded">
+                      <span className="text-xs text-red-700 font-semibold">{t('debugTrace.revertReason')}:</span>
+                      <div className="text-sm text-red-900 font-medium mt-1">
+                        {trace.revertReason}
                       </div>
-                    )}
-                    {trace.decodedError.signature && (
-                      <div className="mb-2">
-                        <span className="text-xs text-red-700">{t('debugTrace.signature')}:</span>
-                        <span className="ml-2 text-xs font-mono text-red-700">
-                          {trace.decodedError.signature}
-                        </span>
-                      </div>
-                    )}
-                    {trace.decodedError.args && (
-                      <div>
-                        <span className="text-xs text-red-700">{t('debugTrace.errorArgs')}:</span>
-                        <pre className="mt-1 text-xs overflow-x-auto bg-white p-2 rounded">
-                          {JSON.stringify(trace.decodedError.args, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                    {trace.decodedError.message && !trace.decodedError.errorName && (
-                      <div className="text-sm text-red-800">
-                        {trace.decodedError.message}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-red-100 p-3 rounded border border-red-300">
+                    </div>
+                  )}
+                  
+                  {trace.decodedError ? (
+                    <>
+                      {trace.decodedError.errorName && (
+                        <div className="mb-2">
+                          <span className="text-xs text-red-700">{t('debugTrace.errorName')}:</span>
+                          <span className="ml-2 text-sm font-mono text-red-800 font-semibold">
+                            {trace.decodedError.errorName}
+                          </span>
+                        </div>
+                      )}
+                      {trace.decodedError.signature && (
+                        <div className="mb-2">
+                          <span className="text-xs text-red-700">{t('debugTrace.signature')}:</span>
+                          <span className="ml-2 text-xs font-mono text-red-700">
+                            {trace.decodedError.signature}
+                          </span>
+                        </div>
+                      )}
+                      {trace.decodedError.args && (
+                        <div>
+                          <span className="text-xs text-red-700">{t('debugTrace.errorArgs')}:</span>
+                          <pre className="mt-1 text-xs overflow-x-auto bg-white p-2 rounded">
+                            {JSON.stringify(trace.decodedError.args, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                      {trace.decodedError.message && !trace.decodedError.errorName && (
+                        <div className="text-sm text-red-800">
+                          {trace.decodedError.message}
+                        </div>
+                      )}
+                    </>
+                  ) : (
                     <div className="text-xs font-mono break-all text-red-800">
                       {trace.error}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
             
@@ -285,10 +360,19 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({ trace, depth }) => {
       </div>
       
       {/* 递归渲染子调用 */}
-      {expanded && hasCalls && (
+      {hasCalls && (
         <div className="mt-2">
           {trace.calls!.map((call, index) => (
-            <TraceCallNode key={index} trace={call} depth={depth + 1} />
+            <TraceCallNode 
+              key={`${nodePath}-${index}`} 
+              trace={call} 
+              depth={depth + 1}
+              expandedNodes={expandedNodes}
+              toggleNode={toggleNode}
+              nodePath={`${nodePath}-${index}`}
+              showAddressNames={showAddressNames}
+              addressNameMap={addressNameMap}
+            />
           ))}
         </div>
       )}
@@ -306,6 +390,19 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   const [parsedTrace, setParsedTrace] = useState<ParsedCallTrace | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['0'])); // 默认展开根节点
+  const [showAddressNames, setShowAddressNames] = useState(true); // 是否显示合约名称
+  const [addressNameMap, setAddressNameMap] = useState<Map<string, string>>(new Map());
+  
+  // 加载合约预设，构建地址->名称映射
+  useEffect(() => {
+    const contracts = loadContractPresets();
+    const map = new Map<string, string>();
+    contracts.forEach(contract => {
+      map.set(contract.address.toLowerCase(), contract.name);
+    });
+    setAddressNameMap(map);
+  }, []);
   
   // 当 ABI 变化时，重新解析现有 trace
   useEffect(() => {
@@ -349,6 +446,9 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
       } else {
         setParsedTrace(trace as ParsedCallTrace);
       }
+      
+      // 默认展开根节点
+      setExpandedNodes(new Set(['0']));
     } catch (err) {
       console.error('Failed to fetch trace:', err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -364,6 +464,42 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
     } finally {
       setIsFetching(false);
     }
+  };
+  
+  // 切换节点展开/折叠
+  const toggleNode = (path: string) => {
+    setExpandedNodes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(path)) {
+        newSet.delete(path);
+      } else {
+        newSet.add(path);
+      }
+      return newSet;
+    });
+  };
+  
+  // 全部展开
+  const expandAll = () => {
+    if (!parsedTrace) return;
+    const allPaths = new Set<string>();
+    
+    const collectPaths = (trace: ParsedCallTrace, path: string) => {
+      allPaths.add(path);
+      if (trace.calls) {
+        trace.calls.forEach((call, index) => {
+          collectPaths(call, `${path}-${index}`);
+        });
+      }
+    };
+    
+    collectPaths(parsedTrace, '0');
+    setExpandedNodes(allPaths);
+  };
+  
+  // 全部折叠
+  const collapseAll = () => {
+    setExpandedNodes(new Set(['0'])); // 只保留根节点展开
   };
   
   return (
@@ -420,6 +556,41 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
             >
               {isFetching ? t('debugTrace.fetching') : t('debugTrace.fetchTrace')}
             </button>
+            
+            {/* 展开/折叠控制 */}
+            {parsedTrace && (
+              <div className="flex gap-2">
+                <button
+                  onClick={expandAll}
+                  className="flex-1 bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 transition-colors text-sm"
+                >
+                  {t('debugTrace.expandAll')}
+                </button>
+                <button
+                  onClick={collapseAll}
+                  className="flex-1 bg-gray-600 text-white py-2 px-3 rounded-md hover:bg-gray-700 transition-colors text-sm"
+                >
+                  {t('debugTrace.collapseAll')}
+                </button>
+              </div>
+            )}
+            
+            {/* 地址显示切换 */}
+            {parsedTrace && addressNameMap.size > 0 && (
+              <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-md">
+                <span className="text-sm text-purple-800">{t('debugTrace.showContractNames')}</span>
+                <button
+                  onClick={() => setShowAddressNames(!showAddressNames)}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    showAddressNames 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  {showAddressNames ? t('debugTrace.namesOn') : t('debugTrace.namesOff')}
+                </button>
+              </div>
+            )}
             
             {/* ABI 提示 */}
             {rawTrace && selectedAbis.length === 0 && (
@@ -486,7 +657,15 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
           
           {parsedTrace ? (
             <div className="space-y-3">
-              <TraceCallNode trace={parsedTrace} depth={0} />
+              <TraceCallNode 
+                trace={parsedTrace} 
+                depth={0}
+                expandedNodes={expandedNodes}
+                toggleNode={toggleNode}
+                nodePath="0"
+                showAddressNames={showAddressNames}
+                addressNameMap={addressNameMap}
+              />
             </div>
           ) : (
             <div className="text-center py-12">

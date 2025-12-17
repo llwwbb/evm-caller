@@ -400,7 +400,13 @@
     "tip1": "debug_traceTransaction 需要 Archive Node 支持",
     "tip2": "从左侧选择 ABI 可自动解析函数调用",
     "tip3": "展开节点查看详细的 input/output/error 信息",
-    "tip4": "某些公共 RPC 可能不支持此功能，建议使用 Alchemy、Infura 等服务"
+    "tip4": "某些公共 RPC 可能不支持此功能，建议使用 Alchemy、Infura 等服务",
+    "revertReason": "回滚原因",
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "showContractNames": "显示合约名称",
+    "namesOn": "已开启",
+    "namesOff": "已关闭"
   },
   "abiEncoder": {
     "title": "ABI 编码器",

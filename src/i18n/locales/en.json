@@ -400,7 +400,13 @@
     "tip1": "debug_traceTransaction requires Archive Node support",
     "tip2": "Select ABI from the left to automatically parse function calls",
     "tip3": "Expand nodes to view detailed input/output/error information",
-    "tip4": "Some public RPCs may not support this feature, consider using Alchemy, Infura, etc."
+    "tip4": "Some public RPCs may not support this feature, consider using Alchemy, Infura, etc.",
+    "revertReason": "Revert Reason",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "showContractNames": "Show Contract Names",
+    "namesOn": "ON",
+    "namesOff": "OFF"
   },
   "abiEncoder": {
     "title": "ABI Encoder",
