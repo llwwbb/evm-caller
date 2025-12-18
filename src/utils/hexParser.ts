@@ -207,17 +207,8 @@ function formatValue(value: any, paramType?: ParamType): any {
     return value.toString();
   }
   
-  // 处理数组类型（但需要排除 Result 对象，因为它们有 toArray 方法）
-  if (Array.isArray(value) && !(value && typeof value === 'object' && typeof value.toArray === 'function')) {
-    // 如果是数组类型，检查 paramType 是否是数组
-    if (paramType && (paramType.baseType === 'array' || (paramType.type && paramType.type.endsWith('[]'))) && paramType.arrayChildren) {
-      return value.map((v: any) => formatValue(v, paramType.arrayChildren || undefined));
-    }
-    return value.map((v: any) => formatValue(v));
-  }
-  
   if (value && typeof value === 'object') {
-    // 检查是否是 ethers 的 Result 对象
+    // 首先检查是否是 ethers 的 Result 对象（有 toArray 方法）
     if (value.toArray && typeof value.toArray === 'function') {
       const arr = value.toArray();
       
@@ -291,6 +282,15 @@ function formatValue(value: any, paramType?: ParamType): any {
       formatted[key] = formatValue(value[key]);
     }
     return formatted;
+  }
+  
+  // 处理数组类型（必须在 Result 对象检查之后）
+  if (Array.isArray(value)) {
+    // 如果是数组类型，检查 paramType 是否是数组
+    if (paramType && (paramType.baseType === 'array' || (paramType.type && paramType.type.endsWith('[]'))) && paramType.arrayChildren) {
+      return value.map((v: any) => formatValue(v, paramType.arrayChildren || undefined));
+    }
+    return value.map((v: any) => formatValue(v));
   }
   
   return value;
