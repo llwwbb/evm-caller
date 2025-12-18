@@ -5,8 +5,7 @@ import {
   fetchDebugTrace, 
   parseTraceWithAbi, 
   formatGas, 
-  calculateGasPercentage, 
-  getCallTypeIcon 
+  calculateGasPercentage
 } from '../utils/debugTrace';
 import { loadContractPresets } from '../utils/presetStorage';
 
@@ -59,21 +58,18 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
   };
 
   // 层级缩进样式
-  const indentPx = depth * 24; // 每层 24px 缩进
+  const indentPx = depth * 16; // 每层 16px 缩进，不限制最大值
   
   return (
-    <div className="mb-2" style={{ marginLeft: `${indentPx}px` }}>
-      {/* 层级连接线 */}
+    <div className="mb-2" style={{ paddingLeft: `${indentPx}px` }}>
+      {/* 层级指示器 - 显示深度 */}
       {depth > 0 && (
         <div 
-          className="absolute border-l-2 border-gray-300" 
-          style={{ 
-            left: `${indentPx - 12}px`, 
-            top: 0, 
-            bottom: '50%',
-            width: '2px'
-          }} 
-        />
+          className="absolute left-0 top-3 flex items-center gap-1 text-xs text-gray-400 font-mono"
+          style={{ paddingLeft: `${Math.max(indentPx - 30, 4)}px` }}
+        >
+          <span className="text-gray-300">└─</span>
+        </div>
       )}
       
       <div
@@ -93,9 +89,30 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                {/* 调用类型图标 */}
-                <span className="text-2xl" title={trace.type}>
-                  {getCallTypeIcon(trace.type)}
+                {/* 层级深度标识 */}
+                {depth > 0 && (
+                  <span className="text-xs font-mono text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">
+                    L{depth}
+                  </span>
+                )}
+                
+                {/* 调用类型 */}
+                <span 
+                  className="px-2 py-0.5 rounded text-xs font-mono font-semibold"
+                  style={{
+                    backgroundColor: trace.type === 'CALL' ? '#dbeafe' : 
+                                   trace.type === 'DELEGATECALL' ? '#fef3c7' : 
+                                   trace.type === 'STATICCALL' ? '#e0e7ff' : 
+                                   trace.type === 'CREATE' || trace.type === 'CREATE2' ? '#dcfce7' : 
+                                   '#fecaca',
+                    color: trace.type === 'CALL' ? '#1e40af' : 
+                          trace.type === 'DELEGATECALL' ? '#92400e' : 
+                          trace.type === 'STATICCALL' ? '#3730a3' : 
+                          trace.type === 'CREATE' || trace.type === 'CREATE2' ? '#166534' : 
+                          '#991b1b'
+                  }}
+                >
+                  {trace.type}
                 </span>
                 
                 {/* From -> To */}
@@ -196,17 +213,17 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
         
         {/* 节点详情 - 展开时显示 */}
         {expanded && (
-          <div className="px-4 pb-4 space-y-3 border-t border-gray-200">
+          <div className="px-4 pb-4 space-y-3 border-t border-gray-200 min-w-0">
             {/* Input 数据 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
+            <div className="relative">
+              <div className="mb-2 flex items-start gap-2">
                 <span className="text-sm font-semibold text-gray-700">{t('debugTrace.input')}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowRawInput(!showRawInput);
                   }}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
                 >
                   {showRawInput ? t('debugTrace.hideRaw') : t('debugTrace.showRaw')}
                 </button>
@@ -251,15 +268,15 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
             
             {/* Output 数据 */}
             {trace.output && trace.output !== '0x' && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
+              <div className="relative">
+                <div className="mb-2 flex items-start gap-2">
                   <span className="text-sm font-semibold text-gray-700">{t('debugTrace.output')}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowRawOutput(!showRawOutput);
                     }}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
                   >
                     {showRawOutput ? t('debugTrace.hideRaw') : t('debugTrace.showRaw')}
                   </button>
@@ -359,9 +376,9 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
         )}
       </div>
       
-      {/* 递归渲染子调用 */}
-      {hasCalls && (
-        <div className="mt-2">
+      {/* 递归渲染子调用 - 只有当前节点展开时才渲染 */}
+      {expanded && hasCalls && (
+        <div className="mt-2 space-y-2">
           {trace.calls!.map((call, index) => (
             <TraceCallNode 
               key={`${nodePath}-${index}`} 
@@ -471,8 +488,10 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
     setExpandedNodes(prev => {
       const newSet = new Set(prev);
       if (newSet.has(path)) {
+        // 折叠：只移除该节点，保留子节点的状态
         newSet.delete(path);
       } else {
+        // 展开：添加该节点
         newSet.add(path);
       }
       return newSet;
@@ -656,16 +675,18 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
           </h3>
           
           {parsedTrace ? (
-            <div className="space-y-3">
-              <TraceCallNode 
-                trace={parsedTrace} 
-                depth={0}
-                expandedNodes={expandedNodes}
-                toggleNode={toggleNode}
-                nodePath="0"
-                showAddressNames={showAddressNames}
-                addressNameMap={addressNameMap}
-              />
+            <div className="overflow-x-auto">
+              <div className="space-y-3 min-w-fit">
+                <TraceCallNode 
+                  trace={parsedTrace} 
+                  depth={0}
+                  expandedNodes={expandedNodes}
+                  toggleNode={toggleNode}
+                  nodePath="0"
+                  showAddressNames={showAddressNames}
+                  addressNameMap={addressNameMap}
+                />
+              </div>
             </div>
           ) : (
             <div className="text-center py-12">
