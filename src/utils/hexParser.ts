@@ -211,7 +211,7 @@ function formatValue(value: any, paramType?: ParamType): any {
   if (Array.isArray(value)) {
     // 如果是数组类型，检查 paramType 是否是数组
     if (paramType && paramType.baseType === 'array' && paramType.arrayChildren) {
-      return value.map((v: any) => formatValue(v, paramType.arrayChildren));
+      return value.map((v: any) => formatValue(v, paramType.arrayChildren || undefined));
     }
     return value.map((v: any) => formatValue(v));
   }
@@ -230,7 +230,7 @@ function formatValue(value: any, paramType?: ParamType): any {
         hasNamedFields = true;
         // 找到对应的 component
         const componentIndex = paramType?.components?.findIndex(c => c.name === key);
-        const component = componentIndex !== undefined && componentIndex >= 0 
+        const component = (componentIndex !== undefined && componentIndex >= 0 && paramType?.components)
           ? paramType.components[componentIndex]
           : undefined;
         namedFields[key] = formatValue(value[key], component);
@@ -259,7 +259,7 @@ function formatValue(value: any, paramType?: ParamType): any {
             if (item && typeof item === 'object' && item.toArray) {
               const itemArr = item.toArray();
               const formatted: any = {};
-              childType.components.forEach((component, index) => {
+              childType.components!.forEach((component, index) => {
                 const componentValue = itemArr[index];
                 const fieldName = component.name || `field${index}`;
                 formatted[fieldName] = formatValue(componentValue, component);
