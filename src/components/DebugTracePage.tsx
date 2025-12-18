@@ -62,16 +62,6 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
   
   return (
     <div className="mb-2" style={{ paddingLeft: `${indentPx}px` }}>
-      {/* 层级指示器 - 显示深度 */}
-      {depth > 0 && (
-        <div 
-          className="absolute left-0 top-3 flex items-center gap-1 text-xs text-gray-400 font-mono"
-          style={{ paddingLeft: `${Math.max(indentPx - 30, 4)}px` }}
-        >
-          <span className="text-gray-300">└─</span>
-        </div>
-      )}
-      
       <div
         className={`border-2 rounded-lg overflow-hidden ${
           hasError 
