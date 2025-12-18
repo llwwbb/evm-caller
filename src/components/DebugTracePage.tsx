@@ -12,6 +12,7 @@ import { loadContractPresets } from '../utils/presetStorage';
 interface DebugTracePageProps {
   rpcUrl: string;
   selectedAbis: string[];
+  presetRefreshTrigger: number;
 }
 
 interface TraceCallNodeProps {
@@ -51,8 +52,12 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
   
   // 获取地址显示名称
   const getAddressDisplay = (address: string): string => {
-    if (showAddressNames && addressNameMap.has(address.toLowerCase())) {
-      return addressNameMap.get(address.toLowerCase())!;
+    if (!address) return address;
+    const lowerAddr = address.toLowerCase();
+    if (showAddressNames && addressNameMap.has(lowerAddr)) {
+      const name = addressNameMap.get(lowerAddr)!;
+      console.log(`✅ 地址匹配: ${address} -> ${name}`);
+      return name;
     }
     return address;
   };
@@ -389,7 +394,8 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
 
 const DebugTracePage: React.FC<DebugTracePageProps> = ({ 
   rpcUrl, 
-  selectedAbis
+  selectedAbis,
+  presetRefreshTrigger
 }) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
@@ -402,14 +408,21 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   const [addressNameMap, setAddressNameMap] = useState<Map<string, string>>(new Map());
   
   // 加载合约预设，构建地址->名称映射
-  useEffect(() => {
+  const loadAddressMapping = () => {
     const contracts = loadContractPresets();
     const map = new Map<string, string>();
     contracts.forEach(contract => {
       map.set(contract.address.toLowerCase(), contract.name);
     });
+    console.log('📝 加载合约预设:', contracts.length, '个');
+    console.log('📋 地址映射:', Array.from(map.entries()));
     setAddressNameMap(map);
-  }, []);
+  };
+  
+  // 当 presetRefreshTrigger 变化时重新加载
+  useEffect(() => {
+    loadAddressMapping();
+  }, [presetRefreshTrigger]);
   
   // 当 ABI 变化时，重新解析现有 trace
   useEffect(() => {
@@ -584,20 +597,34 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
               </div>
             )}
             
-            {/* 地址显示切换 */}
-            {parsedTrace && addressNameMap.size > 0 && (
-              <div className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-md">
-                <span className="text-sm text-purple-800">{t('debugTrace.showContractNames')}</span>
-                <button
-                  onClick={() => setShowAddressNames(!showAddressNames)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    showAddressNames 
-                      ? 'bg-purple-600 text-white' 
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  {showAddressNames ? t('debugTrace.namesOn') : t('debugTrace.namesOff')}
-                </button>
+            {/* 地址显示切换 - 只要有预设就显示 */}
+            {addressNameMap.size > 0 && (
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-purple-800 font-medium">{t('debugTrace.showContractNames')}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => loadAddressMapping()}
+                      className="px-2 py-1 rounded-md text-xs text-purple-600 hover:bg-purple-100 transition-colors"
+                      title={t('debugTrace.refreshMappings')}
+                    >
+                      🔄
+                    </button>
+                    <button
+                      onClick={() => setShowAddressNames(!showAddressNames)}
+                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                        showAddressNames 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {showAddressNames ? t('debugTrace.namesOn') : t('debugTrace.namesOff')}
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-purple-600">
+                  {t('debugTrace.contractPresetsCount', { count: addressNameMap.size })}
+                </div>
               </div>
             )}
             

@@ -406,7 +406,9 @@
     "collapseAll": "全部折叠",
     "showContractNames": "显示合约名称",
     "namesOn": "已开启",
-    "namesOff": "已关闭"
+    "namesOff": "已关闭",
+    "contractPresetsCount": "已加载 {{count}} 个合约预设",
+    "refreshMappings": "刷新地址映射"
   },
   "abiEncoder": {
     "title": "ABI 编码器",

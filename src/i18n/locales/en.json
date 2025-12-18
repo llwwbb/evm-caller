@@ -406,7 +406,9 @@
     "collapseAll": "Collapse All",
     "showContractNames": "Show Contract Names",
     "namesOn": "ON",
-    "namesOff": "OFF"
+    "namesOff": "OFF",
+    "contractPresetsCount": "{{count}} contract preset(s) loaded",
+    "refreshMappings": "Refresh address mappings"
   },
   "abiEncoder": {
     "title": "ABI Encoder",

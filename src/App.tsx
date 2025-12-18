@@ -391,7 +391,7 @@ function App() {
 
             {activeTab === 'debug-trace' && (
               <div className="lg:col-span-12 min-h-0">
-                <DebugTracePage rpcUrl={rpcUrl} selectedAbis={selectedAbis} />
+                <DebugTracePage rpcUrl={rpcUrl} selectedAbis={selectedAbis} presetRefreshTrigger={presetRefreshTrigger} />
               </div>
             )}
 
