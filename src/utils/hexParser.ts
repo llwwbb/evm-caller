@@ -207,10 +207,10 @@ function formatValue(value: any, paramType?: ParamType): any {
     return value.toString();
   }
   
-  // 处理数组类型
-  if (Array.isArray(value)) {
+  // 处理数组类型（但需要排除 Result 对象，因为它们有 toArray 方法）
+  if (Array.isArray(value) && !(value && typeof value === 'object' && typeof value.toArray === 'function')) {
     // 如果是数组类型，检查 paramType 是否是数组
-    if (paramType && paramType.baseType === 'array' && paramType.arrayChildren) {
+    if (paramType && (paramType.baseType === 'array' || (paramType.type && paramType.type.endsWith('[]'))) && paramType.arrayChildren) {
       return value.map((v: any) => formatValue(v, paramType.arrayChildren || undefined));
     }
     return value.map((v: any) => formatValue(v));
@@ -221,27 +221,14 @@ function formatValue(value: any, paramType?: ParamType): any {
     if (value.toArray && typeof value.toArray === 'function') {
       const arr = value.toArray();
       
-      // 首先尝试提取命名字段（ethers 有时会自动添加命名字段）
-      const namedFields: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in value) {
-        if (!isNaN(Number(key))) continue;
-        hasNamedFields = true;
-        // 找到对应的 component
-        const componentIndex = paramType?.components?.findIndex(c => c.name === key);
-        const component = (componentIndex !== undefined && componentIndex >= 0 && paramType?.components)
-          ? paramType.components[componentIndex]
-          : undefined;
-        namedFields[key] = formatValue(value[key], component);
-      }
-      
-      if (hasNamedFields) {
-        return namedFields;
-      }
-      
-      // 如果没有命名字段，但 paramType 是 tuple 类型，使用 ABI 定义来格式化
-      if (paramType && paramType.baseType === 'tuple' && paramType.components) {
+      // 优先使用 paramType 的 ABI 定义来格式化（如果有的话）
+      // 如果 paramType 是 tuple 类型，使用 ABI 定义来格式化
+      // 检查 baseType 或 type 是否表示 tuple
+      const isTuple = paramType && (
+        paramType.baseType === 'tuple' || 
+        (paramType.type && paramType.type.startsWith('tuple'))
+      );
+      if (isTuple && paramType.components) {
         const formatted: any = {};
         paramType.components.forEach((component, index) => {
           const componentValue = arr[index];
@@ -254,7 +241,9 @@ function formatValue(value: any, paramType?: ParamType): any {
       // 如果 paramType 是数组类型，且数组元素是 tuple
       if (paramType && paramType.baseType === 'array' && paramType.arrayChildren) {
         const childType = paramType.arrayChildren;
-        if (childType.baseType === 'tuple' && childType.components) {
+        const isChildTuple = childType.baseType === 'tuple' || 
+          (childType.type && childType.type.startsWith('tuple'));
+        if (isChildTuple && childType.components) {
           return arr.map((item: any) => {
             if (item && typeof item === 'object' && item.toArray) {
               const itemArr = item.toArray();
@@ -270,6 +259,25 @@ function formatValue(value: any, paramType?: ParamType): any {
           });
         }
         return arr.map((item: any) => formatValue(item, childType));
+      }
+      
+      // 如果没有 paramType 或不是 tuple，尝试提取命名字段（ethers 有时会自动添加命名字段）
+      const namedFields: any = {};
+      let hasNamedFields = false;
+      
+      for (const key in value) {
+        if (!isNaN(Number(key))) continue;
+        hasNamedFields = true;
+        // 找到对应的 component（如果有 paramType）
+        const componentIndex = paramType?.components?.findIndex(c => c.name === key);
+        const component = (componentIndex !== undefined && componentIndex >= 0 && paramType?.components)
+          ? paramType.components[componentIndex]
+          : undefined;
+        namedFields[key] = formatValue(value[key], component);
+      }
+      
+      if (hasNamedFields) {
+        return namedFields;
       }
       
       // 否则返回数组格式
