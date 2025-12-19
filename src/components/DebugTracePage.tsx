@@ -7,7 +7,7 @@ import {
   formatGas, 
   calculateGasPercentage
 } from '../utils/debugTrace';
-import { loadContractPresets } from '../utils/presetStorage';
+import { loadContractPresets, saveDebugTraceResult, loadDebugTraceResult } from '../utils/presetStorage';
 
 interface DebugTracePageProps {
   rpcUrl: string;
@@ -406,6 +406,38 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['0'])); // 默认展开根节点
   const [showAddressNames, setShowAddressNames] = useState(true); // 是否显示合约名称
   const [addressNameMap, setAddressNameMap] = useState<Map<string, string>>(new Map());
+  
+  // 从 localStorage 恢复状态
+  useEffect(() => {
+    const savedState = loadDebugTraceResult();
+    if (savedState) {
+      setTxHash(savedState.txHash || '');
+      if (savedState.rawTrace) {
+        setRawTrace(savedState.rawTrace);
+        // 如果恢复时有 rawTrace，让后续的 useEffect 根据 selectedAbis 重新解析
+        // 而不是直接使用保存的 parsedTrace（可能已过期）
+      }
+      if (savedState.expandedNodes && savedState.expandedNodes.length > 0) {
+        setExpandedNodes(new Set(savedState.expandedNodes));
+      }
+      if (savedState.showAddressNames !== undefined) {
+        setShowAddressNames(savedState.showAddressNames);
+      }
+    }
+  }, []);
+  
+  // 保存状态到 localStorage
+  useEffect(() => {
+    if (rawTrace || parsedTrace) {
+      saveDebugTraceResult({
+        txHash,
+        rawTrace,
+        parsedTrace,
+        expandedNodes: Array.from(expandedNodes),
+        showAddressNames,
+      });
+    }
+  }, [txHash, rawTrace, parsedTrace, expandedNodes, showAddressNames]);
   
   // 加载合约预设，构建地址->名称映射
   const loadAddressMapping = () => {

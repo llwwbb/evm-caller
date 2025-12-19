@@ -15,6 +15,7 @@ const STORAGE_KEYS = {
   EVENT_QUERY_RESULTS: 'evm-caller:event-query-results',
   TYPE_DEF_PRESETS: 'evm-caller:type-def-presets',
   ABI_ENCODER_HISTORY: 'evm-caller:abi-encoder-history',
+  DEBUG_TRACE_RESULT: 'evm-caller:debug-trace-result',
 };
 
 // 生成唯一 ID
@@ -703,6 +704,57 @@ export function clearAbiEncoderHistory(): void {
     localStorage.removeItem(STORAGE_KEYS.ABI_ENCODER_HISTORY);
   } catch (error) {
     console.error('清空 ABI 编码器历史记录失败:', error);
+  }
+}
+
+// ==================== Debug Trace 结果持久化 ====================
+
+export interface DebugTraceState {
+  txHash: string;
+  rawTrace: any; // CallTrace
+  parsedTrace: any; // ParsedCallTrace
+  expandedNodes: string[]; // Set 转换为数组
+  showAddressNames: boolean;
+}
+
+/**
+ * 保存 Debug Trace 结果
+ */
+export function saveDebugTraceResult(state: DebugTraceState): void {
+  try {
+    const json = JSON.stringify(state, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+    localStorage.setItem(STORAGE_KEYS.DEBUG_TRACE_RESULT, json);
+  } catch (error) {
+    console.error('保存 Debug Trace 结果失败:', error);
+  }
+}
+
+/**
+ * 加载 Debug Trace 结果
+ */
+export function loadDebugTraceResult(): DebugTraceState | null {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.DEBUG_TRACE_RESULT);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('加载 Debug Trace 结果失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 清空 Debug Trace 结果
+ */
+export function clearDebugTraceResult(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.DEBUG_TRACE_RESULT);
+  } catch (error) {
+    console.error('清空 Debug Trace 结果失败:', error);
   }
 }
 
