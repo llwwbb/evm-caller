@@ -25,9 +25,7 @@ interface HexParserPageProps {
 const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
   const { t } = useTranslation();
   const [hexData, setHexData] = useState('');
-  const [parsedHexData, setParsedHexData] = useState(''); // 保存解析时的 hex 数据
   const [decodeType, setDecodeType] = useState<DecodeType>('auto');
-  const [result, setResult] = useState<DecodedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HexParserHistory[]>([]);
 
@@ -36,9 +34,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
     const saved = loadHexParserResult();
     if (saved) {
       setHexData(saved.hexData || '');
-      setParsedHexData(saved.hexData || '');
       setDecodeType(saved.decodeType || 'auto');
-      setResult(saved.result || null);
     }
     setHistory(loadHexParserHistory());
   }, []);
@@ -55,11 +51,9 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
     }
 
     setError(null);
-    setResult(null);
     
     // 保存解析时的 hex 数据
     const trimmedHex = hexData.trim();
-    setParsedHexData(trimmedHex);
 
     try {
       let decoded: DecodedData;
@@ -79,8 +73,6 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
           decoded = autoDetectAndDecode(trimmedHex, mergedAbi);
           break;
       }
-
-      setResult(decoded);
       
       // 保存结果
       saveHexParserResult({
@@ -89,7 +81,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         result: decoded,
       });
       
-      // 添加到历史记录
+      // 添加到历史记录（插入到第一个）
       addHexParserHistory({
         hexData: trimmedHex,
         decodeType,
@@ -141,15 +133,6 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
-  // 从历史记录恢复
-  const restoreFromHistory = useCallback((historyItem: HexParserHistory) => {
-    setHexData(historyItem.hexData);
-    setParsedHexData(historyItem.hexData);
-    setDecodeType(historyItem.decodeType);
-    setResult(historyItem.result);
-    setError(null);
-  }, []);
 
   // 删除历史记录
   const handleDeleteHistory = useCallback((id: string) => {
@@ -254,124 +237,8 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         </div>
       </div>
 
-      {/* 右列：解析结果和历史 */}
+      {/* 右列：历史记录 */}
       <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
-        {/* 解析结果 */}
-        {result && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('hexParser.parseResult')}</h3>
-
-            <div className="space-y-4">
-              {/* 类型 */}
-              <div>
-                <span className="text-sm font-medium text-gray-600">{t('hexParser.typeLabel')}</span>
-                <span className={`ml-2 px-3 py-1 rounded text-sm font-medium ${getTypeBadgeColor(result.type)}`}>
-                  {getTypeLabel(result.type)}
-                </span>
-              </div>
-
-              {result.type === 'unknown' ? (
-                // 无法识别
-                <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-sm text-gray-700">
-                    {result.error || t('hexParser.cannotRecognize')}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {t('hexParser.checkFormat')}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {/* 名称 */}
-                  {result.name && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">{t('hexParser.nameLabel')}</span>
-                      <span className="ml-2 text-blue-700 font-mono text-base font-semibold">
-                        {result.name}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* 签名 */}
-                  {result.signature && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600">{t('hexParser.signatureLabel')}</span>
-                      <span className="ml-2 text-gray-600 font-mono text-xs">
-                        {result.signature}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* 参数 */}
-                  {result.args && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600 block mb-2">
-                        {t('hexParser.parametersLabel')}
-                      </span>
-                      <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                        <pre className="text-xs overflow-x-auto">
-                          {JSON.stringify(result.args, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Fragment 详情 */}
-                  {result.fragment && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-600 block mb-2">
-                        {t('hexParser.fragmentDetails')}
-                      </span>
-                      <div className="bg-blue-50 p-4 rounded border border-blue-200">
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="font-medium text-gray-700">{t('hexParser.nameLabel')}</span>
-                            <span className="ml-2 text-gray-800">{result.fragment.name}</span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-700">{t('hexParser.typeFragmentLabel')}</span>
-                            <span className="ml-2 text-gray-800">{result.fragment.type}</span>
-                          </div>
-                          {result.fragment.inputs && result.fragment.inputs.length > 0 && (
-                            <div>
-                              <span className="font-medium text-gray-700 block mb-1">{t('hexParser.inputParameters')}</span>
-                              <div className="ml-4 space-y-1">
-                                {result.fragment.inputs.map((input: any, i: number) => (
-                                  <div key={i} className="text-xs font-mono text-gray-700">
-                                    • {input.name || `arg${i}`}: {input.type}
-                                    {input.indexed && (
-                                      <span className="ml-2 px-1 bg-yellow-200 text-yellow-800 rounded text-xs">
-                                        indexed
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 原始数据对照 */}
-                  <div>
-                    <span className="text-sm font-medium text-gray-600 block mb-2">
-                      {t('hexParser.rawHexData')}
-                    </span>
-                    <div className="bg-gray-50 p-3 rounded border border-gray-200">
-                      <div className="text-xs font-mono break-all text-gray-700">
-                        {parsedHexData}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 历史记录 */}
         <div className="bg-white rounded-lg shadow-md p-6 flex-1">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-gray-800">{t('hexParser.history') || '历史记录'}</h3>
@@ -386,16 +253,16 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
           </div>
           
           {history.length > 0 ? (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-4 overflow-y-auto">
               {history.map(item => (
                 <div
                   key={item.id}
-                  className={`p-3 rounded border cursor-pointer hover:bg-gray-50 ${
+                  className={`p-4 rounded border ${
                     item.success ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
                   }`}
-                  onClick={() => restoreFromHistory(item)}
                 >
-                  <div className="flex items-center justify-between mb-1">
+                  {/* 头部信息 */}
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <span className={`text-xs px-2 py-0.5 rounded ${
                         item.decodeType === 'auto' ? 'bg-gray-100 text-gray-700' :
@@ -411,28 +278,95 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                       <span className={`text-xs ${item.success ? 'text-green-600' : 'text-red-600'}`}>
                         {item.success ? '✓' : '✗'}
                       </span>
-                      {item.result && (
-                        <span className={`text-xs px-2 py-0.5 rounded ${getTypeBadgeColor(item.result.type)}`}>
-                          {getTypeLabel(item.result.type)}
-                        </span>
-                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-500">{formatTime(item.timestamp)}</span>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDeleteHistory(item.id); }}
+                        onClick={() => handleDeleteHistory(item.id)}
                         className="text-red-400 hover:text-red-600 text-xs"
                       >
                         ✕
                       </button>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-600 font-mono truncate">
-                    {item.hexData.substring(0, 80)}{item.hexData.length > 80 ? '...' : ''}
-                  </div>
-                  {item.result?.name && (
-                    <div className="text-xs text-blue-600 font-mono mt-1">
-                      {item.result.name}
+
+                  {/* 解析结果内容 */}
+                  {item.result ? (
+                    <div className="space-y-3">
+                      {/* 类型 */}
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">{t('hexParser.typeLabel')}</span>
+                        <span className={`ml-2 px-3 py-1 rounded text-sm font-medium ${getTypeBadgeColor(item.result.type)}`}>
+                          {getTypeLabel(item.result.type)}
+                        </span>
+                      </div>
+
+                      {item.result.type === 'unknown' ? (
+                        // 无法识别
+                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                          <p className="text-sm text-gray-700">
+                            {item.result.error || t('hexParser.cannotRecognize')}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* 签名 */}
+                          {item.result.signature && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-600 block mb-1">{t('hexParser.signatureLabel')}</span>
+                              <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                                <span className="text-xs text-gray-600 font-mono break-all">
+                                  {item.result.signature}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 参数 */}
+                          {item.result.args && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-600 block mb-2">
+                                {t('hexParser.parametersLabel')}
+                              </span>
+                              <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                                <pre className="text-xs overflow-x-auto whitespace-pre-wrap break-all">
+                                  {JSON.stringify(item.result.args, null, 2)}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* 原始 Hex 数据 */}
+                      <div>
+                        <span className="text-sm font-medium text-gray-600 block mb-2">
+                          {t('hexParser.rawHexData')}
+                        </span>
+                        <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                          <div className="text-xs font-mono break-all text-gray-700">
+                            {item.hexData}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // 解析失败
+                    <div className="space-y-3">
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-sm text-red-800">{t('hexParser.parseFailed')}</p>
+                      </div>
+                      {/* 原始 Hex 数据 */}
+                      <div>
+                        <span className="text-sm font-medium text-gray-600 block mb-2">
+                          {t('hexParser.rawHexData')}
+                        </span>
+                        <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                          <div className="text-xs font-mono break-all text-gray-700">
+                            {item.hexData}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
