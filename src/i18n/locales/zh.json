@@ -214,7 +214,11 @@
     "rawHexData": "原始 Hex 数据：",
     "enterHexData": "请输入 Hex 数据",
     "selectAbiFirst": "请在左侧选择至少一个 ABI",
-    "parseFailed": "解析失败"
+    "parseFailed": "解析失败",
+    "history": "历史记录",
+    "clearHistory": "清空历史",
+    "confirmClearHistory": "确定要清空所有历史记录吗？",
+    "noHistory": "暂无历史记录"
   },
   "eventQuery": {
     "title": "Event 日志查询",

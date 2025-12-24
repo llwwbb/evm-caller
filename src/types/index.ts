@@ -159,6 +159,16 @@ export interface ParsedEvent {
   anonymous?: boolean;
 }
 
+// Hex 解析器历史记录
+export interface HexParserHistory {
+  id: string;
+  hexData: string;              // 解析的 hex 数据
+  decodeType: 'auto' | 'function' | 'event' | 'error';  // 解析类型
+  result: DecodedData | null;   // 解析结果
+  success: boolean;              // 是否成功
+  timestamp: number;             // 时间戳
+}
+
 // ==================== ABI 编码器相关类型 ====================
 
 // 编码模式

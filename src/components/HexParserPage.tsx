@@ -1,13 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DecodedData } from '../types';
+import { DecodedData, HexParserHistory } from '../types';
 import {
   autoDetectAndDecode,
   decodeHexAsFunction,
   decodeHexAsEvent,
   decodeHexAsError,
 } from '../utils/hexParser';
-import { saveHexParserResult, loadHexParserResult } from '../utils/presetStorage';
+import {
+  saveHexParserResult,
+  loadHexParserResult,
+  loadHexParserHistory,
+  addHexParserHistory,
+  deleteHexParserHistory,
+  clearHexParserHistory,
+} from '../utils/presetStorage';
 
 type DecodeType = 'auto' | 'function' | 'event' | 'error';
 
@@ -22,8 +29,9 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
   const [decodeType, setDecodeType] = useState<DecodeType>('auto');
   const [result, setResult] = useState<DecodedData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<HexParserHistory[]>([]);
 
-  // 加载保存的结果
+  // 加载保存的结果和历史记录
   useEffect(() => {
     const saved = loadHexParserResult();
     if (saved) {
@@ -32,6 +40,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
       setDecodeType(saved.decodeType || 'auto');
       setResult(saved.result || null);
     }
+    setHistory(loadHexParserHistory());
   }, []);
 
   const handleDecode = () => {
@@ -79,8 +88,27 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         decodeType,
         result: decoded,
       });
+      
+      // 添加到历史记录
+      addHexParserHistory({
+        hexData: trimmedHex,
+        decodeType,
+        result: decoded,
+        success: true,
+      });
+      setHistory(loadHexParserHistory());
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('hexParser.parseFailed'));
+      const errorMessage = err instanceof Error ? err.message : t('hexParser.parseFailed');
+      setError(errorMessage);
+      
+      // 即使失败也添加到历史记录
+      addHexParserHistory({
+        hexData: trimmedHex,
+        decodeType,
+        result: null,
+        success: false,
+      });
+      setHistory(loadHexParserHistory());
     }
   };
 
@@ -112,6 +140,34 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // 从历史记录恢复
+  const restoreFromHistory = useCallback((historyItem: HexParserHistory) => {
+    setHexData(historyItem.hexData);
+    setParsedHexData(historyItem.hexData);
+    setDecodeType(historyItem.decodeType);
+    setResult(historyItem.result);
+    setError(null);
+  }, []);
+
+  // 删除历史记录
+  const handleDeleteHistory = useCallback((id: string) => {
+    deleteHexParserHistory(id);
+    setHistory(loadHexParserHistory());
+  }, []);
+
+  // 清空历史记录
+  const handleClearHistory = useCallback(() => {
+    if (window.confirm(t('hexParser.confirmClearHistory') || '确定要清空所有历史记录吗？')) {
+      clearHexParserHistory();
+      setHistory([]);
+    }
+  }, [t]);
+
+  // 格式化时间
+  const formatTime = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString();
   };
 
   return (
@@ -198,8 +254,9 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
         </div>
       </div>
 
-      {/* 右列：解析结果 */}
-      <div className="flex flex-col overflow-y-auto pr-2">
+      {/* 右列：解析结果和历史 */}
+      <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
+        {/* 解析结果 */}
         {result && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-bold mb-4 text-gray-800">{t('hexParser.parseResult')}</h3>
@@ -313,6 +370,78 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
             </div>
           </div>
         )}
+
+        {/* 历史记录 */}
+        <div className="bg-white rounded-lg shadow-md p-6 flex-1">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-800">{t('hexParser.history') || '历史记录'}</h3>
+            {history.length > 0 && (
+              <button
+                onClick={handleClearHistory}
+                className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+              >
+                {t('hexParser.clearHistory') || '清空历史'}
+              </button>
+            )}
+          </div>
+          
+          {history.length > 0 ? (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {history.map(item => (
+                <div
+                  key={item.id}
+                  className={`p-3 rounded border cursor-pointer hover:bg-gray-50 ${
+                    item.success ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
+                  }`}
+                  onClick={() => restoreFromHistory(item)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        item.decodeType === 'auto' ? 'bg-gray-100 text-gray-700' :
+                        item.decodeType === 'function' ? 'bg-blue-100 text-blue-700' :
+                        item.decodeType === 'event' ? 'bg-green-100 text-green-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {item.decodeType === 'auto' ? t('hexParser.autoDetect') :
+                         item.decodeType === 'function' ? t('hexParser.function') :
+                         item.decodeType === 'event' ? t('hexParser.event') :
+                         t('hexParser.error')}
+                      </span>
+                      <span className={`text-xs ${item.success ? 'text-green-600' : 'text-red-600'}`}>
+                        {item.success ? '✓' : '✗'}
+                      </span>
+                      {item.result && (
+                        <span className={`text-xs px-2 py-0.5 rounded ${getTypeBadgeColor(item.result.type)}`}>
+                          {getTypeLabel(item.result.type)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">{formatTime(item.timestamp)}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteHistory(item.id); }}
+                        className="text-red-400 hover:text-red-600 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 font-mono truncate">
+                    {item.hexData.substring(0, 80)}{item.hexData.length > 80 ? '...' : ''}
+                  </div>
+                  {item.result?.name && (
+                    <div className="text-xs text-blue-600 font-mono mt-1">
+                      {item.result.name}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">{t('hexParser.noHistory') || '暂无历史记录'}</p>
+          )}
+        </div>
       </div>
     </div>
   );

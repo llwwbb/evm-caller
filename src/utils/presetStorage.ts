@@ -1,4 +1,4 @@
-import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory } from '../types';
+import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory, HexParserHistory } from '../types';
 
 // localStorage 键名常量
 const STORAGE_KEYS = {
@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   CALL_HISTORY: 'evm-caller:call-history',
   TX_PARSER_RESULT: 'evm-caller:tx-parser-result',
   HEX_PARSER_RESULT: 'evm-caller:hex-parser-result',
+  HEX_PARSER_HISTORY: 'evm-caller:hex-parser-history',
   EVENT_QUERY_RESULTS: 'evm-caller:event-query-results',
   TYPE_DEF_PRESETS: 'evm-caller:type-def-presets',
   ABI_ENCODER_HISTORY: 'evm-caller:abi-encoder-history',
@@ -755,6 +756,67 @@ export function clearDebugTraceResult(): void {
     localStorage.removeItem(STORAGE_KEYS.DEBUG_TRACE_RESULT);
   } catch (error) {
     console.error('清空 Debug Trace 结果失败:', error);
+  }
+}
+
+// ==================== Hex 解析器历史记录 ====================
+
+const MAX_HEX_PARSER_HISTORY = 50; // 最多保留 50 条历史记录
+
+/**
+ * 加载 Hex 解析器历史记录
+ */
+export function loadHexParserHistory(): HexParserHistory[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.HEX_PARSER_HISTORY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载 Hex 解析器历史记录失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 保存 Hex 解析器历史记录（添加一条）
+ */
+export function addHexParserHistory(history: Omit<HexParserHistory, 'id' | 'timestamp'>): HexParserHistory {
+  const histories = loadHexParserHistory();
+  const newHistory: HexParserHistory = {
+    ...history,
+    id: generateId(),
+    timestamp: Date.now(),
+  };
+  
+  histories.unshift(newHistory);
+  
+  // 限制历史记录数量
+  const trimmed = histories.slice(0, MAX_HEX_PARSER_HISTORY);
+  
+  localStorage.setItem(STORAGE_KEYS.HEX_PARSER_HISTORY, JSON.stringify(trimmed));
+  return newHistory;
+}
+
+/**
+ * 删除单条 Hex 解析器历史记录
+ */
+export function deleteHexParserHistory(id: string): boolean {
+  const histories = loadHexParserHistory();
+  const filtered = histories.filter(h => h.id !== id);
+  
+  if (filtered.length === histories.length) return false;
+  
+  localStorage.setItem(STORAGE_KEYS.HEX_PARSER_HISTORY, JSON.stringify(filtered));
+  return true;
+}
+
+/**
+ * 清空 Hex 解析器历史记录
+ */
+export function clearHexParserHistory(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.HEX_PARSER_HISTORY);
+  } catch (error) {
+    console.error('清空 Hex 解析器历史记录失败:', error);
   }
 }
 

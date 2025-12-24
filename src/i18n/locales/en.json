@@ -214,7 +214,11 @@
     "rawHexData": "Raw Hex Data:",
     "enterHexData": "Please enter Hex data",
     "selectAbiFirst": "Please select at least one ABI from the left",
-    "parseFailed": "Parse failed"
+    "parseFailed": "Parse failed",
+    "history": "History",
+    "clearHistory": "Clear History",
+    "confirmClearHistory": "Are you sure you want to clear all history?",
+    "noHistory": "No history"
   },
   "eventQuery": {
     "title": "Event Log Query",
