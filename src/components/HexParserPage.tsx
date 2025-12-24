@@ -18,6 +18,7 @@ interface HexParserPageProps {
 const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
   const { t } = useTranslation();
   const [hexData, setHexData] = useState('');
+  const [parsedHexData, setParsedHexData] = useState(''); // 保存解析时的 hex 数据
   const [decodeType, setDecodeType] = useState<DecodeType>('auto');
   const [result, setResult] = useState<DecodedData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +28,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
     const saved = loadHexParserResult();
     if (saved) {
       setHexData(saved.hexData || '');
+      setParsedHexData(saved.hexData || '');
       setDecodeType(saved.decodeType || 'auto');
       setResult(saved.result || null);
     }
@@ -45,23 +47,27 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
 
     setError(null);
     setResult(null);
+    
+    // 保存解析时的 hex 数据
+    const trimmedHex = hexData.trim();
+    setParsedHexData(trimmedHex);
 
     try {
       let decoded: DecodedData;
 
       switch (decodeType) {
         case 'function':
-          decoded = decodeHexAsFunction(hexData.trim(), mergedAbi);
+          decoded = decodeHexAsFunction(trimmedHex, mergedAbi);
           break;
         case 'event':
-          decoded = decodeHexAsEvent(hexData.trim(), mergedAbi);
+          decoded = decodeHexAsEvent(trimmedHex, mergedAbi);
           break;
         case 'error':
-          decoded = decodeHexAsError(hexData.trim(), mergedAbi);
+          decoded = decodeHexAsError(trimmedHex, mergedAbi);
           break;
         case 'auto':
         default:
-          decoded = autoDetectAndDecode(hexData.trim(), mergedAbi);
+          decoded = autoDetectAndDecode(trimmedHex, mergedAbi);
           break;
       }
 
@@ -69,7 +75,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
       
       // 保存结果
       saveHexParserResult({
-        hexData: hexData.trim(),
+        hexData: trimmedHex,
         decodeType,
         result: decoded,
       });
@@ -298,7 +304,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                     </span>
                     <div className="bg-gray-50 p-3 rounded border border-gray-200">
                       <div className="text-xs font-mono break-all text-gray-700">
-                        {hexData}
+                        {parsedHexData}
                       </div>
                     </div>
                   </div>
