@@ -157,7 +157,17 @@ const TraceCallNode: React.FC<TraceCallNodeProps> = ({
                 {/* Value 标识 */}
                 {hasValue && (
                   <span className="text-amber-600 text-sm flex items-center gap-1">
-                    💰 {(BigInt(trace.value!) / BigInt(10 ** 18)).toString()} ETH
+                    💰 {(() => {
+                      const value = BigInt(trace.value!);
+                      const eth = value / BigInt(10 ** 18);
+                      const remainder = value % BigInt(10 ** 18);
+                      if (remainder === BigInt(0)) {
+                        return eth.toString();
+                      }
+                      // 格式化小数部分，展示完整精度，去除末尾的 0
+                      const decimalStr = remainder.toString().padStart(18, '0').replace(/0+$/, '');
+                      return `${eth}.${decimalStr}`;
+                    })()} ETH
                   </span>
                 )}
                 
