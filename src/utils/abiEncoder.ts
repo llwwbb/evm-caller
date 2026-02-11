@@ -474,24 +474,52 @@ function formatDecodedValue(value: any, type: string): any {
 }
 
 /**
- * 格式化数值输出（支持 hex 或十进制）
+ * 判断 Solidity 类型是否是数值类型 (uint*, int*)
  */
-export function formatOutput(value: any, asHex: boolean = false): string {
+function isNumericType(type: string): boolean {
+  return /^u?int(\d*)$/.test(type.trim());
+}
+
+/**
+ * 判断 Solidity 类型是否应该以 hex 格式输出 (address, bytes, bytesN)
+ */
+function isHexType(type: string): boolean {
+  const t = type.trim();
+  if (t === 'address') return true;
+  if (t === 'bytes') return true;
+  if (/^bytes(\d+)$/.test(t)) return true;
+  return false;
+}
+
+/**
+ * 格式化数值输出（支持 hex 或十进制，根据类型智能输出）
+ */
+export function formatOutput(value: any, asHex: boolean = false, type?: string): string {
   if (typeof value === 'string') {
-    // 如果已经是 hex 格式或者是普通字符串
+    // 如果已经是 hex 格式
     if (value.startsWith('0x')) {
-      if (!asHex) {
-        // 尝试转换为十进制
+      if (asHex) {
+        return value;
+      }
+      // 非 hex 输出模式：根据类型决定
+      // address 和 bytes 类型始终以 hex 输出
+      if (type && isHexType(type)) {
+        return value;
+      }
+      // 数值类型转换为十进制
+      if (!type || isNumericType(type)) {
         try {
           return BigInt(value).toString();
         } catch {
           return value;
         }
       }
+      // 未知类型保留原样
       return value;
     }
-    // 如果是数字字符串且需要 hex
-    if (asHex && /^\d+$/.test(value)) {
+    // 如果是数字字符串且需要 hex 输出
+    if (asHex && /^-?\d+$/.test(value)) {
+      // address 和 bytes 类型的值通常不会是纯数字字符串，但以防万一
       try {
         const bn = BigInt(value);
         return toBeHex(bn);
@@ -515,6 +543,18 @@ export function formatOutput(value: any, asHex: boolean = false): string {
   }
   
   if (Array.isArray(value)) {
+    // 根据类型递归格式化数组元素
+    if (type) {
+      if (type.startsWith('(') && type.endsWith(')')) {
+        // Tuple 类型：每个元素有不同的类型
+        const innerTypes = parseTupleTypes(type);
+        return JSON.stringify(value.map((v, i) => formatOutput(v, asHex, innerTypes[i])));
+      } else if (type.endsWith(']')) {
+        // 数组类型：所有元素是同一类型
+        const elementType = type.replace(/\[\d*\]$/, '');
+        return JSON.stringify(value.map(v => formatOutput(v, asHex, elementType)));
+      }
+    }
     return JSON.stringify(value.map(v => formatOutput(v, asHex)));
   }
   

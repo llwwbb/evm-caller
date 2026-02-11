@@ -216,7 +216,7 @@ const AbiEncoderPage: React.FC = () => {
       if (executeResult.success && executeResult.data) {
         const formattedResult = executeResult.data.map((v: any, i: number) => ({
           type: types[i],
-          value: formatOutput(v, outputAsHex),
+          value: formatOutput(v, outputAsHex, types[i]),
         }));
         outputStr = JSON.stringify(formattedResult, null, 2);
         setResult(outputStr);
