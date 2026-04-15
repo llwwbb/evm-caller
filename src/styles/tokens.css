@@ -1,0 +1,48 @@
+:root {
+  /* Surface */
+  --bg: #0b0d10;
+  --surface: #14171c;
+  --surface-2: #1a1e25;
+
+  /* Lines */
+  --line: #2a2f38;
+  --line-soft: #1c2028;
+
+  /* Foreground */
+  --fg: #e6e8ec;
+  --fg-dim: #8b93a3;
+  --fg-mute: #6e768a;
+
+  /* Accents */
+  --mint: #6fffdd;
+  --blue: #60a5fa;
+  --amber: #fbbf24;
+  --violet: #a78bfa;
+  --emerald: #4ade80;
+  --red: #ff5b6e;
+
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, pre {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Scrollbar — dark-themed */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-mute); }
