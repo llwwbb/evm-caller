@@ -446,7 +446,8 @@
     "focused": "FOCUSED",
     "pinnedHint": "{{count}} panels pinned — consider closing some",
     "closeAll": "Close all",
-    "callTree": "Call tree"
+    "callTree": "Call tree",
+    "clickNodeToViewDetail": "Click a node on the left to view details · ⌘/Shift+click to pin"
   },
   "abiEncoder": {
     "title": "ABI Encoder",

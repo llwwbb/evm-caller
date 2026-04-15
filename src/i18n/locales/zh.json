@@ -446,7 +446,8 @@
     "focused": "FOCUSED",
     "pinnedHint": "已固定 {{count}} 个面板 — 可关闭一些",
     "closeAll": "全部关闭",
-    "callTree": "调用树"
+    "callTree": "调用树",
+    "clickNodeToViewDetail": "点击左侧节点查看详情 · ⌘/Shift+点击追加到栈"
   },
   "abiEncoder": {
     "title": "ABI 编码器",
