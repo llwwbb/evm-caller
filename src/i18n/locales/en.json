@@ -541,7 +541,13 @@
     "invalidType": "Invalid type: {{type}}",
     "encodeFailed": "Encode failed",
     "decodeFailed": "Decode failed",
-    "packedDecodeError": "Packed decode does not support dynamic-length types: {{types}}"
+    "packedDecodeError": "Packed decode does not support dynamic-length types: {{types}}",
+    "selectPreset": "Select a preset…",
+    "newPresetName": "New preset name",
+    "typesSection": "Type definition",
+    "output": "Output",
+    "outputPlaceholder": "Result will appear here after executing",
+    "input": "Input"
   }
 }
 

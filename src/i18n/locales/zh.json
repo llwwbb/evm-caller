@@ -541,7 +541,13 @@
     "invalidType": "无效的类型: {{type}}",
     "encodeFailed": "编码失败",
     "decodeFailed": "解码失败",
-    "packedDecodeError": "Packed 解码不支持动态长度类型: {{types}}"
+    "packedDecodeError": "Packed 解码不支持动态长度类型: {{types}}",
+    "selectPreset": "选择类型预设…",
+    "newPresetName": "新预设名称",
+    "typesSection": "类型定义",
+    "output": "输出",
+    "outputPlaceholder": "执行后结果将显示在这里",
+    "input": "输入"
   }
 }
 
