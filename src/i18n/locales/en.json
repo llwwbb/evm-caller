@@ -38,7 +38,9 @@
     "edit": "edit",
     "delete": "delete",
     "confirmDelete": "Confirm delete?",
-    "empty": "No presets yet"
+    "empty": "No presets yet",
+    "selectAll": "select all",
+    "clearAll": "clear"
   },
   "preset": {
     "title": "Presets",

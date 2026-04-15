@@ -215,6 +215,7 @@ const PresetModal: React.FC<PresetModalProps> = ({
             addLabelPlaceholder={t('presetModal.abiNamePlaceholder')}
             addDetailPlaceholder={t('presetModal.abiPlaceholder')}
             addDetailMultiline
+            onBulkSet={(idSet) => commitAbis(idSet)}
           />
         </div>
       </div>

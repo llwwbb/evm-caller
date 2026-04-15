@@ -19,6 +19,8 @@ interface PresetColumnProps {
   addLabelPlaceholder: string;
   addDetailPlaceholder: string;
   addDetailMultiline?: boolean;
+  /** Only meaningful in mode="multi". Replaces the entire selection in one call. */
+  onBulkSet?: (ids: Set<string>) => void;
 }
 
 const PresetColumn: React.FC<PresetColumnProps> = ({
@@ -33,6 +35,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
   addLabelPlaceholder,
   addDetailPlaceholder,
   addDetailMultiline = false,
+  onBulkSet,
 }) => {
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
@@ -66,13 +69,29 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
-      <div className="flex items-center justify-between border-b border-line px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {title}
         </h3>
+        {mode === 'multi' && onBulkSet && items.length > 0 && (() => {
+          const allSelected = items.every((i) => selectedIds.has(i.id));
+          return (
+            <button
+              onClick={() =>
+                onBulkSet(allSelected ? new Set() : new Set(items.map((i) => i.id)))
+              }
+              className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2"
+            >
+              {allSelected ? t('presetModal.clearAll') : t('presetModal.selectAll')}
+            </button>
+          );
+        })()}
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2"
+          className={
+            'rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2 ' +
+            (mode === 'multi' && onBulkSet && items.length > 0 ? '' : 'ml-auto')
+          }
         >
           {isAdding ? '×' : '+ add'}
         </button>
