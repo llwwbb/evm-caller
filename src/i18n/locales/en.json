@@ -9,6 +9,14 @@
     "stateOverride": "State Override",
     "slotCalc": "Storage Slot"
   },
+  "contractPreset": {
+    "namePlaceholder": "Name (e.g. USDC)",
+    "addEntry": "add address"
+  },
+  "picker": {
+    "noMatch": "No matching preset",
+    "showAllChains": "show all chains"
+  },
   "topnav": {
     "presets": "Presets",
     "config": "Config",
@@ -32,7 +40,8 @@
     "confirmDelete": "Confirm delete?",
     "empty": "No presets yet",
     "selectAll": "select all",
-    "clearAll": "clear"
+    "clearAll": "clear",
+    "descriptionPlaceholder": "Description (optional)"
   },
   "functionCall": {
     "functions": "Functions",
@@ -51,7 +60,9 @@
     "clearAll": "Clear all",
     "args": "Args",
     "result": "Result",
-    "error": "Error"
+    "error": "Error",
+    "addAbi": "new abi",
+    "ungroupedAbi": "Ungrouped"
   },
   "result": {
     "confirmClearAll": "Are you sure to clear all call results?"

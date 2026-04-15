@@ -9,6 +9,14 @@
     "stateOverride": "状态覆盖",
     "slotCalc": "存储槽"
   },
+  "contractPreset": {
+    "namePlaceholder": "名称（如 USDC）",
+    "addEntry": "添加地址"
+  },
+  "picker": {
+    "noMatch": "没有匹配的预设",
+    "showAllChains": "显示所有链"
+  },
   "topnav": {
     "presets": "预设",
     "config": "配置",
@@ -32,7 +40,8 @@
     "confirmDelete": "确认删除？",
     "empty": "暂无预设",
     "selectAll": "全选",
-    "clearAll": "取消全选"
+    "clearAll": "取消全选",
+    "descriptionPlaceholder": "备注（可选）"
   },
   "functionCall": {
     "functions": "函数",
@@ -51,7 +60,9 @@
     "clearAll": "全部清空",
     "args": "参数",
     "result": "结果",
-    "error": "错误"
+    "error": "错误",
+    "addAbi": "新建 ABI",
+    "ungroupedAbi": "未分组"
   },
   "result": {
     "confirmClearAll": "确定要清空所有调用结果吗？"

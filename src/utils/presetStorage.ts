@@ -481,11 +481,9 @@ export function importPresets(config: ExportedConfig, mode: 'merge' | 'replace' 
       const mergedRpc = [...existingRpc, ...newRpcPresets];
       localStorage.setItem(STORAGE_KEYS.RPC_PRESETS, JSON.stringify(mergedRpc));
 
-      // 合并合约预设（根据 address 去重）
-      const existingAddresses = new Set(existingContract.map(p => p.address.toLowerCase()));
-      const newContractPresets = contractPresets.filter(
-        p => !existingAddresses.has(p.address.toLowerCase())
-      );
+      // 合并合约预设（按 name 去重；新条目完全替换同名旧条目）
+      const existingNames = new Set(existingContract.map(p => p.name));
+      const newContractPresets = contractPresets.filter((p) => !existingNames.has(p.name));
       const mergedContract = [...existingContract, ...newContractPresets];
       localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(mergedContract));
 

@@ -1,25 +1,54 @@
-export type AddressNameMap = Map<string, string>;
+import { ContractPreset } from '../types';
 
-export function formatAddress(
-  address: string | undefined | null,
-  nameMap: AddressNameMap,
-  showNames: boolean
-): string {
-  if (!address) return '';
-  const lower = address.toLowerCase();
-  if (showNames && nameMap.has(lower)) return nameMap.get(lower)!;
-  if (address.length > 10) {
-    return address.slice(0, 6) + '…' + address.slice(-4);
-  }
-  return address;
+export interface AddressNameLookup {
+  strict: Map<string, string>;
+  loose: Map<string, string>;
 }
 
-export function buildAddressNameMap(
-  contracts: Array<{ address: string; name: string }>
-): AddressNameMap {
-  const map: AddressNameMap = new Map();
-  for (const c of contracts) map.set(c.address.toLowerCase(), c.name);
-  return map;
+// Legacy alias; kept so older imports still compile during incremental migration.
+export type AddressNameMap = AddressNameLookup;
+
+export function buildAddressNameLookup(
+  contracts: ContractPreset[],
+  currentChainId: number | null,
+): AddressNameLookup {
+  const strict = new Map<string, string>();
+  const loose = new Map<string, string>();
+  for (const c of contracts) {
+    for (const e of c.entries) {
+      if (!e.address) continue;
+      const key = e.address.toLowerCase();
+      if (currentChainId != null && e.chainId === currentChainId) {
+        strict.set(key, c.name);
+      } else if (e.chainId == null || currentChainId == null) {
+        if (!loose.has(key)) loose.set(key, c.name);
+      }
+    }
+  }
+  return { strict, loose };
+}
+
+export function formatAddress(
+  addr: string | null | undefined,
+  lookup: AddressNameLookup,
+  showNames: boolean,
+  opts?: { allowLoose?: boolean },
+): string {
+  if (!addr) return '';
+  if (!showNames) return truncate(addr);
+  const key = addr.toLowerCase();
+  const strict = lookup.strict.get(key);
+  if (strict) return strict;
+  if (opts?.allowLoose !== false) {
+    const loose = lookup.loose.get(key);
+    if (loose) return `${loose}?`;
+  }
+  return truncate(addr);
+}
+
+function truncate(addr: string): string {
+  if (addr.length <= 10) return addr;
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 
 export const CALL_TYPE_STYLE: Record<

@@ -13,6 +13,8 @@ import StateOverridePage from './components/stateOverride/StateOverridePage';
 import SlotCalcPage from './components/slotCalc/SlotCalcPage';
 import { callViewFunction } from './utils/rpcCaller';
 import { parseAbi } from './utils/abiParser';
+import { toDisplay } from './utils/decodedFormat';
+import { fetchChainId } from './utils/fetchChainId';
 import { RpcConfig as RpcConfigType, ParsedFunction, CallHistory } from './types';
 import {
   initializeDefaultPresets,
@@ -20,6 +22,7 @@ import {
   saveCallHistory,
   loadCallHistory,
   loadRpcPresets,
+  updateRpcPreset,
 } from './utils/presetStorage';
 
 function App() {
@@ -39,6 +42,7 @@ function App() {
   const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [showAddressNames, setShowAddressNames] = useState(true);
+  const [currentChainId, setCurrentChainId] = useState<number | null>(null);
 
   useEffect(() => {
     initializeDefaultPresets();
@@ -88,6 +92,28 @@ function App() {
 
   useEffect(() => { saveCallHistory(callHistory); }, [callHistory]);
 
+  // Derive chainId from rpcUrl (backfill on first select of an RPC preset).
+  useEffect(() => {
+    const trimmed = rpcUrl.trim();
+    if (!trimmed) { setCurrentChainId(null); return; }
+
+    const presets = loadRpcPresets();
+    const preset = presets.find((p) => p.rpcUrl === trimmed);
+    if (preset?.chainId) { setCurrentChainId(preset.chainId); return; }
+
+    if (!preset) { setCurrentChainId(null); return; }
+
+    const controller = new AbortController();
+    fetchChainId(trimmed, controller.signal)
+      .then((cid) => {
+        if (controller.signal.aborted) return;
+        updateRpcPreset(preset.id, { chainId: cid });
+        setCurrentChainId(cid);
+      })
+      .catch(() => { /* silent: leaves null */ });
+    return () => controller.abort();
+  }, [rpcUrl, presetRefreshTrigger]);
+
   const handleFunctionCall = async (functionName: string, args: any[], func: ParsedFunction) => {
     if (!rpcUrl.trim()) { alert(t('alert.enterRpcUrl')); return; }
     if (!contractAddress.trim()) { alert(t('alert.enterContractAddress')); return; }
@@ -99,14 +125,17 @@ function App() {
         blockTag: blockTag.trim() || 'latest',
       };
       const result = await callViewFunction(
-        config, abiString, functionName, args, func.outputs, func.stateMutability
+        config, abiString, functionName, args, func.stateMutability
       );
+      const formatted = result.success
+        ? { success: true, data: toDisplay(result.data, func.outputs) }
+        : result;
       const rpcPresets = loadRpcPresets();
       const currentRpcPreset = rpcPresets.find((p) => p.rpcUrl === rpcUrl.trim());
       setCallHistory((prev) => [
         {
           id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          functionName, args, result, timestamp: Date.now(),
+          functionName, args, result: formatted, timestamp: Date.now(),
           blockTag: config.blockTag, rpcName: currentRpcPreset?.name,
         },
         ...prev,
@@ -183,6 +212,7 @@ function App() {
             selectedAbis={selectedAbis}
             showAddressNames={showAddressNames}
             presetRefreshTrigger={presetRefreshTrigger}
+            currentChainId={currentChainId}
           />
         )}
         {activeTab === 'hex-parser' && <HexParserPage mergedAbi={mergedAbi} />}
@@ -202,6 +232,7 @@ function App() {
             mergedAbi={mergedAbi}
             showAddressNames={showAddressNames}
             presetRefreshTrigger={presetRefreshTrigger}
+            currentChainId={currentChainId}
           />
         )}
         {activeTab === 'slot-calc' && <SlotCalcPage rpcUrl={rpcUrl} />}

@@ -23,7 +23,7 @@ import {
   saveStateOverridePreset,
   deleteStateOverridePreset,
 } from '../../utils/presetStorage';
-import { buildAddressNameMap } from '../../utils/addressDisplay';
+import { buildAddressNameLookup } from '../../utils/addressDisplay';
 import StatsRibbon, { StatCell } from '../layout/StatsRibbon';
 import CallTree from '../debugTrace/CallTree';
 import NodeStack from '../debugTrace/NodeStack';
@@ -34,6 +34,7 @@ interface StateOverridePageProps {
   mergedAbi: string;
   showAddressNames: boolean;
   presetRefreshTrigger: number;
+  currentChainId: number | null;
 }
 
 interface CallDraft {
@@ -72,6 +73,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
   mergedAbi,
   showAddressNames,
   presetRefreshTrigger,
+  currentChainId,
 }) => {
   const { t } = useTranslation();
 
@@ -93,7 +95,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
   const [presetName, setPresetName] = useState('');
 
   // Address name map (for trace display)
-  const [addressNameMap, setAddressNameMap] = useState(() => buildAddressNameMap([]));
+  const [addressNameMap, setAddressNameMap] = useState(() => buildAddressNameLookup([], null));
 
   const pin = usePinStack();
 
@@ -112,8 +114,8 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
   }, []);
 
   useEffect(() => {
-    setAddressNameMap(buildAddressNameMap(loadContractPresets()));
-  }, [presetRefreshTrigger]);
+    setAddressNameMap(buildAddressNameLookup(loadContractPresets(), currentChainId));
+  }, [presetRefreshTrigger, currentChainId]);
 
   // ==================== Account override management ====================
 

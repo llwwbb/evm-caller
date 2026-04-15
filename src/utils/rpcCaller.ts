@@ -1,75 +1,33 @@
 import { JsonRpcProvider, Contract } from 'ethers';
-import { CallResult, RpcConfig, ParsedParam } from '../types';
+import { CallResult, RpcConfig } from '../types';
 
 /**
- * 调用合约的 view 函数或模拟执行状态修改函数
- * @param config - RPC 配置
- * @param abi - 合约 ABI
- * @param functionName - 函数名
- * @param args - 函数参数
- * @param outputs - 函数输出定义（用于格式化带名称的返回值）
- * @param stateMutability - 函数的状态可变性（view/pure/nonpayable/payable）
- * @returns 调用结果
+ * Call a view function or simulate a state-mutating function. Returns the raw
+ * ethers result; callers pass it through toDisplay() with ABI outputs for
+ * rendering.
  */
 export async function callViewFunction(
   config: RpcConfig,
   abi: string | any[],
   functionName: string,
   args: any[],
-  outputs?: ParsedParam[],
   stateMutability?: string
 ): Promise<CallResult> {
   try {
-    console.log('🚀 开始调用函数:', functionName, 'args:', args);
-    console.log('📋 outputs 定义:', outputs);
-    console.log('🔧 函数状态可变性:', stateMutability);
-    
-    // 创建 provider
     const provider = new JsonRpcProvider(config.rpcUrl);
-
-    // 创建合约实例
     const contract = new Contract(config.contractAddress, abi, provider);
 
-    // 准备 blockTag（默认 'latest'）
     let blockTag: string | number = config.blockTag || 'latest';
-    
-    // 如果 blockTag 是数字字符串，转换为数字
     if (typeof blockTag === 'string' && /^\d+$/.test(blockTag)) {
       blockTag = parseInt(blockTag, 10);
     }
-    
-    console.log('🔖 使用区块标识:', blockTag, '类型:', typeof blockTag);
 
-    // 根据函数类型选择调用方式
-    let result: any;
     const isStateMutating = stateMutability === 'nonpayable' || stateMutability === 'payable';
-    
-    if (isStateMutating) {
-      // 状态修改函数：使用 staticCall 模拟执行
-      console.log('⚠️ 使用 staticCall 模拟执行状态修改函数');
-      result = await contract[functionName].staticCall(...args, { blockTag });
-    } else {
-      // 只读函数：直接调用
-      console.log('👁️ 调用只读函数');
-      result = await contract[functionName](...args, { blockTag });
-    }
-    
-    console.log('📥 原始返回结果:', result);
-    console.log('🔍 结果类型检查:', {
-      hasToArray: typeof result?.toArray === 'function',
-      hasToObject: typeof result?.toObject === 'function',
-      isArray: Array.isArray(result),
-      keys: result && typeof result === 'object' ? Object.keys(result) : []
-    });
+    const result = isStateMutating
+      ? await contract[functionName].staticCall(...args, { blockTag })
+      : await contract[functionName](...args, { blockTag });
 
-    // 格式化返回值
-    const formattedResult = formatResult(result, outputs);
-    console.log('✨ 格式化后结果:', formattedResult);
-
-    return {
-      success: true,
-      data: formattedResult,
-    };
+    return { success: true, data: result };
   } catch (error) {
     console.error('RPC 调用失败:', error);
     
@@ -121,81 +79,6 @@ export async function validateRpcConnection(rpcUrl: string): Promise<{ valid: bo
       error: errorMessage,
     };
   }
-}
-
-/**
- * 格式化返回结果为可读格式
- * @param result - 原始返回结果
- * @param outputs - 函数输出定义（用于命名返回值）
- * @returns 格式化后的结果
- */
-function formatResult(result: any, _outputs?: ParsedParam[]): any {
-  // 处理 BigInt
-  if (typeof result === 'bigint') {
-    return result.toString();
-  }
-
-  // 处理对象 - 必须在数组检查之前，因为 Result 对象也是数组
-  if (result && typeof result === 'object') {
-    // 检查是否是 ethers 的 Result 对象（优先级最高）
-    if (result.toArray && typeof result.toArray === 'function') {
-      console.log('🔍 检测到 Result 对象');
-      
-      // 尝试使用 toObject() 方法（ethers v6）
-      if (result.toObject && typeof result.toObject === 'function') {
-        try {
-          const obj = result.toObject();
-          console.log('✅ 使用 toObject() 成功:', obj);
-          
-          // 递归格式化对象中的值
-          const formatted: any = {};
-          for (const key in obj) {
-            formatted[key] = formatResult(obj[key]);
-          }
-          return formatted;
-        } catch (error) {
-          console.log('⚠️ toObject() 失败，降级处理:', error);
-        }
-      }
-      
-      const arr = result.toArray();
-      console.log('📦 toArray() 结果:', arr);
-      
-      // 尝试从 Result 对象中提取命名字段
-      const formatted: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in result) {
-        if (!isNaN(Number(key))) continue; // 跳过数字索引
-        hasNamedFields = true;
-        formatted[key] = formatResult(result[key]);
-      }
-      
-      if (hasNamedFields) {
-        console.log('✅ 找到命名字段:', Object.keys(formatted));
-        return formatted;
-      }
-      
-      console.log('⚠️ 未找到命名字段，返回数组');
-      return arr.map((item: any) => formatResult(item));
-    }
-    
-    // 处理普通数组（在 Result 对象检查之后）
-    if (Array.isArray(result)) {
-      console.log('📦 处理普通数组');
-      return result.map(item => formatResult(item));
-    }
-
-    // 处理普通对象
-    const formatted: any = {};
-    for (const key in result) {
-      if (!isNaN(Number(key))) continue;
-      formatted[key] = formatResult(result[key]);
-    }
-    return formatted;
-  }
-
-  return result;
 }
 
 /**

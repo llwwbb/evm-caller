@@ -7,7 +7,7 @@ import {
   saveDebugTraceResult,
   loadDebugTraceResult,
 } from '../utils/presetStorage';
-import { buildAddressNameMap } from '../utils/addressDisplay';
+import { buildAddressNameLookup } from '../utils/addressDisplay';
 import TxBar from './layout/TxBar';
 import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 import CallTree from './debugTrace/CallTree';
@@ -19,6 +19,7 @@ interface DebugTracePageProps {
   selectedAbis: string[];
   showAddressNames: boolean;
   presetRefreshTrigger: number;
+  currentChainId: number | null;
 }
 
 function gasNum(gas: string | undefined): number {
@@ -76,6 +77,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   selectedAbis,
   showAddressNames,
   presetRefreshTrigger,
+  currentChainId,
 }) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
@@ -84,7 +86,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['0']));
-  const [addressNameMap, setAddressNameMap] = useState(() => buildAddressNameMap([]));
+  const [addressNameMap, setAddressNameMap] = useState(() => buildAddressNameLookup([], null));
   const [didHydrate, setDidHydrate] = useState(false);
 
   const pin = usePinStack();
@@ -129,10 +131,10 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
     pin.collapsedPaths,
   ]);
 
-  // Refresh address name map when presets change
+  // Refresh address name map when presets or chain change
   useEffect(() => {
-    setAddressNameMap(buildAddressNameMap(loadContractPresets()));
-  }, [presetRefreshTrigger]);
+    setAddressNameMap(buildAddressNameLookup(loadContractPresets(), currentChainId));
+  }, [presetRefreshTrigger, currentChainId]);
 
   // Re-parse whenever ABIs or rawTrace change
   useEffect(() => {

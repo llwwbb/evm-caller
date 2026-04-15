@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PresetColumn, { PresetColumnItem } from './PresetColumn';
+import ContractPresetColumn from './ContractPresetColumn';
 import {
   loadRpcPresets, saveRpcPreset, updateRpcPreset, deleteRpcPreset,
   loadContractPresets, saveContractPreset, updateContractPreset, deleteContractPreset,
@@ -66,23 +67,10 @@ const PresetModal: React.FC<PresetModalProps> = ({
     () => rpcs.find((r) => r.rpcUrl === currentRpcUrl)?.id ?? null,
     [rpcs, currentRpcUrl]
   );
-  const selectedContractId = useMemo(
-    () =>
-      contracts.find(
-        (c) => c.address.toLowerCase() === currentContractAddress.toLowerCase()
-      )?.id ?? null,
-    [contracts, currentContractAddress]
-  );
-
   const rpcItems: PresetColumnItem[] = rpcs.map((r) => ({
     id: r.id,
     label: r.name,
     detail: r.rpcUrl,
-  }));
-  const contractItems: PresetColumnItem[] = contracts.map((c) => ({
-    id: c.id,
-    label: c.name,
-    detail: c.address,
   }));
   const abiItems: PresetColumnItem[] = abis.map((a) => ({
     id: a.id,
@@ -153,22 +141,18 @@ const PresetModal: React.FC<PresetModalProps> = ({
             addLabelPlaceholder={t('presetModal.rpcNamePlaceholder')}
             addDetailPlaceholder={t('presetModal.rpcUrlPlaceholder')}
           />
-          <PresetColumn
+          <ContractPresetColumn
             title={t('presetModal.contracts')}
-            items={contractItems}
-            mode="single"
-            selectedIds={new Set(selectedContractId ? [selectedContractId] : [])}
-            onToggle={(id) => {
-              const c = contracts.find((x) => x.id === id);
-              if (c) onContractAddressChange(c.address);
-            }}
-            onAdd={(label, detail) => {
-              saveContractPreset(label, detail);
+            items={contracts}
+            currentAddress={currentContractAddress}
+            onPickAddress={onContractAddressChange}
+            onAdd={(name, entries, description) => {
+              saveContractPreset(name, entries, description);
               setContracts(loadContractPresets());
               onRefreshPresets();
             }}
-            onEdit={(id, label, detail) => {
-              updateContractPreset(id, { name: label, address: detail });
+            onEdit={(id, updates) => {
+              updateContractPreset(id, updates);
               setContracts(loadContractPresets());
               onRefreshPresets();
             }}
@@ -177,8 +161,6 @@ const PresetModal: React.FC<PresetModalProps> = ({
               setContracts(loadContractPresets());
               onRefreshPresets();
             }}
-            addLabelPlaceholder={t('presetModal.contractNamePlaceholder')}
-            addDetailPlaceholder={t('presetModal.contractAddressPlaceholder')}
           />
           <PresetColumn
             title={t('presetModal.abis')}
