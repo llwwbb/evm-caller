@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { JsonRpcProvider } from 'ethers';
 import { EventQueryParams, ParsedLog } from '../types';
 import { queryEvents, extractEvents, validateBlockRange } from '../utils/eventQuery';
 import { saveEventQueryResults, loadEventQueryResults } from '../utils/presetStorage';
-import { JsonRpcProvider, Interface } from 'ethers';
+import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
 interface EventQueryPageProps {
   rpcUrl: string;
@@ -13,229 +14,120 @@ interface EventQueryPageProps {
   selectedAbis: string[];
 }
 
-const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress, mergedAbi, selectedAbiNames, selectedAbis }) => {
+interface EventOption {
+  name: string;
+  inputs: any[];
+  abiName?: string;
+}
+
+function stringifySafe(value: any): string {
+  try {
+    return JSON.stringify(
+      value,
+      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
+      2
+    );
+  } catch {
+    return String(value);
+  }
+}
+
+const EventQueryPage: React.FC<EventQueryPageProps> = ({
+  rpcUrl,
+  contractAddress,
+  mergedAbi,
+  selectedAbiNames,
+  selectedAbis,
+}) => {
   const { t } = useTranslation();
-  const [events, setEvents] = useState<Array<{ name: string; inputs: any[]; abiName?: string }>>([]);
+  const [events, setEvents] = useState<EventOption[]>([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [fromBlock, setFromBlock] = useState('');
   const [toBlock, setToBlock] = useState('');
-  const [currentFromBlock, setCurrentFromBlock] = useState<number | null>(null); // 当前查询的起始块
-  const [currentToBlock, setCurrentToBlock] = useState<number | null>(null); // 当前查询的结束块
+  const [currentFromBlock, setCurrentFromBlock] = useState<number | null>(null);
+  const [currentToBlock, setCurrentToBlock] = useState<number | null>(null);
   const [indexedParams, setIndexedParams] = useState<Record<string, string>>({});
+  const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<ParsedLog[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<number>>(new Set());
 
-  // 加载保存的结果
   useEffect(() => {
     const saved = loadEventQueryResults();
-    if (saved && saved.length > 0) {
-      setResults(saved);
-    }
+    if (saved && saved.length > 0) setResults(saved);
   }, []);
 
-  // 当 selectedAbis 变化时，重新提取事件
   useEffect(() => {
     if (selectedAbis.length > 0 && selectedAbiNames.length > 0) {
-      loadEventsFromAbis(selectedAbis, selectedAbiNames);
+      try {
+        const all: EventOption[] = [];
+        selectedAbis.forEach((abi, idx) => {
+          const extracted = extractEvents(abi);
+          extracted.forEach((e) =>
+            all.push({ ...e, abiName: selectedAbiNames[idx] || `ABI ${idx + 1}` })
+          );
+        });
+        setEvents(all);
+        if (all.length > 0 && !all.some((e) => e.name === selectedEvent)) {
+          setSelectedEvent(all[0].name);
+          updateIndexedParams(all[0]);
+        }
+      } catch (err) {
+        console.error('extract events failed:', err);
+        setEvents([]);
+      }
     } else if (mergedAbi) {
-      loadEventsFromAbi(mergedAbi);
+      try {
+        const extracted = extractEvents(mergedAbi);
+        setEvents(extracted);
+        if (extracted.length > 0 && !extracted.some((e) => e.name === selectedEvent)) {
+          setSelectedEvent(extracted[0].name);
+          updateIndexedParams(extracted[0]);
+        }
+      } catch (err) {
+        console.error('extract events failed:', err);
+        setEvents([]);
+      }
     } else {
       setEvents([]);
       setSelectedEvent('');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAbis, selectedAbiNames, mergedAbi]);
 
-  const loadEventsFromAbis = (abis: string[], abiNames: string[]) => {
-    try {
-      const allEvents: Array<{ name: string; inputs: any[]; abiName: string }> = [];
-      
-      abis.forEach((abi, index) => {
-        const extractedEvents = extractEvents(abi);
-        extractedEvents.forEach(event => {
-          allEvents.push({
-            ...event,
-            abiName: abiNames[index] || `ABI ${index + 1}`
-          });
-        });
-      });
-      
-      setEvents(allEvents);
-      if (allEvents.length > 0) {
-        setSelectedEvent(allEvents[0].name);
-        updateIndexedParams(allEvents[0]);
-      } else {
-        setSelectedEvent('');
-        setIndexedParams({});
-      }
-    } catch (err) {
-      console.error(t('errors.extractEventsFailed'), err);
-      setEvents([]);
-    }
-  };
-
-  const loadEventsFromAbi = (abi: string) => {
-    try {
-      const extractedEvents = extractEvents(abi);
-      setEvents(extractedEvents);
-      if (extractedEvents.length > 0) {
-        setSelectedEvent(extractedEvents[0].name);
-        updateIndexedParams(extractedEvents[0]);
-      } else {
-        setSelectedEvent('');
-        setIndexedParams({});
-      }
-    } catch (err) {
-      console.error(t('errors.extractEventsFailed'), err);
-      setEvents([]);
-    }
-  };
-
-  const handleEventChange = (eventName: string) => {
-    setSelectedEvent(eventName);
-    const event = events.find((e) => e.name === eventName);
-    if (event) {
-      updateIndexedParams(event);
-    }
-  };
-
-  const updateIndexedParams = (event: { name: string; inputs: any[] }) => {
+  const updateIndexedParams = (event: { inputs: any[] }) => {
     const params: Record<string, string> = {};
     event.inputs.forEach((input) => {
-      if (input.indexed) {
-        params[input.name] = '';
-      }
+      if (input.indexed) params[input.name] = '';
     });
     setIndexedParams(params);
   };
 
-  const handleIndexedParamChange = (name: string, value: string) => {
-    setIndexedParams((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // 快速查询最近 1000 个区块
-  const handleQuickQuery = async () => {
-    if (!rpcUrl.trim()) {
-      setError(t('eventQuery.configureRpcFirst'));
-      return;
-    }
-
-    try {
-      const provider = new JsonRpcProvider(rpcUrl);
-      const latestBlock = await provider.getBlockNumber();
-      const from = Math.max(0, latestBlock - 1000);
-      
-      setFromBlock(from.toString());
-      setToBlock(latestBlock.toString());
-      setCurrentFromBlock(from);
-      setCurrentToBlock(latestBlock);
-      
-      // 自动触发查询
-      await performQuery(from.toString(), latestBlock.toString());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
-    }
-  };
-
-  // 向后查询（更早的区块）
-  const handleQueryPrevious = async () => {
-    if (currentFromBlock === null) return;
-    
-    const newTo = currentFromBlock - 1;
-    const newFrom = Math.max(0, newTo - 999);
-    
-    setFromBlock(newFrom.toString());
-    setToBlock(newTo.toString());
-    setCurrentFromBlock(newFrom);
-    setCurrentToBlock(newTo);
-    
-    await performQuery(newFrom.toString(), newTo.toString());
-  };
-
-  // 向前查询（更新的区块）
-  const handleQueryNext = async () => {
-    if (currentToBlock === null || !rpcUrl.trim()) return;
-    
-    try {
-      const provider = new JsonRpcProvider(rpcUrl);
-      const latestBlock = await provider.getBlockNumber();
-      
-      const newFrom = currentToBlock + 1;
-      const newTo = Math.min(latestBlock, newFrom + 999);
-      
-      if (newFrom > latestBlock) {
-        setError(t('eventQuery.alreadyLatest'));
-        return;
-      }
-      
-      setFromBlock(newFrom.toString());
-      setToBlock(newTo.toString());
-      setCurrentFromBlock(newFrom);
-      setCurrentToBlock(newTo);
-      
-      await performQuery(newFrom.toString(), newTo.toString());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
-    }
-  };
-
-  const handleQuery = async () => {
-    if (!fromBlock.trim() || !toBlock.trim()) {
-      setError(t('eventQuery.enterBlockRange'));
-      return;
-    }
-
-    await performQuery(fromBlock, toBlock);
+  const handleEventChange = (name: string) => {
+    setSelectedEvent(name);
+    const e = events.find((x) => x.name === name);
+    if (e) updateIndexedParams(e);
   };
 
   const performQuery = async (from: string, to: string) => {
-    if (!rpcUrl.trim()) {
-      setError(t('eventQuery.configureRpcFirst'));
-      return;
-    }
-
-    if (!contractAddress.trim()) {
-      setError(t('eventQuery.configureContractFirst'));
-      return;
-    }
-
-    if (!mergedAbi) {
-      setError(t('eventQuery.selectAbiFirst'));
-      return;
-    }
-
-    if (!selectedEvent) {
-      setError(t('eventQuery.selectEventFirst'));
-      return;
-    }
-
-    // 验证区块范围
-    const validation = validateBlockRange(from, to);
-    if (!validation.valid) {
-      setError(validation.error || t('eventQuery.blockRangeInvalid'));
-      return;
-    }
+    if (!rpcUrl.trim()) { setError(t('eventQuery.configureRpcFirst')); return; }
+    if (!contractAddress.trim()) { setError(t('eventQuery.configureContractFirst')); return; }
+    if (!mergedAbi) { setError(t('eventQuery.selectAbiFirst')); return; }
+    if (!selectedEvent) { setError(t('eventQuery.selectEventFirst')); return; }
+    const v = validateBlockRange(from, to);
+    if (!v.valid) { setError(v.error || t('eventQuery.blockRangeInvalid')); return; }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // 过滤空的 indexed 参数
-      const filteredIndexedParams: Record<string, any> = {};
-      Object.entries(indexedParams).forEach(([key, value]) => {
-        if (value.trim()) {
-          filteredIndexedParams[key] = value.trim();
-        }
+      const filteredParams: Record<string, any> = {};
+      Object.entries(indexedParams).forEach(([k, v]) => {
+        if (v.trim()) filteredParams[k] = v.trim();
       });
 
-      // 找到选中事件对应的 ABI 名称
-      const selectedEventObj = events.find(e => e.name === selectedEvent);
-      const eventAbiName = selectedEventObj?.abiName || selectedAbiNames.join(', ');
-
+      const e = events.find((x) => x.name === selectedEvent);
       const params: EventQueryParams = {
         rpcUrl: rpcUrl.trim(),
         contractAddress: contractAddress.trim(),
@@ -243,22 +135,17 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
         eventName: selectedEvent,
         fromBlock: isNaN(Number(from)) ? from : Number(from),
         toBlock: isNaN(Number(to)) ? to : Number(to),
-        indexedParams: filteredIndexedParams,
-        abiName: eventAbiName,
+        indexedParams: filteredParams,
+        abiName: e?.abiName || selectedAbiNames.join(', '),
       };
 
       const result = await queryEvents(params);
-
       if (result.success && result.events) {
-        // 追加新结果到历史记录（最新的在前面）
-        setResults(prev => [...result.events!, ...prev]);
-        // 记录当前查询的区块范围
+        const updated = [...result.events, ...results];
+        setResults(updated);
+        saveEventQueryResults(updated);
         setCurrentFromBlock(isNaN(Number(from)) ? null : Number(from));
         setCurrentToBlock(isNaN(Number(to)) ? null : Number(to));
-        
-        // 保存结果
-        const updatedResults = [...result.events!, ...results];
-        saveEventQueryResults(updatedResults);
       } else {
         setError(result.error || t('errors.queryEventFailed'));
       }
@@ -269,403 +156,318 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({ rpcUrl, contractAddress
     }
   };
 
-  const toggleResult = (index: number) => {
-    const newExpanded = new Set(expandedResults);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
+  const handleQuickQuery = async () => {
+    if (!rpcUrl.trim()) { setError(t('eventQuery.configureRpcFirst')); return; }
+    try {
+      const provider = new JsonRpcProvider(rpcUrl);
+      const latest = await provider.getBlockNumber();
+      const from = Math.max(0, latest - 1000);
+      setFromBlock(from.toString());
+      setToBlock(latest.toString());
+      await performQuery(from.toString(), latest.toString());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
     }
-    setExpandedResults(newExpanded);
   };
 
-  // 删除单个结果
-  const handleDeleteResult = (index: number) => {
-    const newResults = results.filter((_, i) => i !== index);
-    setResults(newResults);
-    saveEventQueryResults(newResults);
-    
-    // 同时从展开列表中移除
-    const newExpanded = new Set(expandedResults);
-    newExpanded.delete(index);
-    // 调整其他展开项的索引
-    const adjustedExpanded = new Set<number>();
-    newExpanded.forEach(i => {
-      if (i > index) {
-        adjustedExpanded.add(i - 1);
-      } else if (i < index) {
-        adjustedExpanded.add(i);
-      }
+  const handleQueryPrevious = async () => {
+    if (currentFromBlock === null) return;
+    const newTo = currentFromBlock - 1;
+    const newFrom = Math.max(0, newTo - 999);
+    setFromBlock(newFrom.toString());
+    setToBlock(newTo.toString());
+    await performQuery(newFrom.toString(), newTo.toString());
+  };
+
+  const handleQueryNext = async () => {
+    if (currentToBlock === null || !rpcUrl.trim()) return;
+    try {
+      const provider = new JsonRpcProvider(rpcUrl);
+      const latest = await provider.getBlockNumber();
+      const newFrom = currentToBlock + 1;
+      const newTo = Math.min(latest, newFrom + 999);
+      if (newFrom > latest) { setError(t('eventQuery.alreadyLatest')); return; }
+      setFromBlock(newFrom.toString());
+      setToBlock(newTo.toString());
+      await performQuery(newFrom.toString(), newTo.toString());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('eventQuery.getLatestBlockFailed'));
+    }
+  };
+
+  const handleQuery = () => {
+    if (!fromBlock.trim() || !toBlock.trim()) {
+      setError(t('eventQuery.enterBlockRange'));
+      return;
+    }
+    performQuery(fromBlock, toBlock);
+  };
+
+  const toggleResult = (i: number) => {
+    setExpandedResults((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
     });
-    setExpandedResults(adjustedExpanded);
   };
 
-  // 清空所有结果
-  const handleClearAllResults = () => {
+  const handleDeleteResult = (i: number) => {
+    const next = results.filter((_, idx) => idx !== i);
+    setResults(next);
+    saveEventQueryResults(next);
+  };
+
+  const handleClearAll = () => {
     if (window.confirm(t('eventQuery.confirmClearAll'))) {
       setResults([]);
-      setExpandedResults(new Set());
       saveEventQueryResults([]);
     }
   };
 
-  // 获取当前选中事件的 indexed 参数
-  const getIndexedInputs = () => {
-    const event = events.find((e) => e.name === selectedEvent);
-    if (!event) return [];
-    return event.inputs.filter((input) => input.indexed);
-  };
+  const selectedEventObj = events.find((e) => e.name === selectedEvent);
+  const hasIndexed = selectedEventObj?.inputs.some((i) => i.indexed) ?? false;
 
-  // 获取当前选中事件的 topic hash
-  const getEventTopic = () => {
-    if (!mergedAbi || !selectedEvent) return null;
-    
-    try {
-      const abi = JSON.parse(mergedAbi);
-      const iface = new Interface(abi);
-      const eventFragment = iface.getEvent(selectedEvent);
-      return eventFragment?.topicHash || null;
-    } catch (error) {
-      console.error(t('errors.getEventTopicFailed'), error);
-      return null;
-    }
-  };
+  const stats: StatCell[] | null = useMemo(() => {
+    if (results.length === 0) return null;
+    return [
+      { label: t('eventQueryUI.statEvents'), value: results.length },
+      {
+        label: t('eventQueryUI.statRange'),
+        value:
+          currentFromBlock !== null && currentToBlock !== null
+            ? `${currentFromBlock}—${currentToBlock}`
+            : '—',
+      },
+      {
+        label: t('eventQueryUI.statLatestBlock'),
+        value: results[0]?.blockNumber ?? '—',
+      },
+    ];
+  }, [results, currentFromBlock, currentToBlock, t]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-      {/* 左列：查询参数 + 查询控制 */}
-      <div className="flex flex-col overflow-y-auto pr-2">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">{t('eventQuery.eventQuery')}</h2>
+    <div className="flex h-full min-h-0 flex-col">
+      {/* TxBar: contract + event + blocks + actions */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
+        <span className="max-w-[260px] truncate text-fg" title={contractAddress}>
+          {contractAddress || '—'}
+        </span>
 
-          <div className="space-y-4">
-            {/* Event 选择 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('eventQuery.selectEvent')}
-              </label>
-              <select
-                value={selectedEvent}
-                onChange={(e) => handleEventChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                disabled={events.length === 0}
-              >
-                {events.length === 0 ? (
-                  <option value="">{t('eventQuery.noEvents')}</option>
-                ) : (
-                  events.map((event, index) => (
-                    <option key={`${event.name}_${index}`} value={event.name}>
-                      {event.name}{event.abiName ? ` (${event.abiName})` : ''}
-                    </option>
-                  ))
-                )}
-              </select>
-              
-              {/* 显示选中事件的 ABI 和 topic */}
-              {selectedEvent && (
-                <>
-                  {events.find(e => e.name === selectedEvent)?.abiName && (
-                    <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded-md">
-                      <span className="text-xs font-medium text-gray-600 block mb-1">{t('eventQuery.fromAbi')}</span>
-                      <span className="text-xs text-purple-600 font-medium">
-                        {events.find(e => e.name === selectedEvent)?.abiName}
-                      </span>
-                    </div>
-                  )}
-                  {getEventTopic() && (
-                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                      <span className="text-xs font-medium text-gray-600 block mb-1">Topic Hash:</span>
-                      <span className="text-xs text-blue-600 font-mono break-all">
-                        {getEventTopic()}
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+        <span className="text-line">/</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">event</span>
+        <select
+          value={selectedEvent}
+          onChange={(e) => handleEventChange(e.target.value)}
+          disabled={events.length === 0}
+          className="min-w-[180px] rounded-sm border border-line bg-bg px-2 py-1 text-fg focus:border-mint focus:outline-none disabled:opacity-50"
+        >
+          {events.length === 0 ? (
+            <option>—</option>
+          ) : (
+            events.map((e, i) => (
+              <option key={`${e.name}-${i}`} value={e.name}>
+                {e.name}
+                {e.abiName ? ` · ${e.abiName}` : ''}
+              </option>
+            ))
+          )}
+        </select>
 
-            {/* 合约地址显示 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('eventQuery.contractAddress')}
-              </label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md border border-gray-200 font-mono text-xs text-gray-700">
-                {contractAddress || t('eventQuery.notSet')}
-              </div>
-            </div>
+        <span className="text-line">/</span>
+        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">from</span>
+        <input
+          value={fromBlock}
+          onChange={(e) => setFromBlock(e.target.value)}
+          placeholder="block"
+          className="w-[90px] rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+        />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">to</span>
+        <input
+          value={toBlock}
+          onChange={(e) => setToBlock(e.target.value)}
+          placeholder="block"
+          className="w-[90px] rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+        />
 
-            {/* 快速查询 */}
-            <div>
+        {hasIndexed && (
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={
+              'rounded-sm px-2 py-0.5 text-[10px] ' +
+              (showFilters ? 'bg-mint/10 text-mint' : 'text-fg-dim hover:bg-surface-2')
+            }
+          >
+            filters
+          </button>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={handleQuickQuery}
+            disabled={isLoading}
+            className="rounded-sm border border-line px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
+          >
+            {t('eventQueryUI.quickLatest1k')}
+          </button>
+          {currentFromBlock !== null && (
+            <>
               <button
-                onClick={handleQuickQuery}
-                disabled={isLoading || !rpcUrl}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                onClick={handleQueryPrevious}
+                disabled={isLoading || currentFromBlock === 0}
+                className="rounded-sm border border-line px-2 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
               >
-                {t('eventQuery.quickQuery')}
+                ← prev
               </button>
-            </div>
-
-            {/* 区块范围 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('eventQuery.blockRange')}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={fromBlock}
-                  onChange={(e) => setFromBlock(e.target.value)}
-                  placeholder={t('eventQuery.fromBlockPlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-                <input
-                  type="text"
-                  value={toBlock}
-                  onChange={(e) => setToBlock(e.target.value)}
-                  placeholder={t('eventQuery.toBlockPlaceholder')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Indexed 参数过滤 */}
-            {getIndexedInputs().length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('eventQuery.indexedParams')}
-                </label>
-                <div className="space-y-2">
-                  {getIndexedInputs().map((input) => (
-                    <div key={input.name}>
-                      <label className="block text-xs text-gray-600 mb-1">
-                        {input.name} ({input.type})
-                      </label>
-                      <input
-                        type="text"
-                        value={indexedParams[input.name] || ''}
-                        onChange={(e) => handleIndexedParamChange(input.name, e.target.value)}
-                        placeholder={t('eventQuery.filterPlaceholder')}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 分隔线 */}
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-base font-semibold text-gray-700 mb-3">{t('eventQuery.queryControl')}</h3>
-
               <button
-                onClick={handleQuery}
-                disabled={isLoading || !mergedAbi}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium mb-3"
+                onClick={handleQueryNext}
+                disabled={isLoading}
+                className="rounded-sm border border-line px-2 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
               >
-                {isLoading ? t('eventQuery.querying') : t('eventQuery.queryEvents')}
+                next →
               </button>
-
-              {/* 翻页按钮 */}
-              {currentFromBlock !== null && currentToBlock !== null && (
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onClick={handleQueryPrevious}
-                    disabled={isLoading || currentFromBlock === 0}
-                    className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-                  >
-                    {t('eventQuery.previous1000')}
-                  </button>
-                  <button
-                    onClick={handleQueryNext}
-                    disabled={isLoading}
-                    className="bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-                  >
-                    {t('eventQuery.next1000')}
-                  </button>
-                </div>
-              )}
-
-              {!mergedAbi && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-3">
-                  <p className="text-sm text-yellow-800">
-                    {t('eventQuery.selectAbiHint')}
-                  </p>
-                </div>
-              )}
-
-              {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md mb-3">
-                  <p className="text-sm text-red-800">{error}</p>
-                </div>
-              )}
-
-              {isLoading && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                </div>
-              )}
-
-              {!isLoading && results.length > 0 && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-green-800">{t('eventQuery.queryComplete')}</span>
-                      <span className="text-2xl font-bold text-green-700">{results.length}</span>
-                    </div>
-                    <p className="text-xs text-green-700">{t('eventQuery.foundEvents', { count: results.length })}</p>
-                  </div>
-                </div>
-              )}
-
-              {!isLoading && results.length === 0 && fromBlock && toBlock && !error && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-800">{t('eventQuery.noEventsFound')}</p>
-                </div>
-              )}
-
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <h4 className="text-xs font-semibold text-gray-700 mb-2">{t('eventQuery.usageTips')}</h4>
-                <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
-                  <li>{t('eventQuery.tip1')}</li>
-                  <li>{t('eventQuery.tip2')}</li>
-                  <li>{t('eventQuery.tip3')}</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+            </>
+          )}
+          <button
+            onClick={handleQuery}
+            disabled={isLoading}
+            className="rounded-sm bg-mint px-3 py-1 font-mono text-[10px] font-semibold text-bg disabled:opacity-50"
+          >
+            {isLoading ? t('eventQueryUI.querying') : t('eventQueryUI.query')}
+          </button>
         </div>
       </div>
 
-      {/* 右列：结果列表 */}
-      <div className="flex flex-col overflow-y-auto pr-2">
-        {results.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800">
-                {t('eventQuery.queryResult')}
-                <span className="ml-2 text-sm text-gray-500">({results.length})</span>
-              </h3>
-              <button
-                onClick={handleClearAllResults}
-                className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium"
-              >
-                {t('eventQuery.clearAll')}
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {results.map((result, index) => (
-                <div
-                  key={`${result.transactionHash}-${result.logIndex}-${index}`}
-                  className="border-2 border-green-200 rounded-lg overflow-hidden bg-green-50 relative group"
-                >
-                  {/* 删除按钮 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteResult(index);
-                    }}
-                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors opacity-0 group-hover:opacity-100 z-10"
-                    title={t('eventQuery.deleteItem')}
-                  >
-                    ×
-                  </button>
-
-                  <div
-                    onClick={() => toggleResult(index)}
-                    className="px-4 py-3 cursor-pointer hover:bg-green-100 transition-colors"
-                  >
-                    <div className="flex items-center justify-between pr-8">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-gray-500">
-                            Block #{result.blockNumber}
-                          </span>
-                          <span className="text-xs font-mono text-gray-500">
-                            Log #{result.logIndex}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1 font-mono break-all">
-                          Tx: {result.transactionHash}
-                        </div>
-                      </div>
-                      
-                      <svg
-                        className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                          expandedResults.has(index) ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {expandedResults.has(index) && (
-                    <div className="px-4 pb-4 space-y-3 bg-white">
-                      {result.parsed ? (
-                        <>
-                          <div>
-                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.eventNameLabel')}</span>
-                            <span className="ml-2 text-sm font-semibold text-green-700">
-                              {result.parsed.eventName}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.signatureLabel')}</span>
-                            <span className="ml-2 text-xs text-gray-600 font-mono">
-                              {result.parsed.signature}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs font-medium text-gray-600">Topic：</span>
-                            <span className="ml-2 text-xs text-blue-600 font-mono break-all">
-                              {result.parsed.topic}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-xs font-medium text-gray-600">{t('eventQuery.contractAddressLabel')}</span>
-                            <span className="ml-2 text-xs font-mono text-gray-700 break-all">
-                              {result.address}
-                            </span>
-                          </div>
-                          {result.parsed?.abiName && (
-                            <div>
-                              <span className="text-xs font-medium text-gray-600">ABI：</span>
-                              <span className="ml-2 text-xs text-purple-600 font-medium">
-                                {result.parsed.abiName}
-                              </span>
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-xs font-medium text-gray-600 block mb-1">{t('eventQuery.parametersLabel')}</span>
-                            <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                              <pre className="text-xs overflow-x-auto">
-                                {JSON.stringify(result.parsed.args, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-xs text-red-600">
-                          {result.error || t('eventQuery.parseError')}
-                        </div>
-                      )}
-                    </div>
-                  )}
+      {/* Indexed filters row */}
+      {showFilters && hasIndexed && (
+        <div className="border-b border-line bg-surface px-5 py-3">
+          <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+            {t('eventQueryUI.indexedFilters')}
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {selectedEventObj?.inputs
+              .filter((i) => i.indexed)
+              .map((i) => (
+                <div key={i.name} className="flex items-center gap-2">
+                  <span className="min-w-[80px] font-mono text-[10px] text-fg-mute">
+                    {i.name}
+                    <span className="ml-1 text-[9px]">({i.type})</span>
+                  </span>
+                  <input
+                    value={indexedParams[i.name] ?? ''}
+                    onChange={(e) =>
+                      setIndexedParams((prev) => ({ ...prev, [i.name]: e.target.value }))
+                    }
+                    className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[10px] text-fg focus:border-mint focus:outline-none"
+                  />
                 </div>
               ))}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[11px] text-call-red">
+          {error}
+        </div>
+      )}
+
+      {stats && <StatsRibbon stats={stats} />}
+
+      <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[10px]">
+        <span className="uppercase tracking-[0.22em] text-fg-mute">
+          {t('eventQueryUI.results')}
+        </span>
+        <span className="text-fg-mute">·</span>
+        <span className="text-fg">{results.length}</span>
+        {results.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            className="ml-auto rounded-sm px-2 py-0.5 text-[10px] text-fg-mute hover:bg-surface-2"
+          >
+            {t('debugTrace.closeAll')}
+          </button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {results.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-center">
+            <div>
+              <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
+              <p className="font-ui text-[13px] text-fg-dim">
+                {t('eventQueryUI.noResults')}
+              </p>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('eventQuery.queryResult')}</h3>
-            <p className="text-sm text-gray-500 text-center py-8">
-              {t('eventQuery.noResults')}
-            </p>
-          </div>
+          results.map((log, i) => {
+            const expanded = expandedResults.has(i);
+            return (
+              <div key={i} className="border-b border-line-soft">
+                <div
+                  className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[11px] hover:bg-surface-2"
+                  onClick={() => toggleResult(i)}
+                >
+                  <span className="text-[10px] text-fg-mute">#{log.logIndex}</span>
+                  <span className="text-fg-mute">{log.blockNumber}</span>
+                  {log.parsed ? (
+                    <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-mint">
+                      {log.parsed.eventName}
+                    </span>
+                  ) : (
+                    <span className="rounded-xs bg-line px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-fg-mute">
+                      RAW
+                    </span>
+                  )}
+                  <span className="truncate text-fg-dim" title={log.transactionHash}>
+                    {log.transactionHash.slice(0, 10)}…{log.transactionHash.slice(-6)}
+                  </span>
+                  <span className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteResult(i);
+                      }}
+                      className="rounded-sm px-1.5 text-fg-mute hover:bg-surface-2"
+                    >
+                      ×
+                    </button>
+                    <span className="text-fg-mute">{expanded ? '▾' : '▸'}</span>
+                  </span>
+                </div>
+                {expanded && (
+                  <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
+                    <div className="mb-1.5">
+                      <span className="text-fg-mute">address </span>
+                      <span className="text-fg">{log.address}</span>
+                    </div>
+                    {log.parsed?.signature && (
+                      <div className="mb-1.5">
+                        <span className="text-fg-mute">signature </span>
+                        <span className="text-fg">{log.parsed.signature}</span>
+                      </div>
+                    )}
+                    {log.parsed?.abiName && (
+                      <div className="mb-2">
+                        <span className="text-fg-mute">abi </span>
+                        <span className="text-mint">{log.parsed.abiName}</span>
+                      </div>
+                    )}
+                    <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+                      {t('eventQueryUI.args')}
+                    </div>
+                    <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                      {log.parsed
+                        ? stringifySafe(log.parsed.args)
+                        : stringifySafe({ topics: log.topics, data: log.data })}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

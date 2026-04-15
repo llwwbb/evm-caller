@@ -281,6 +281,19 @@
     "decode": "Decode",
     "decodedArgs": "Decoded args"
   },
+  "eventQueryUI": {
+    "statEvents": "events",
+    "statRange": "block range",
+    "statLatestBlock": "latest block",
+    "quickLatest1k": "last 1000 blocks",
+    "query": "query",
+    "querying": "querying",
+    "results": "results",
+    "noResults": "No results yet",
+    "args": "args",
+    "indexedFilters": "Indexed params filter",
+    "confirmClearAll": "Clear all query results?"
+  },
   "eventQuery": {
     "title": "Event Log Query",
     "description": "Query smart contract event logs",

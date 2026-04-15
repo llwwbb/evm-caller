@@ -281,6 +281,19 @@
     "decode": "解析",
     "decodedArgs": "解析后的参数"
   },
+  "eventQueryUI": {
+    "statEvents": "事件数",
+    "statRange": "区块范围",
+    "statLatestBlock": "最新区块",
+    "quickLatest1k": "最近 1000 块",
+    "query": "查询",
+    "querying": "查询中",
+    "results": "结果",
+    "noResults": "暂无查询结果",
+    "args": "参数",
+    "indexedFilters": "indexed 参数过滤",
+    "confirmClearAll": "清空所有查询结果？"
+  },
   "eventQuery": {
     "title": "Event 日志查询",
     "description": "查询智能合约事件日志",
