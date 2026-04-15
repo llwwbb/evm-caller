@@ -16,6 +16,7 @@ import { usePinStack } from '../hooks/usePinStack';
 
 interface DebugTracePageProps {
   rpcUrl: string;
+  onRpcUrlChange: (url: string) => void;
   selectedAbis: string[];
   showAddressNames: boolean;
   presetRefreshTrigger: number;
@@ -74,6 +75,7 @@ function allPaths(node: ParsedCallTrace, path = '0'): string[] {
 
 const DebugTracePage: React.FC<DebugTracePageProps> = ({
   rpcUrl,
+  onRpcUrlChange,
   selectedAbis,
   showAddressNames,
   presetRefreshTrigger,
@@ -229,7 +231,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
     }
   };
 
-  const txBarItems = rawTrace
+  const txBarExtra = rawTrace
     ? [
         { kicker: 'tx', value: `${txHash.slice(0, 10)}…${txHash.slice(-6)}` },
         { kicker: 'abis', value: <span className="text-mint">{selectedAbis.length}</span> },
@@ -240,7 +242,11 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
     <div className="flex h-full min-h-0 flex-col">
       {rawTrace ? (
         <TxBar
-          items={txBarItems}
+          rpcUrl={rpcUrl}
+          onRpcChange={(url) => onRpcUrlChange(url)}
+          currentChainId={currentChainId}
+          extra={txBarExtra}
+          refreshToken={presetRefreshTrigger}
           actions={
             <button
               onClick={handleFetch}

@@ -5,6 +5,8 @@ import { parseParamValue } from '../../utils/rpcCaller';
 import { loadContractPresets } from '../../utils/presetStorage';
 import { buildAddressNameLookup } from '../../utils/addressDisplay';
 import DecodedValue from '../common/DecodedValue';
+import AbiSelector from '../common/AbiSelector';
+import TxBar from '../layout/TxBar';
 
 interface FunctionCallPageProps {
   rpcUrl: string;
@@ -15,7 +17,9 @@ interface FunctionCallPageProps {
   onBlockTagChange: (v: string) => void;
   onPresetsClick: () => void;
   functions: ParsedFunction[];
+  selectedAbis: string[];
   selectedAbiNames: string[];
+  onAbisChange: (abis: string[], names: string[]) => void;
   callHistory: CallHistory[];
   onFunctionCall: (name: string, args: any[], func: ParsedFunction) => Promise<void>;
   onDeleteResult: (id: string) => void;
@@ -26,7 +30,6 @@ interface FunctionCallPageProps {
   showAddressNames: boolean;
 }
 
-// Build a stable key for a function (handles overloads by including input types)
 function fnKey(fn: ParsedFunction): string {
   return `${fn.name}(${fn.inputs.map((i) => i.type).join(',')})`;
 }
@@ -37,6 +40,19 @@ const MUTABILITY_STYLE: Record<string, { bg: string; fg: string }> = {
   nonpayable: { bg: 'rgba(251,191,36,0.12)',  fg: 'var(--amber)' },
   payable:    { bg: 'rgba(74,222,128,0.12)',  fg: 'var(--emerald)' },
 };
+
+const MUTABILITY_ORDER: Record<string, number> = {
+  view: 0, pure: 1, nonpayable: 2, payable: 3,
+};
+
+function sortFunctions(fns: ParsedFunction[]): ParsedFunction[] {
+  return [...fns].sort((a, b) => {
+    const ma = MUTABILITY_ORDER[a.stateMutability] ?? 99;
+    const mb = MUTABILITY_ORDER[b.stateMutability] ?? 99;
+    if (ma !== mb) return ma - mb;
+    return a.name.localeCompare(b.name);
+  });
+}
 
 const MutabilityBadge: React.FC<{ mutability: string }> = ({ mutability }) => {
   const style = MUTABILITY_STYLE[mutability] ?? MUTABILITY_STYLE.view;
@@ -50,6 +66,11 @@ const MutabilityBadge: React.FC<{ mutability: string }> = ({ mutability }) => {
   );
 };
 
+interface FnGroup {
+  abiName: string;
+  fns: ParsedFunction[];
+}
+
 const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   rpcUrl,
   contractAddress,
@@ -59,7 +80,9 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   onBlockTagChange,
   onPresetsClick,
   functions,
+  selectedAbis,
   selectedAbiNames,
+  onAbisChange,
   callHistory,
   onFunctionCall,
   onDeleteResult,
@@ -72,15 +95,9 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  // arg values kept per function key so switching doesn't lose in-progress input
   const [argValuesByFn, setArgValuesByFn] = useState<Record<string, string[]>>({});
   const [callError, setCallError] = useState<string | null>(null);
-
-  const filteredFns = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return functions;
-    return functions.filter((f) => f.name.toLowerCase().includes(q));
-  }, [filter, functions]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const selectedFn = useMemo(
     () => functions.find((f) => fnKey(f) === selectedKey) ?? null,
@@ -91,6 +108,31 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
     () => buildAddressNameLookup(loadContractPresets(), currentChainId),
     [currentChainId, presetRefreshTrigger],
   );
+
+  const groups: FnGroup[] = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    const byName = new Map<string, ParsedFunction[]>();
+    const order: string[] = [];
+    for (const fn of functions) {
+      const key = fn.abiName || t('functionCall.ungroupedAbi');
+      if (!byName.has(key)) {
+        byName.set(key, []);
+        order.push(key);
+      }
+      if (!q || fn.name.toLowerCase().includes(q)) {
+        byName.get(key)!.push(fn);
+      }
+    }
+    return order
+      .map((name) => ({ abiName: name, fns: sortFunctions(byName.get(name) ?? []) }))
+      .filter((g) => g.fns.length > 0);
+  }, [functions, filter, t]);
+
+  const toggleGroup = (name: string) => setCollapsedGroups((prev) => {
+    const next = new Set(prev);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    return next;
+  });
 
   const getArgValues = (fn: ParsedFunction): string[] => {
     const k = fnKey(fn);
@@ -113,7 +155,6 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
     try {
       const raw = getArgValues(selectedFn);
       const parsed = selectedFn.inputs.map((input, i) => {
-        // empty string fine for zero-arg; otherwise must parse
         if (selectedFn.inputs.length === 0) return undefined;
         return parseParamValue(raw[i] ?? '', input.type);
       });
@@ -128,66 +169,84 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Editable input bar */}
-      <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">rpc</span>
-        <input
-          value={rpcUrl}
-          onChange={(e) => onRpcUrlChange(e.target.value)}
-          placeholder="https://..."
-          className="w-[240px] min-w-0 flex-shrink rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
-        />
-        <span className="text-line">/</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
-        <input
-          value={contractAddress}
-          onChange={(e) => onContractAddressChange(e.target.value)}
-          placeholder="0x..."
-          className="w-[360px] min-w-0 flex-shrink rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
-        />
-        <span className="text-line">/</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">block</span>
-        <input
-          value={blockTag}
-          onChange={(e) => onBlockTagChange(e.target.value)}
-          placeholder="latest"
-          className="w-[92px] rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
-        />
-        <span className="text-line">/</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">abis</span>
-        <span className="text-mint">{selectedAbiNames.length}</span>
-        <button
-          onClick={onPresetsClick}
-          className="ml-auto rounded-sm border border-line px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2"
-        >
-          {t('topnav.presets')}
-        </button>
-      </div>
+      <TxBar
+        rpcUrl={rpcUrl}
+        onRpcChange={(url) => onRpcUrlChange(url)}
+        contractAddress={contractAddress}
+        onContractChange={(addr) => onContractAddressChange(addr)}
+        currentChainId={currentChainId}
+        extra={[
+          {
+            kicker: 'block',
+            value: (
+              <input
+                value={blockTag}
+                onChange={(e) => onBlockTagChange(e.target.value)}
+                placeholder="latest"
+                className="w-[92px] rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+              />
+            ),
+          },
+          {
+            kicker: 'abis',
+            value: <span className="text-mint">{selectedAbiNames.length}</span>,
+          },
+        ]}
+        actions={
+          <button
+            onClick={onPresetsClick}
+            className="rounded-sm border border-line bg-surface px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          >
+            {t('topnav.presets')}
+          </button>
+        }
+        refreshToken={presetRefreshTrigger}
+      />
 
       {functions.length === 0 ? (
-        <div className="flex flex-1 min-h-0 items-center justify-center text-center">
-          <div>
-            <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
-            <p className="font-ui text-[13px] text-fg-dim">
-              {t('functionCall.noAbiSelected')}
-            </p>
-            <button
-              onClick={onPresetsClick}
-              className="mt-4 rounded-sm border border-mint px-3 py-1.5 font-mono text-[11px] text-mint hover:bg-mint/10"
-            >
-              {t('functionCall.selectAbi')}
-            </button>
+        <div
+          className="grid flex-1 min-h-0"
+          style={{ gridTemplateColumns: '260px 1fr' }}
+        >
+          <AbiSelector
+            selectedAbis={selectedAbis}
+            selectedAbiNames={selectedAbiNames}
+            onChange={onAbisChange}
+            onOpenPresets={onPresetsClick}
+            refreshToken={presetRefreshTrigger}
+          />
+          <div className="flex items-center justify-center text-center">
+            <div>
+              <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
+              <p className="font-ui text-[13px] text-fg-dim">
+                {t('functionCall.noAbiSelected')}
+              </p>
+              <button
+                onClick={onPresetsClick}
+                className="mt-4 rounded-sm border border-mint px-3 py-1.5 font-mono text-[11px] text-mint hover:bg-mint/10"
+              >
+                {t('functionCall.selectAbi')}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <div
           className="grid flex-1 min-h-0"
-          style={{ gridTemplateColumns: '2fr 3fr' }}
+          style={{ gridTemplateColumns: '260px minmax(0, 2fr) minmax(0, 3fr)' }}
         >
-          {/* LEFT: function list */}
+          <AbiSelector
+            selectedAbis={selectedAbis}
+            selectedAbiNames={selectedAbiNames}
+            onChange={onAbisChange}
+            onOpenPresets={onPresetsClick}
+            refreshToken={presetRefreshTrigger}
+          />
+
+          {/* middle: grouped function list */}
           <div className="flex min-h-0 flex-col border-r border-line">
             <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[10px]">
-              <span className="uppercase tracking-[0.22em] text-fg-mute">
+              <span className="uppercase tracking-[0.22em] text-fg-dim">
                 {t('functionCall.functions')}
               </span>
               <span className="text-fg-mute">·</span>
@@ -200,37 +259,53 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
               />
             </div>
             <div className="flex-1 overflow-y-auto">
-              {filteredFns.length === 0 ? (
-                <div className="p-4 font-ui text-[12px] text-fg-mute">
+              {groups.length === 0 ? (
+                <div className="p-4 font-ui text-[12px] text-fg-dim">
                   {t('functionCall.noMatchingFunctions')}
                 </div>
               ) : (
-                filteredFns.map((fn) => {
-                  const k = fnKey(fn);
-                  const selected = k === selectedKey;
+                groups.map((g) => {
+                  const collapsed = collapsedGroups.has(g.abiName);
                   return (
-                    <div
-                      key={k}
-                      onClick={() => setSelectedKey(k)}
-                      className={
-                        'group cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[11px] transition-colors ' +
-                        (selected
-                          ? 'border-l-2 border-l-mint bg-mint/5 pl-[14px]'
-                          : 'border-l-2 border-l-transparent pl-[14px] hover:bg-surface-2')
-                      }
-                    >
-                      <div className="flex items-center gap-2">
-                        <MutabilityBadge mutability={fn.stateMutability} />
-                        <span className="truncate text-fg">{fn.name}</span>
-                        <span className="truncate text-[10px] text-fg-mute">
-                          ({fn.inputs.map((i) => i.type).join(', ')})
-                        </span>
+                    <div key={g.abiName}>
+                      <div
+                        onClick={() => toggleGroup(g.abiName)}
+                        className="sticky top-0 z-10 flex cursor-pointer items-center gap-1.5 border-b border-line bg-surface px-4 py-1.5 font-mono text-[10px] text-fg-dim hover:text-fg"
+                      >
+                        <span className="text-fg-mute">{collapsed ? '▸' : '▾'}</span>
+                        <span className="uppercase tracking-[0.18em]">{g.abiName}</span>
+                        <span className="text-fg-mute">·</span>
+                        <span>{g.fns.length}</span>
                       </div>
-                      {fn.outputs.length > 0 && (
-                        <div className="mt-0.5 ml-[46px] truncate text-[10px] text-fg-mute">
-                          → {fn.outputs.map((o) => o.type).join(', ')}
-                        </div>
-                      )}
+                      {!collapsed && g.fns.map((fn) => {
+                        const k = fnKey(fn);
+                        const selected = k === selectedKey;
+                        return (
+                          <div
+                            key={k}
+                            onClick={() => setSelectedKey(k)}
+                            className={
+                              'group cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[11px] transition-colors ' +
+                              (selected
+                                ? 'border-l-2 border-l-mint bg-mint/5 pl-[14px]'
+                                : 'border-l-2 border-l-transparent pl-[14px] hover:bg-surface-2')
+                            }
+                          >
+                            <div className="flex items-center gap-2">
+                              <MutabilityBadge mutability={fn.stateMutability} />
+                              <span className="truncate text-fg">{fn.name}</span>
+                              <span className="truncate text-[10px] text-fg-mute">
+                                ({fn.inputs.map((i) => i.type).join(', ')})
+                              </span>
+                            </div>
+                            {fn.outputs.length > 0 && (
+                              <div className="mt-0.5 ml-[46px] truncate text-[10px] text-fg-mute">
+                                → {fn.outputs.map((o) => o.type).join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })
@@ -238,7 +313,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
             </div>
           </div>
 
-          {/* RIGHT: function form (if selected) + always-visible global history */}
+          {/* right: detail + history */}
           <div className="flex min-h-0 min-w-0 flex-col">
             {selectedFn ? (
               <div className="border-b border-line bg-bg px-5 py-4">
@@ -314,7 +389,6 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
               </div>
             )}
 
-            {/* Global call history — always visible */}
             <div className="flex items-center gap-2 border-b border-line px-5 py-2 font-mono text-[10px]">
               <span className="uppercase tracking-[0.22em] text-fg-dim">
                 {t('functionCall.recentCalls')}
@@ -349,9 +423,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                         <span
                           className={
                             'rounded-xs px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] ' +
-                            (success
-                              ? 'bg-mint/15 text-mint'
-                              : 'bg-call-red/15 text-call-red')
+                            (success ? 'bg-mint/15 text-mint' : 'bg-call-red/15 text-call-red')
                           }
                         >
                           {success ? 'OK' : 'ERR'}

@@ -59,36 +59,30 @@ function App() {
   useEffect(() => {
     if (selectedAbis.length === 0) {
       setMergedAbi('');
-      if (activeTab === 'function-call') {
-        setFunctions([]);
-        setAbiString('');
-      }
+      setFunctions([]);
+      setAbiString('');
       return;
     }
     try {
-      const abiArrays = selectedAbis.map((abiStr) => {
-        try { return JSON.parse(abiStr); } catch { return []; }
+      const abiArrays = selectedAbis.map((abiStr, i) => {
+        try { return { abi: JSON.parse(abiStr), name: selectedAbiNames[i] ?? '' }; }
+        catch { return { abi: [], name: selectedAbiNames[i] ?? '' }; }
       });
-      const merged = abiArrays.flat();
+      const merged = abiArrays.flatMap((x) => x.abi);
       const mergedStr = JSON.stringify(merged);
       setMergedAbi(mergedStr);
-      if (activeTab === 'function-call' && mergedStr) {
-        try {
-          const parsedFunctions = parseAbi(merged, true);
-          setFunctions(parsedFunctions);
-          setAbiString(mergedStr);
-        } catch (error) {
-          console.error('解析合并 ABI 失败:', error);
-          setFunctions([]);
-          setAbiString('');
-        }
-      }
+      const parsedFunctions = abiArrays.flatMap(({ abi, name }) =>
+        parseAbi(abi, true).map((fn) => ({ ...fn, abiName: name })),
+      );
+      setFunctions(parsedFunctions);
+      setAbiString(mergedStr);
     } catch (error) {
       console.error('合并 ABI 失败:', error);
       setMergedAbi('');
-      if (activeTab === 'function-call') { setFunctions([]); setAbiString(''); }
+      setFunctions([]);
+      setAbiString('');
     }
-  }, [selectedAbis, activeTab]);
+  }, [selectedAbis, selectedAbiNames]);
 
   useEffect(() => { saveCallHistory(callHistory); }, [callHistory]);
 
@@ -190,7 +184,9 @@ function App() {
             onBlockTagChange={setBlockTag}
             onPresetsClick={() => setIsPresetModalOpen(true)}
             functions={functions}
+            selectedAbis={selectedAbis}
             selectedAbiNames={selectedAbiNames}
+            onAbisChange={(abis, names) => { setSelectedAbis(abis); setSelectedAbiNames(names); }}
             callHistory={callHistory}
             onFunctionCall={handleFunctionCall}
             onDeleteResult={handleDeleteResult}
@@ -204,6 +200,7 @@ function App() {
         {activeTab === 'transaction-parser' && (
           <TransactionParserPage
             rpcUrl={rpcUrl}
+            onRpcUrlChange={setRpcUrl}
             selectedAbis={selectedAbis}
             selectedAbiNames={selectedAbiNames}
             mergedAbi={mergedAbi}
@@ -215,6 +212,7 @@ function App() {
         {activeTab === 'debug-trace' && (
           <DebugTracePage
             rpcUrl={rpcUrl}
+            onRpcUrlChange={setRpcUrl}
             selectedAbis={selectedAbis}
             showAddressNames={showAddressNames}
             presetRefreshTrigger={presetRefreshTrigger}

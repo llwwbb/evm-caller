@@ -18,6 +18,7 @@ import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
 interface TransactionParserPageProps {
   rpcUrl: string;
+  onRpcUrlChange: (url: string) => void;
   selectedAbis: string[];
   selectedAbiNames: string[];
   mergedAbi: string;
@@ -92,6 +93,7 @@ const ParseTypeButtons: React.FC<{
 
 const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
   rpcUrl,
+  onRpcUrlChange,
   selectedAbis,
   selectedAbiNames,
   currentChainId,
@@ -219,7 +221,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
     ];
   }, [parsedTx, t]);
 
-  const txBarItems = parsedTx
+  const txBarExtra = parsedTx
     ? [
         { kicker: 'tx', value: `${parsedTx.hash.slice(0, 10)}…${parsedTx.hash.slice(-6)}` },
         { kicker: 'block', value: parsedTx.blockNumber?.toLocaleString() ?? '—' },
@@ -234,7 +236,11 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
     <div className="flex h-full min-h-0 flex-col">
       {parsedTx ? (
         <TxBar
-          items={txBarItems}
+          rpcUrl={rpcUrl}
+          onRpcChange={(url) => onRpcUrlChange(url)}
+          currentChainId={currentChainId}
+          extra={txBarExtra}
+          refreshToken={presetRefreshTrigger}
           actions={
             <button
               onClick={handleFetch}
