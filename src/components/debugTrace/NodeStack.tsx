@@ -18,23 +18,21 @@ interface NodeStackProps {
   onCloseAll: () => void;
 }
 
+// Only show the current node — deep hierarchies would otherwise stretch the
+// right panel. A leading `…` indicates there are parent frames above.
 function buildCrumb(
   path: string,
   nameMap: AddressNameMap,
   showNames: boolean,
   getByPath: (p: string) => ParsedCallTrace | null
 ): string {
-  const parts = path.split('-');
-  const segments: string[] = [];
-  for (let i = 1; i <= parts.length; i++) {
-    const subPath = parts.slice(0, i).join('-');
-    const node = getByPath(subPath);
-    if (!node) break;
-    const to = node.to ? formatAddress(node.to, nameMap, showNames) : '(create)';
-    const fn = node.decodedInput?.functionName;
-    segments.push(fn ? `${to}.${fn}` : to);
-  }
-  return segments.join(' · ');
+  const node = getByPath(path);
+  if (!node) return '';
+  const to = node.to ? formatAddress(node.to, nameMap, showNames) : '(create)';
+  const fn = node.decodedInput?.functionName;
+  const label = fn ? `${to}.${fn}` : to;
+  const depth = path.split('-').length - 1;
+  return depth > 0 ? `… · ${label}` : label;
 }
 
 const NodeStack: React.FC<NodeStackProps> = ({
@@ -54,7 +52,7 @@ const NodeStack: React.FC<NodeStackProps> = ({
   const pinCount = pinnedPaths.size;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-bg">
+    <div className="flex h-full min-h-0 min-w-0 flex-col bg-bg">
       <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5 font-mono text-[10px]">
         <span className="uppercase tracking-[0.22em] text-fg-mute">focused +</span>
         <span className="text-fg">pinned</span>

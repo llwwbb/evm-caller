@@ -46,7 +46,7 @@
     "simulate": "模拟调用",
     "calling": "调用中...",
     "recentCalls": "近期调用",
-    "noRecentCalls": "此函数暂无调用记录",
+    "noRecentCalls": "暂无调用记录",
     "confirmClearAll": "清空所有调用历史？",
     "clearAll": "全部清空",
     "args": "参数",

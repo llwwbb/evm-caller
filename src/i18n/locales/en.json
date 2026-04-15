@@ -46,7 +46,7 @@
     "simulate": "Simulate",
     "calling": "Calling...",
     "recentCalls": "Recent calls",
-    "noRecentCalls": "No calls yet for this function",
+    "noRecentCalls": "No calls yet",
     "confirmClearAll": "Clear entire call history?",
     "clearAll": "Clear all",
     "args": "Args",

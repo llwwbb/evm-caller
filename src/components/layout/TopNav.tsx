@@ -70,31 +70,34 @@ const TopNav: React.FC<TopNavProps> = ({
         ))}
       </div>
 
-      <div className="flex items-center gap-3 text-fg-dim">
+      <div className="flex items-center gap-2">
         <button
           onClick={onToggleAddressNames}
           title={t('topnav.toggleAddressNames')}
           className={
-            'rounded-sm px-2 py-1 transition-colors ' +
+            'rounded-sm border px-2 py-1 transition-colors ' +
             (showAddressNames
-              ? 'text-mint hover:bg-surface-2'
-              : 'hover:bg-surface-2')
+              ? 'border-mint/60 bg-mint/10 text-mint hover:bg-mint/15'
+              : 'border-line bg-surface text-fg-dim hover:bg-surface-2 hover:text-fg')
           }
         >
           @names
         </button>
         <button
           onClick={onPresetsClick}
-          className="rounded-sm px-2 py-1 hover:bg-surface-2"
+          className="rounded-sm border border-line bg-surface px-2 py-1 text-fg-dim transition-colors hover:bg-surface-2 hover:text-fg"
         >
           {t('topnav.presets')}
         </button>
-        <button onClick={cycleLang} className="rounded-sm px-2 py-1 hover:bg-surface-2">
+        <button
+          onClick={cycleLang}
+          className="rounded-sm border border-line bg-surface px-2 py-1 text-fg-dim transition-colors hover:bg-surface-2 hover:text-fg"
+        >
           {i18n.language === 'zh' ? 'EN' : 'ZH'}
         </button>
         <button
           onClick={onConfigClick}
-          className="rounded-sm px-2 py-1 hover:bg-surface-2"
+          className="rounded-sm border border-line bg-surface px-2 py-1 text-fg-dim transition-colors hover:bg-surface-2 hover:text-fg"
         >
           {t('topnav.config')}
         </button>
