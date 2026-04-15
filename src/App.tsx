@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import TopNav, { TabId } from './components/layout/TopNav';
 import PresetModal from './components/preset/PresetModal';
-import ConfigManager from './components/ConfigManager';
+import ConfigModal from './components/config/ConfigModal';
 import FunctionCallPage from './components/functionCall/FunctionCallPage';
 import TransactionParserPage from './components/TransactionParserPage';
 import HexParserPage from './components/HexParserPage';
@@ -213,16 +213,11 @@ function App() {
         onRefreshPresets={() => setPresetRefreshTrigger((v) => v + 1)}
       />
 
-      {isConfigModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => setIsConfigModalOpen(false)}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <ConfigManager onImportComplete={() => window.location.reload()} />
-          </div>
-        </div>
-      )}
+      <ConfigModal
+        open={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        onImportComplete={() => window.location.reload()}
+      />
     </div>
   );
 }
