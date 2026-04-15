@@ -22,6 +22,24 @@
     "config": "配置",
     "toggleAddressNames": "切换合约别名显示"
   },
+  "presetModal": {
+    "title": "预设管理",
+    "rpc": "RPC 节点",
+    "contracts": "合约地址",
+    "abis": "ABI",
+    "rpcNamePlaceholder": "名称（如 Ethereum 主网）",
+    "rpcUrlPlaceholder": "https://...",
+    "contractNamePlaceholder": "名称（如 USDC）",
+    "contractAddressPlaceholder": "0x...",
+    "abiNamePlaceholder": "名称（如 ERC20）",
+    "abiPlaceholder": "JSON ABI 或 Solidity 函数签名",
+    "save": "保存",
+    "cancel": "取消",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirmDelete": "确认删除？",
+    "empty": "暂无预设"
+  },
   "preset": {
     "title": "预设配置",
     "subtitle": "点击快速切换",

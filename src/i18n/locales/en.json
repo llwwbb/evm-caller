@@ -22,6 +22,24 @@
     "config": "Config",
     "toggleAddressNames": "Toggle contract name display"
   },
+  "presetModal": {
+    "title": "Presets",
+    "rpc": "RPC URLs",
+    "contracts": "Contracts",
+    "abis": "ABIs",
+    "rpcNamePlaceholder": "Name (e.g. Ethereum Mainnet)",
+    "rpcUrlPlaceholder": "https://...",
+    "contractNamePlaceholder": "Name (e.g. USDC)",
+    "contractAddressPlaceholder": "0x...",
+    "abiNamePlaceholder": "Name (e.g. ERC20)",
+    "abiPlaceholder": "JSON ABI or Solidity function signatures",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "edit",
+    "delete": "delete",
+    "confirmDelete": "Confirm delete?",
+    "empty": "No presets yet"
+  },
   "preset": {
     "title": "Presets",
     "subtitle": "Click to switch quickly",
