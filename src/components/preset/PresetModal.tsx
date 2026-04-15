@@ -125,7 +125,7 @@ const PresetModal: React.FC<PresetModalProps> = ({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1">
+        <div className="grid min-h-0 flex-1 grid-cols-3">
           <PresetColumn
             title={t('presetModal.rpc')}
             items={rpcItems}

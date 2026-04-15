@@ -65,7 +65,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col border-r border-line last:border-r-0">
+    <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {title}
