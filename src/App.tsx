@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next';
 import TopNav, { TabId } from './components/layout/TopNav';
 import PresetModal from './components/preset/PresetModal';
 import ConfigManager from './components/ConfigManager';
-import RpcConfig from './components/RpcConfig';
-import FunctionList from './components/FunctionList';
-import ResultDisplay from './components/ResultDisplay';
+import FunctionCallPage from './components/functionCall/FunctionCallPage';
 import TransactionParserPage from './components/TransactionParserPage';
 import HexParserPage from './components/HexParserPage';
 import EventQueryPage from './components/EventQueryPage';
@@ -40,10 +38,16 @@ function App() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [showAddressNames, setShowAddressNames] = useState(true);
 
-  const [lastUsed] = useState(() => loadLastUsedConfig());
-
   useEffect(() => {
     initializeDefaultPresets();
+  }, []);
+
+  // Restore last-used config once on mount
+  useEffect(() => {
+    const last = loadLastUsedConfig();
+    if (last.rpcUrl) setRpcUrl(last.rpcUrl);
+    if (last.contractAddress) setContractAddress(last.contractAddress);
+    if (last.blockTag) setBlockTag(last.blockTag);
   }, []);
 
   useEffect(() => {
@@ -147,44 +151,22 @@ function App() {
         {/* Phase 1: keep existing tab contents verbatim — they look clashy on the
             dark shell but work; Phases 2/3 rewrite each page in the new design system. */}
         {activeTab === 'function-call' && (
-          <div className="grid grid-cols-1 gap-4 h-full p-4 lg:grid-cols-12">
-            <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2 lg:col-span-3">
-              <RpcConfig
-                onRpcUrlChange={setRpcUrl}
-                onContractAddressChange={setContractAddress}
-                onBlockTagChange={setBlockTag}
-                initialRpcUrl={lastUsed.rpcUrl}
-                initialContractAddress={lastUsed.contractAddress}
-                initialBlockTag={lastUsed.blockTag}
-                externalRpcUrl={rpcUrl}
-                externalContractAddress={contractAddress}
-                selectedAbiNames={selectedAbiNames}
-                functionsCount={functions.length}
-              />
-            </div>
-            <div className="flex flex-col space-y-4 overflow-y-auto min-h-0 pr-2 lg:col-span-4">
-              {functions.length > 0 && rpcUrl && contractAddress && (
-                <FunctionList
-                  functions={functions}
-                  config={{ rpcUrl, contractAddress }}
-                  abiString={abiString}
-                  onFunctionCall={handleFunctionCall}
-                />
-              )}
-              {isCallInProgress && (
-                <div className="rounded border border-line bg-surface p-4">
-                  <p className="text-sm">{t('functionList.calling')}</p>
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col overflow-y-auto min-h-0 pr-2 lg:col-span-5">
-              <ResultDisplay
-                results={callHistory}
-                onClearAll={handleClearAllResults}
-                onDeleteResult={handleDeleteResult}
-              />
-            </div>
-          </div>
+          <FunctionCallPage
+            rpcUrl={rpcUrl}
+            contractAddress={contractAddress}
+            blockTag={blockTag}
+            onRpcUrlChange={setRpcUrl}
+            onContractAddressChange={setContractAddress}
+            onBlockTagChange={setBlockTag}
+            onPresetsClick={() => setIsPresetModalOpen(true)}
+            functions={functions}
+            selectedAbiNames={selectedAbiNames}
+            callHistory={callHistory}
+            onFunctionCall={handleFunctionCall}
+            onDeleteResult={handleDeleteResult}
+            onClearAll={handleClearAllResults}
+            isCallInProgress={isCallInProgress}
+          />
         )}
         {activeTab === 'transaction-parser' && (
           <TransactionParserPage

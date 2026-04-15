@@ -98,6 +98,25 @@
     "testSuccess": "连接成功",
     "testFailed": "连接失败"
   },
+  "functionCall": {
+    "functions": "函数",
+    "searchFunctions": "搜索函数名",
+    "noAbiSelected": "尚未选择 ABI",
+    "selectAbi": "打开预设选择 ABI",
+    "noMatchingFunctions": "没有匹配的函数",
+    "selectFunctionHint": "从左侧选择一个函数查看详情与调用",
+    "missingConfig": "请先填写 RPC 与合约地址",
+    "call": "调用",
+    "simulate": "模拟调用",
+    "calling": "调用中...",
+    "recentCalls": "近期调用",
+    "noRecentCalls": "此函数暂无调用记录",
+    "confirmClearAll": "清空所有调用历史？",
+    "clearAll": "全部清空",
+    "args": "参数",
+    "result": "结果",
+    "error": "错误"
+  },
   "functionList": {
     "title": "函数列表",
     "viewFunctions": "View/Pure 函数",

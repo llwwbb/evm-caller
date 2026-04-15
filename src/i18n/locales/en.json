@@ -98,6 +98,25 @@
     "testSuccess": "Connected successfully",
     "testFailed": "Connection failed"
   },
+  "functionCall": {
+    "functions": "Functions",
+    "searchFunctions": "Search by name",
+    "noAbiSelected": "No ABI selected",
+    "selectAbi": "Open presets to select ABIs",
+    "noMatchingFunctions": "No matching functions",
+    "selectFunctionHint": "Select a function from the left to see details and call",
+    "missingConfig": "Please fill in RPC and contract address first",
+    "call": "Call",
+    "simulate": "Simulate",
+    "calling": "Calling...",
+    "recentCalls": "Recent calls",
+    "noRecentCalls": "No calls yet for this function",
+    "confirmClearAll": "Clear entire call history?",
+    "clearAll": "Clear all",
+    "args": "Args",
+    "result": "Result",
+    "error": "Error"
+  },
   "functionList": {
     "title": "Function List",
     "viewFunctions": "View/Pure Functions",
