@@ -1,4 +1,4 @@
-import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory, HexParserHistory, StateOverridePreset } from '../types';
+import { RpcPreset, ContractPreset, ContractEntry, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory, HexParserHistory, StateOverridePreset } from '../types';
 
 // localStorage 键名常量
 const STORAGE_KEYS = {
@@ -18,6 +18,7 @@ const STORAGE_KEYS = {
   ABI_ENCODER_HISTORY: 'evm-caller:abi-encoder-history',
   DEBUG_TRACE_RESULT: 'evm-caller:debug-trace-result',
   STATE_OVERRIDE_PRESETS: 'evm-caller:state-override-presets',
+  CONTRACT_PRESET_VERSION: 'evm-caller:contract-preset-version',
 };
 
 // 生成唯一 ID
@@ -75,6 +76,65 @@ export function deleteRpcPreset(id: string): boolean {
 
 // ==================== 合约地址预设 ====================
 
+type LegacyContractPreset = {
+  id: string;
+  name: string;
+  address: string;
+  description?: string;
+  createdAt: number;
+};
+
+function isLegacyContractPreset(v: any): v is LegacyContractPreset {
+  return v && typeof v.address === 'string' && !Array.isArray(v.entries);
+}
+
+export function migrateContractPresets(): void {
+  const version = localStorage.getItem(STORAGE_KEYS.CONTRACT_PRESET_VERSION);
+  if (version === '2') return;
+
+  const raw = localStorage.getItem(STORAGE_KEYS.CONTRACT_PRESETS);
+  if (!raw) {
+    localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESET_VERSION, '2');
+    return;
+  }
+
+  try {
+    const records: unknown[] = JSON.parse(raw);
+    if (!Array.isArray(records)) {
+      localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESET_VERSION, '2');
+      return;
+    }
+
+    const byName = new Map<string, ContractPreset>();
+    const passThrough: ContractPreset[] = [];
+
+    for (const r of records) {
+      if (isLegacyContractPreset(r)) {
+        const existing = byName.get(r.name);
+        if (existing) {
+          existing.entries.push({ address: r.address });
+        } else {
+          byName.set(r.name, {
+            id: r.id,
+            name: r.name,
+            description: r.description,
+            entries: [{ address: r.address }],
+            createdAt: r.createdAt,
+          });
+        }
+      } else if (r && typeof (r as any).name === 'string' && Array.isArray((r as any).entries)) {
+        passThrough.push(r as ContractPreset);
+      }
+    }
+
+    const migrated = [...Array.from(byName.values()), ...passThrough];
+    localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(migrated));
+    localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESET_VERSION, '2');
+  } catch (error) {
+    console.error('迁移 contract-presets 失败:', error);
+  }
+}
+
 export function loadContractPresets(): ContractPreset[] {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.CONTRACT_PRESETS);
@@ -85,27 +145,30 @@ export function loadContractPresets(): ContractPreset[] {
   }
 }
 
-export function saveContractPreset(name: string, address: string, description?: string): ContractPreset {
+export function saveContractPreset(name: string, entries: ContractEntry[], description?: string): ContractPreset {
   const presets = loadContractPresets();
   const newPreset: ContractPreset = {
     id: generateId(),
     name,
-    address,
     description,
+    entries: entries.length > 0 ? entries : [{ address: '' }],
     createdAt: Date.now(),
   };
-  
+
   presets.unshift(newPreset);
   localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(presets));
   return newPreset;
 }
 
-export function updateContractPreset(id: string, updates: Partial<Omit<ContractPreset, 'id' | 'createdAt'>>): boolean {
+export function updateContractPreset(
+  id: string,
+  updates: Partial<Pick<ContractPreset, 'name' | 'description' | 'entries'>>,
+): boolean {
   const presets = loadContractPresets();
   const index = presets.findIndex(p => p.id === id);
-  
+
   if (index === -1) return false;
-  
+
   presets[index] = { ...presets[index], ...updates };
   localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(presets));
   return true;
@@ -114,11 +177,31 @@ export function updateContractPreset(id: string, updates: Partial<Omit<ContractP
 export function deleteContractPreset(id: string): boolean {
   const presets = loadContractPresets();
   const filtered = presets.filter(p => p.id !== id);
-  
+
   if (filtered.length === presets.length) return false;
-  
+
   localStorage.setItem(STORAGE_KEYS.CONTRACT_PRESETS, JSON.stringify(filtered));
   return true;
+}
+
+export function findContractByAddress(
+  address: string,
+  chainId?: number,
+): { preset: ContractPreset; entry: ContractEntry } | null {
+  const lowered = address.toLowerCase();
+  const presets = loadContractPresets();
+  for (const preset of presets) {
+    for (const entry of preset.entries) {
+      if (entry.address.toLowerCase() !== lowered) continue;
+      if (chainId != null && entry.chainId === chainId) return { preset, entry };
+    }
+  }
+  for (const preset of presets) {
+    for (const entry of preset.entries) {
+      if (entry.address.toLowerCase() === lowered) return { preset, entry };
+    }
+  }
+  return null;
 }
 
 // ==================== ABI 预设 ====================
@@ -250,19 +333,19 @@ export function loadLastUsedConfig(): LastUsedConfig {
 // ==================== 初始化默认预设 ====================
 
 export function initializeDefaultPresets(): void {
-  // 只在首次使用时初始化
+  migrateContractPresets();
+
   const hasRpcPresets = loadRpcPresets().length > 0;
   const hasAbiPresets = loadAbiPresets().length > 0;
-  
+  const hasContractPresets = loadContractPresets().length > 0;
+
   if (!hasRpcPresets) {
-    // 添加常用的 RPC 预设
     saveRpcPreset('Ethereum 主网', 'https://eth.llamarpc.com', 1);
     saveRpcPreset('BSC 主网', 'https://bsc-dataseed.binance.org', 56);
     saveRpcPreset('Polygon 主网', 'https://polygon-rpc.com', 137);
   }
-  
+
   if (!hasAbiPresets) {
-    // 添加 ERC20 标准 ABI
     const erc20Abi = JSON.stringify([
       {
         "name": "name",
@@ -300,8 +383,16 @@ export function initializeDefaultPresets(): void {
         "outputs": [{"type": "uint256", "name": ""}]
       }
     ], null, 2);
-    
+
     saveAbiPreset('ERC20 标准接口', erc20Abi);
+  }
+
+  if (!hasContractPresets) {
+    saveContractPreset('USDC', [
+      { chainId: 1, address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+      { chainId: 137, address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' },
+      { chainId: 42161, address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' },
+    ], 'USD Coin');
   }
 }
 
