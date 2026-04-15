@@ -14,7 +14,13 @@
     "debugTrace": "调用追踪",
     "hexParser": "Hex 解析",
     "eventQuery": "Event 查询",
-    "abiEncoder": "ABI 编码器"
+    "abiEncoder": "ABI 编码器",
+    "stateOverride": "状态覆盖"
+  },
+  "topnav": {
+    "presets": "预设",
+    "config": "配置",
+    "toggleAddressNames": "切换合约别名显示"
   },
   "preset": {
     "title": "预设配置",

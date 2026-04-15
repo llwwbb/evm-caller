@@ -14,7 +14,13 @@
     "debugTrace": "Debug Trace",
     "hexParser": "Hex Parser",
     "eventQuery": "Event Query",
-    "abiEncoder": "ABI Encoder"
+    "abiEncoder": "ABI Encoder",
+    "stateOverride": "State Override"
+  },
+  "topnav": {
+    "presets": "Presets",
+    "config": "Config",
+    "toggleAddressNames": "Toggle contract name display"
   },
   "preset": {
     "title": "Presets",
