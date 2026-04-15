@@ -54,7 +54,17 @@ No fixed sidebar, no footer, no 320px drawer.
 | `hex-parser` | `HexParserPage.tsx` | Mode bar (auto/function/event/error) + 50/50 split (hex input / history cards) |
 | `event-query` | `EventQueryPage.tsx` | TxBar (contract + event selector + block range + navigation) + StatsRibbon + tabular event results with inline expand |
 | `abi-encoder` | `AbiEncoderPage.tsx` | Mode bar (abi/packed · encode/decode) + 2/3 split (type entries + values / output + history) |
-| `state-override` | *(pending — see the git stash)* | Will be added back via the refactor's Task 3.6 |
+| `state-override` | `stateOverride/StateOverridePage.tsx` | `eth_call` / `debug_traceCall` radio + editable "from" EOA + 2/3 split (account overrides + slot editor / calls list + result). `debug_traceCall` mode reuses Debug Trace's `CallTree` + `NodeStack` for free pin-stack trace visualization. |
+| `slot-calc` | `slotCalc/SlotCalcPage.tsx` | Three modes: Manual (hand-type variable → compute slot), Layout JSON (paste `solc --storage-layout` / `forge inspect`), Probe (`eth_getStorageAt` over a slot range with per-row type toggles) |
+
+### Multi-call execution (`src/utils/multiCall.ts`)
+
+`executeBatch()` is the single API for state-override's call list. Given N calls:
+
+- **N = 1**: direct `eth_call` / `debug_traceCall` to the single target.
+- **N ≥ 2**: injects an **EIP-1167 minimal proxy** (~45 bytes) as the `code` of the `from` EOA via `stateOverride.code`, forwarding via `DELEGATECALL` to the canonical Multicall3 at `0xcA11bde05977b3631167028862bE2a173976CA11`. The proxy preserves `msg.sender`, so sub-calls (e.g. `approve`, `swap`) see the EOA as the caller — exactly what `approve + swap` simulation needs.
+
+The full Multicall3 bytecode is NOT embedded; the ~45-byte proxy + the canonical deployment is the whole trick.
 
 ### Shared layout primitives (`src/components/layout/`)
 
@@ -98,7 +108,9 @@ One file per domain — don't spread a domain across multiple utils:
 - `rpcCaller.ts` — `callViewFunction` dispatches to `staticCall` for `nonpayable`/`payable`, direct call for `view`/`pure`. `formatResult` unwraps ethers `Result` objects via `toObject()` when available and falls back to manually walking named keys. `parseParamValue` converts user string input to ethers-typed args.
 - `transactionParser.ts`, `debugTrace.ts`, `eventQuery.ts`, `hexParser.ts` — per-tab decoding logic.
 - `debugTrace.ts` uses raw `fetch` (not `provider.send`) to bypass ethers batching — some RPC endpoints reject `debug_traceTransaction` inside a batch.
-- `stateOverride.ts` / `multiCall.ts` / `storageSlot.ts` — used by the state-override tab (currently stashed).
+- `stateOverride.ts` — format `stateOverride` params for RPC, plus `callWithStateOverride` / `debugTraceWithStateOverride` / `staticCallWithStateOverride` / batch variants. Single-call code path; multi-call lives in `multiCall.ts`.
+- `multiCall.ts` — `executeBatch()`, the one API state-override consumes. Uses EIP-1167 proxy → canonical Multicall3 (see above section). ~220 lines.
+- `storageSlot.ts` — pure Solidity storage layout math: `calculateSimpleSlot`, `calculateMappingSlot` (nested), `calculateArraySlot`, `calculatePackedSlot`, `encodeSlotValue`, `decodeSlotValue`. Used by both state-override (slot editor UI hints) and slot-calc tab.
 - `abiEncoder.ts` — encode/decode and user-friendly output formatting (numeric → decimal, bytes preserved as hex, tuples as objects when components have names).
 
 ### i18n
