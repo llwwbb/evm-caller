@@ -2,6 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ParsedFunction, CallHistory } from '../../types';
 import { parseParamValue } from '../../utils/rpcCaller';
+import { loadContractPresets } from '../../utils/presetStorage';
+import { buildAddressNameLookup } from '../../utils/addressDisplay';
+import DecodedValue from '../common/DecodedValue';
 
 interface FunctionCallPageProps {
   rpcUrl: string;
@@ -18,6 +21,9 @@ interface FunctionCallPageProps {
   onDeleteResult: (id: string) => void;
   onClearAll: () => void;
   isCallInProgress: boolean;
+  currentChainId: number | null;
+  presetRefreshTrigger: number;
+  showAddressNames: boolean;
 }
 
 // Build a stable key for a function (handles overloads by including input types)
@@ -44,19 +50,6 @@ const MutabilityBadge: React.FC<{ mutability: string }> = ({ mutability }) => {
   );
 };
 
-/** Tiny formatter — JSON.stringify that degrades gracefully for BigInt, etc. */
-function stringifySafe(value: any): string {
-  try {
-    return JSON.stringify(
-      value,
-      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
-      2
-    );
-  } catch {
-    return String(value);
-  }
-}
-
 const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   rpcUrl,
   contractAddress,
@@ -72,6 +65,9 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   onDeleteResult,
   onClearAll,
   isCallInProgress,
+  currentChainId,
+  presetRefreshTrigger,
+  showAddressNames,
 }) => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('');
@@ -89,6 +85,11 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
   const selectedFn = useMemo(
     () => functions.find((f) => fnKey(f) === selectedKey) ?? null,
     [functions, selectedKey]
+  );
+
+  const lookup = useMemo(
+    () => buildAddressNameLookup(loadContractPresets(), currentChainId),
+    [currentChainId, presetRefreshTrigger],
   );
 
   const getArgValues = (fn: ParsedFunction): string[] => {
@@ -378,18 +379,18 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                             <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-dim">
                               {t('functionCall.args')}
                             </div>
-                            <pre className="mb-3 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                              {stringifySafe(item.args)}
-                            </pre>
+                            <div className="mb-3 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                              <DecodedValue value={item.args as any} lookup={lookup} showNames={showAddressNames} />
+                            </div>
                           </>
                         )}
                         <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-dim">
                           {success ? t('functionCall.result') : t('functionCall.error')}
                         </div>
                         {success ? (
-                          <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                            {stringifySafe(item.result.data)}
-                          </pre>
+                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                            <DecodedValue value={item.result.data as any} lookup={lookup} showNames={showAddressNames} />
+                          </div>
                         ) : (
                           <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-[11px] text-call-red">
                             {item.result.error}

@@ -1,6 +1,7 @@
 import { Interface } from 'ethers';
 import { CallTrace, ParsedCallTrace } from '../types';
 import { decodeInputData } from './transactionParser';
+import { toDisplay } from './decodedFormat';
 
 /**
  * 调用 debug_traceTransaction RPC 方法获取交易调用追踪
@@ -121,11 +122,10 @@ function decodeOutputData(
       const abi = typeof abiString === 'string' ? JSON.parse(abiString) : abiString;
       const iface = new Interface(abi);
       
-      // 查找对应的函数
       const fragment = iface.getFunction(functionName);
       if (fragment) {
         const decoded = iface.decodeFunctionResult(fragment, outputData);
-        return formatValue(decoded);
+        return toDisplay(decoded, fragment.outputs as any);
       }
     } catch (error) {
       // 继续尝试下一个 ABI
@@ -184,9 +184,9 @@ function parseErrorData(
         if (decoded) {
           const args: any = {};
           decoded.fragment.inputs.forEach((input, i) => {
-            args[input.name || `arg${i}`] = formatValue(decoded.args[i]);
+            args[input.name || `arg${i}`] = toDisplay(decoded.args[i], input as any);
           });
-          
+
           return {
             errorName: decoded.name,
             args,
@@ -202,52 +202,6 @@ function parseErrorData(
   return {
     message: errorData
   };
-}
-
-/**
- * 格式化值（处理 BigInt 等特殊类型）
- */
-function formatValue(value: any): any {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
-  
-  if (Array.isArray(value)) {
-    return value.map(v => formatValue(v));
-  }
-  
-  if (value && typeof value === 'object') {
-    // 检查是否是 ethers 的 Result 对象
-    if (value.toArray && typeof value.toArray === 'function') {
-      const arr = value.toArray();
-      
-      // 尝试提取命名字段
-      const formatted: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in value) {
-        if (!isNaN(Number(key))) continue; // 跳过数字索引
-        hasNamedFields = true;
-        formatted[key] = formatValue(value[key]);
-      }
-      
-      if (hasNamedFields) {
-        return formatted;
-      }
-      
-      return arr.map((item: any) => formatValue(item));
-    }
-    
-    // 普通对象
-    const formatted: any = {};
-    for (const key in value) {
-      if (!isNaN(Number(key))) continue;
-      formatted[key] = formatValue(value[key]);
-    }
-    return formatted;
-  }
-  
-  return value;
 }
 
 /**

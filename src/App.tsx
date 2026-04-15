@@ -196,6 +196,9 @@ function App() {
             onDeleteResult={handleDeleteResult}
             onClearAll={handleClearAllResults}
             isCallInProgress={isCallInProgress}
+            currentChainId={currentChainId}
+            presetRefreshTrigger={presetRefreshTrigger}
+            showAddressNames={showAddressNames}
           />
         )}
         {activeTab === 'transaction-parser' && (
@@ -204,6 +207,9 @@ function App() {
             selectedAbis={selectedAbis}
             selectedAbiNames={selectedAbiNames}
             mergedAbi={mergedAbi}
+            currentChainId={currentChainId}
+            presetRefreshTrigger={presetRefreshTrigger}
+            showAddressNames={showAddressNames}
           />
         )}
         {activeTab === 'debug-trace' && (
@@ -215,7 +221,14 @@ function App() {
             currentChainId={currentChainId}
           />
         )}
-        {activeTab === 'hex-parser' && <HexParserPage mergedAbi={mergedAbi} />}
+        {activeTab === 'hex-parser' && (
+          <HexParserPage
+            mergedAbi={mergedAbi}
+            currentChainId={currentChainId}
+            presetRefreshTrigger={presetRefreshTrigger}
+            showAddressNames={showAddressNames}
+          />
+        )}
         {activeTab === 'event-query' && (
           <EventQueryPage
             rpcUrl={rpcUrl}
@@ -223,6 +236,9 @@ function App() {
             mergedAbi={mergedAbi}
             selectedAbiNames={selectedAbiNames}
             selectedAbis={selectedAbis}
+            currentChainId={currentChainId}
+            presetRefreshTrigger={presetRefreshTrigger}
+            showAddressNames={showAddressNames}
           />
         )}
         {activeTab === 'abi-encoder' && <AbiEncoderPage />}

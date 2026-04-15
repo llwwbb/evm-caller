@@ -1,4 +1,5 @@
 import { AbiCoder, solidityPacked, getBytes, hexlify, toBeHex } from 'ethers';
+import { toDisplay } from './decodedFormat';
 
 /**
  * 编码结果
@@ -263,9 +264,10 @@ export function abiDecode(types: string[], hexData: string): DecodeResult {
     
     const coder = AbiCoder.defaultAbiCoder();
     const decoded = coder.decode(types, hexData);
-    
-    // 转换为普通数组并格式化 BigInt
-    const result = decoded.map((v, i) => formatDecodedValue(v, types[i]));
+
+    // toDisplay handles bigint→string and walks Result/array shapes uniformly;
+    // AbiEncoder has no named components so tuples remain arrays.
+    const result = decoded.map((v) => toDisplay(v));
     
     return {
       success: true,
@@ -441,36 +443,6 @@ function decodePackedValue(bytes: Uint8Array, type: string): any {
   
   // 默认返回 hex
   return hexlify(bytes);
-}
-
-/**
- * 格式化解码后的值（处理 BigInt 等）
- */
-function formatDecodedValue(value: any, type: string): any {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
-  
-  if (Array.isArray(value)) {
-    // 获取元素类型
-    if (type.startsWith('(') && type.endsWith(')')) {
-      // Tuple
-      const innerTypes = parseTupleTypes(type);
-      return value.map((v, i) => formatDecodedValue(v, innerTypes[i] || 'unknown'));
-    } else if (type.endsWith(']')) {
-      // 数组
-      const elementType = type.replace(/\[\d*\]$/, '');
-      return value.map(v => formatDecodedValue(v, elementType));
-    }
-    return value.map(v => formatDecodedValue(v, 'unknown'));
-  }
-  
-  if (value && typeof value === 'object' && value.toArray) {
-    // ethers Result 对象
-    return value.toArray().map((v: any) => formatDecodedValue(v, 'unknown'));
-  }
-  
-  return value;
 }
 
 /**

@@ -9,7 +9,10 @@ import {
   parseTransactionLogs,
   decodeInputData,
 } from '../utils/transactionParser';
-import { saveTxParserResult, loadTxParserResult } from '../utils/presetStorage';
+import { saveTxParserResult, loadTxParserResult, loadContractPresets } from '../utils/presetStorage';
+import { buildAddressNameLookup } from '../utils/addressDisplay';
+import DecodedValue from './common/DecodedValue';
+import AddressBadge from './common/AddressBadge';
 import TxBar from './layout/TxBar';
 import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
@@ -18,6 +21,9 @@ interface TransactionParserPageProps {
   selectedAbis: string[];
   selectedAbiNames: string[];
   mergedAbi: string;
+  currentChainId: number | null;
+  presetRefreshTrigger: number;
+  showAddressNames: boolean;
 }
 
 type ParseType = 'hex' | 'address' | 'number' | 'text';
@@ -56,16 +62,6 @@ const parse32Bytes = (chunk: string, type: ParseType): string => {
   }
 };
 
-function stringifySafe(value: any): string {
-  try {
-    return JSON.stringify(
-      value,
-      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
-      2
-    );
-  } catch { return String(value); }
-}
-
 const MiniLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
     {children}
@@ -98,6 +94,9 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
   rpcUrl,
   selectedAbis,
   selectedAbiNames,
+  currentChainId,
+  presetRefreshTrigger,
+  showAddressNames,
 }) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
@@ -109,6 +108,11 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
   const [dataParseTypes, setDataParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
   const [topicParseTypes, setTopicParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
+
+  const lookup = useMemo(
+    () => buildAddressNameLookup(loadContractPresets(), currentChainId),
+    [currentChainId, presetRefreshTrigger],
+  );
 
   useEffect(() => {
     const saved = loadTxParserResult();
@@ -223,11 +227,6 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
       ]
     : [];
 
-  const shortAddr = (addr: string | null | undefined) => {
-    if (!addr) return '—';
-    return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
-  };
-
   const formatTimestamp = (ts?: number) =>
     ts ? new Date(ts * 1000).toLocaleString() : '—';
 
@@ -285,8 +284,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
           {/* Top: tx header + decoded input */}
           <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[11px]">
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
-              <div><span className="text-fg-mute">from </span><span className="text-fg" title={parsedTx.from}>{shortAddr(parsedTx.from)}</span></div>
-              <div><span className="text-fg-mute">to </span><span className="text-fg" title={parsedTx.to || ''}>{parsedTx.to ? shortAddr(parsedTx.to) : t('transactionParser.contractCreation')}</span></div>
+              <div><span className="text-fg-mute">from </span><AddressBadge addr={parsedTx.from} lookup={lookup} showNames={showAddressNames} /></div>
+              <div><span className="text-fg-mute">to </span>{parsedTx.to ? <AddressBadge addr={parsedTx.to} lookup={lookup} showNames={showAddressNames} /> : <span className="text-fg">{t('transactionParser.contractCreation')}</span>}</div>
               <div><span className="text-fg-mute">value </span><span className="text-fg">{(BigInt(parsedTx.value) / BigInt(10 ** 18)).toString()} ETH</span></div>
               <div><span className="text-fg-mute">nonce </span><span className="text-fg">{parsedTx.nonce}</span></div>
               <div><span className="text-fg-mute">gas limit </span><span className="text-fg">{parsedTx.gasLimit}</span></div>
@@ -304,9 +303,9 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                 <div className="mb-1 text-[10px] text-fg-mute">
                   {parsedTx.decodedInput.signature}
                 </div>
-                <pre className="mt-1 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                  {stringifySafe(parsedTx.decodedInput.args)}
-                </pre>
+                <div className="mt-1 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                  <DecodedValue value={parsedTx.decodedInput.args as any} lookup={lookup} showNames={showAddressNames} />
+                </div>
               </div>
             ) : (
               <div className="mt-4 border-t border-line-soft pt-3">
@@ -351,8 +350,8 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                         RAW
                       </span>
                     )}
-                    <span className="truncate text-fg-dim" title={log.address}>
-                      {log.address}
+                    <span className="truncate">
+                      <AddressBadge addr={log.address} lookup={lookup} showNames={showAddressNames} />
                     </span>
                     <span className="ml-auto text-fg-mute">
                       {expanded ? '▾' : '▸'}
@@ -376,9 +375,9 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                             <span className="text-mint">{log.parsed!.abiName}</span>
                           </div>
                           <MiniLabel>{t('txParser.args')}</MiniLabel>
-                          <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                            {stringifySafe(log.parsed!.args)}
-                          </pre>
+                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                            <DecodedValue value={log.parsed!.args as any} lookup={lookup} showNames={showAddressNames} />
+                          </div>
                         </>
                       ) : (
                         <>

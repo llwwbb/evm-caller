@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DecodedData, HexParserHistory } from '../types';
 import {
@@ -14,12 +14,18 @@ import {
   addHexParserHistory,
   deleteHexParserHistory,
   clearHexParserHistory,
+  loadContractPresets,
 } from '../utils/presetStorage';
+import { buildAddressNameLookup } from '../utils/addressDisplay';
+import DecodedValue from './common/DecodedValue';
 
 type DecodeType = 'auto' | 'function' | 'event' | 'error';
 
 interface HexParserPageProps {
   mergedAbi: string;
+  currentChainId: number | null;
+  presetRefreshTrigger: number;
+  showAddressNames: boolean;
 }
 
 const DECODE_TYPE_STYLE: Record<string, { bg: string; fg: string }> = {
@@ -41,25 +47,23 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
   );
 };
 
-function stringifySafe(value: any): string {
-  try {
-    return JSON.stringify(
-      value,
-      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
-      2
-    );
-  } catch {
-    return String(value);
-  }
-}
-
-const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
+const HexParserPage: React.FC<HexParserPageProps> = ({
+  mergedAbi,
+  currentChainId,
+  presetRefreshTrigger,
+  showAddressNames,
+}) => {
   const { t } = useTranslation();
   const [hexData, setHexData] = useState('');
   const [decodeType, setDecodeType] = useState<DecodeType>('auto');
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HexParserHistory[]>([]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  const lookup = useMemo(
+    () => buildAddressNameLookup(loadContractPresets(), currentChainId),
+    [currentChainId, presetRefreshTrigger],
+  );
 
   useEffect(() => {
     const saved = loadHexParserResult();
@@ -269,9 +273,9 @@ const HexParserPage: React.FC<HexParserPageProps> = ({ mergedAbi }) => {
                                 <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
                                   {t('hexParser.decodedArgs')}
                                 </div>
-                                <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                                  {stringifySafe(r.args)}
-                                </pre>
+                                <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                                  <DecodedValue value={r.args as any} lookup={lookup} showNames={showAddressNames} />
+                                </div>
                               </>
                             )}
                           </>

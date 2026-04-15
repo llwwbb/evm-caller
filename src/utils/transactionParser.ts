@@ -1,5 +1,6 @@
 import { JsonRpcProvider, TransactionResponse, TransactionReceipt, Interface, Log, EventFragment } from 'ethers';
 import { ParsedTransaction, ParsedLog } from '../types';
+import { toDisplay } from './decodedFormat';
 
 /**
  * 通过 RPC 获取交易数据
@@ -73,11 +74,9 @@ export function parseTransactionLogs(
         });
 
         if (parsed) {
-          // 格式化参数
           const args: any = {};
           parsed.fragment.inputs.forEach((input, i) => {
-            const value = parsed.args[i];
-            args[input.name || `arg${i}`] = formatValue(value);
+            args[input.name || `arg${i}`] = toDisplay(parsed.args[i], input as any);
           });
 
           parsedLog.parsed = {
@@ -158,11 +157,9 @@ export function decodeInputData(
       return null;
     }
 
-    // 格式化参数
     const args: any = {};
     parsed.fragment.inputs.forEach((input, i) => {
-      const value = parsed.args[i];
-      args[input.name || `arg${i}`] = formatValue(value);
+      args[input.name || `arg${i}`] = toDisplay(parsed.args[i], input as any);
     });
 
     return {
@@ -248,51 +245,5 @@ export async function parseFullTransaction(
     decodedInput: decodedInput || undefined,
     logs: parsedLogs,
   } as ParsedTransaction;
-}
-
-/**
- * 格式化值（处理 BigInt 等特殊类型）
- */
-function formatValue(value: any): any {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
-  
-  if (Array.isArray(value)) {
-    return value.map(v => formatValue(v));
-  }
-  
-  if (value && typeof value === 'object') {
-    // 检查是否是 ethers 的 Result 对象
-    if (value.toArray && typeof value.toArray === 'function') {
-      const arr = value.toArray();
-      
-      // 尝试提取命名字段
-      const formatted: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in value) {
-        if (!isNaN(Number(key))) continue; // 跳过数字索引
-        hasNamedFields = true;
-        formatted[key] = formatValue(value[key]);
-      }
-      
-      if (hasNamedFields) {
-        return formatted;
-      }
-      
-      return arr.map((item: any) => formatValue(item));
-    }
-    
-    // 普通对象
-    const formatted: any = {};
-    for (const key in value) {
-      if (!isNaN(Number(key))) continue;
-      formatted[key] = formatValue(value[key]);
-    }
-    return formatted;
-  }
-  
-  return value;
 }
 

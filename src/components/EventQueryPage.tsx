@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { JsonRpcProvider } from 'ethers';
 import { EventQueryParams, ParsedLog } from '../types';
 import { queryEvents, extractEvents, validateBlockRange } from '../utils/eventQuery';
-import { saveEventQueryResults, loadEventQueryResults } from '../utils/presetStorage';
+import { saveEventQueryResults, loadEventQueryResults, loadContractPresets } from '../utils/presetStorage';
+import { buildAddressNameLookup } from '../utils/addressDisplay';
+import DecodedValue from './common/DecodedValue';
+import AddressBadge from './common/AddressBadge';
 import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
 interface EventQueryPageProps {
@@ -12,6 +15,9 @@ interface EventQueryPageProps {
   mergedAbi: string;
   selectedAbiNames: string[];
   selectedAbis: string[];
+  currentChainId: number | null;
+  presetRefreshTrigger: number;
+  showAddressNames: boolean;
 }
 
 interface EventOption {
@@ -20,24 +26,15 @@ interface EventOption {
   abiName?: string;
 }
 
-function stringifySafe(value: any): string {
-  try {
-    return JSON.stringify(
-      value,
-      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
-      2
-    );
-  } catch {
-    return String(value);
-  }
-}
-
 const EventQueryPage: React.FC<EventQueryPageProps> = ({
   rpcUrl,
   contractAddress,
   mergedAbi,
   selectedAbiNames,
   selectedAbis,
+  currentChainId,
+  presetRefreshTrigger,
+  showAddressNames,
 }) => {
   const { t } = useTranslation();
   const [events, setEvents] = useState<EventOption[]>([]);
@@ -52,6 +49,11 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<ParsedLog[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<number>>(new Set());
+
+  const lookup = useMemo(
+    () => buildAddressNameLookup(loadContractPresets(), currentChainId),
+    [currentChainId, presetRefreshTrigger],
+  );
 
   useEffect(() => {
     const saved = loadEventQueryResults();
@@ -441,7 +443,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
                   <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
                     <div className="mb-1.5">
                       <span className="text-fg-mute">address </span>
-                      <span className="text-fg">{log.address}</span>
+                      <AddressBadge addr={log.address} lookup={lookup} showNames={showAddressNames} />
                     </div>
                     {log.parsed?.signature && (
                       <div className="mb-1.5">
@@ -458,11 +460,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
                     <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
                       {t('eventQueryUI.args')}
                     </div>
-                    <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
-                      {log.parsed
-                        ? stringifySafe(log.parsed.args)
-                        : stringifySafe({ topics: log.topics, data: log.data })}
-                    </pre>
+                    <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                      <DecodedValue
+                        value={log.parsed ? (log.parsed.args as any) : ({ topics: log.topics, data: log.data } as any)}
+                        lookup={lookup}
+                        showNames={showAddressNames}
+                      />
+                    </div>
                   </div>
                 )}
               </div>

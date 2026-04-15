@@ -2,11 +2,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ParsedCallTrace } from '../../types';
 import {
-  AddressNameMap,
-  formatAddress,
+  AddressNameLookup,
   CALL_TYPE_STYLE,
   REVERT_STYLE,
 } from '../../utils/addressDisplay';
+import DecodedValue from '../common/DecodedValue';
+import AddressBadge from '../common/AddressBadge';
 import { formatGas } from './CallTreeRow';
 
 interface NodeCardProps {
@@ -16,7 +17,7 @@ interface NodeCardProps {
   isFocused: boolean;
   isPinned: boolean;
   isCollapsed: boolean;
-  addressNameMap: AddressNameMap;
+  addressNameMap: AddressNameLookup;
   showAddressNames: boolean;
   onTogglePin: (path: string) => void;
   onClose: (path: string) => void;
@@ -42,6 +43,16 @@ const Pre: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </pre>
 );
 
+const DecodedBlock: React.FC<{
+  value: any;
+  lookup: AddressNameLookup;
+  showNames: boolean;
+}> = ({ value, lookup, showNames }) => (
+  <div className="mt-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+    <DecodedValue value={value} lookup={lookup} showNames={showNames} />
+  </div>
+);
+
 const NodeCard: React.FC<NodeCardProps> = ({
   trace,
   path,
@@ -61,10 +72,6 @@ const NodeCard: React.FC<NodeCardProps> = ({
     ? REVERT_STYLE
     : CALL_TYPE_STYLE[trace.type] ?? CALL_TYPE_STYLE.CALL;
 
-  const from = formatAddress(trace.from, addressNameMap, showAddressNames);
-  const to = trace.to
-    ? formatAddress(trace.to, addressNameMap, showAddressNames)
-    : '(create)';
 
   return (
     <div className={isFocused ? 'bg-surface-2' : 'bg-surface'}>
@@ -112,10 +119,31 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
       {!isCollapsed && (
         <div className="overflow-auto px-3.5 py-3 font-mono text-[10.5px] leading-[1.55]">
-          <KV k="from" v={`${trace.from} (${from})`} />
+          <KV
+            k="from"
+            v={
+              <span className="inline-flex gap-1.5">
+                <span className="break-all">{trace.from}</span>
+                <span className="text-fg-dim">
+                  (<AddressBadge addr={trace.from} lookup={addressNameMap} showNames={showAddressNames} />)
+                </span>
+              </span>
+            }
+          />
           <KV
             k="to"
-            v={trace.to ? `${trace.to} (${to})` : '(contract creation)'}
+            v={
+              trace.to ? (
+                <span className="inline-flex gap-1.5">
+                  <span className="break-all">{trace.to}</span>
+                  <span className="text-fg-dim">
+                    (<AddressBadge addr={trace.to} lookup={addressNameMap} showNames={showAddressNames} />)
+                  </span>
+                </span>
+              ) : (
+                '(contract creation)'
+              )
+            }
           />
           <KV k="gas" v={`${formatGas(trace.gasUsed)} / ${formatGas(trace.gas)}`} />
           {trace.decodedInput?.signature && (
@@ -127,7 +155,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
               <MiniLabel>
                 {t('debugTrace.input')} — {trace.decodedInput.functionName}
               </MiniLabel>
-              <Pre>{JSON.stringify(trace.decodedInput.args, null, 2)}</Pre>
+              <DecodedBlock
+                value={trace.decodedInput.args}
+                lookup={addressNameMap}
+                showNames={showAddressNames}
+              />
             </>
           ) : trace.input && trace.input !== '0x' ? (
             <>
@@ -144,12 +176,16 @@ const NodeCard: React.FC<NodeCardProps> = ({
                   <>
                     <div className="font-semibold">
                       {trace.decodedError.errorName}
-                      {trace.decodedError.args && (
-                        <span className="font-normal">
-                          ({JSON.stringify(trace.decodedError.args)})
-                        </span>
-                      )}
                     </div>
+                    {trace.decodedError.args && (
+                      <div className="mt-1">
+                        <DecodedValue
+                          value={trace.decodedError.args}
+                          lookup={addressNameMap}
+                          showNames={showAddressNames}
+                        />
+                      </div>
+                    )}
                     {trace.decodedError.signature && (
                       <div className="mt-0.5 text-[9.5px] text-fg-dim">
                         selector {trace.decodedError.signature}
@@ -166,11 +202,15 @@ const NodeCard: React.FC<NodeCardProps> = ({
           ) : trace.output && trace.output !== '0x' ? (
             <>
               <MiniLabel>{t('debugTrace.output')}</MiniLabel>
-              <Pre>
-                {trace.decodedOutput
-                  ? JSON.stringify(trace.decodedOutput, null, 2)
-                  : trace.output}
-              </Pre>
+              {trace.decodedOutput !== undefined ? (
+                <DecodedBlock
+                  value={trace.decodedOutput}
+                  lookup={addressNameMap}
+                  showNames={showAddressNames}
+                />
+              ) : (
+                <Pre>{trace.output}</Pre>
+              )}
             </>
           ) : null}
         </div>

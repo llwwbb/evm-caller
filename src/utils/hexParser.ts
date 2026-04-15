@@ -1,5 +1,6 @@
-import { Interface, ParamType } from 'ethers';
+import { Interface } from 'ethers';
 import { DecodedData } from '../types';
+import { toDisplay } from './decodedFormat';
 
 /**
  * 将 hex 解析为函数调用
@@ -29,7 +30,7 @@ export function decodeHexAsFunction(hex: string, abi: string): DecodedData {
     const args: any = {};
     parsed.fragment.inputs.forEach((input, i) => {
       const value = parsed.args[i];
-      args[input.name || `arg${i}`] = formatValue(value, input);
+      args[input.name || `arg${i}`] = toDisplay(value, input as any);
     });
 
     return {
@@ -86,7 +87,7 @@ export function decodeHexAsEvent(hex: string, abi: string): DecodedData {
           const args: any = {};
           parsed.fragment.inputs.forEach((input, i) => {
             const value = parsed.args[i];
-            args[input.name || `arg${i}`] = formatValue(value, input);
+            args[input.name || `arg${i}`] = toDisplay(value, input as any);
           });
 
           return {
@@ -142,7 +143,7 @@ export function decodeHexAsError(hex: string, abi: string): DecodedData {
     const args: any = {};
     parsed.fragment.inputs.forEach((input, i) => {
       const value = parsed.args[i];
-      args[input.name || `arg${i}`] = formatValue(value, input);
+      args[input.name || `arg${i}`] = toDisplay(value, input as any);
     });
 
     return {
@@ -197,104 +198,6 @@ export function autoDetectAndDecode(hex: string, abi: string): DecodedData {
   };
 }
 
-/**
- * 格式化值（处理 BigInt 等特殊类型，并根据 ABI 定义格式化 tuple）
- * @param value - 要格式化的值
- * @param paramType - ABI 参数类型定义（可选）
- */
-function formatValue(value: any, paramType?: ParamType): any {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
-  
-  if (value && typeof value === 'object') {
-    // 首先检查是否是 ethers 的 Result 对象（有 toArray 方法）
-    if (value.toArray && typeof value.toArray === 'function') {
-      const arr = value.toArray();
-      
-      // 优先使用 paramType 的 ABI 定义来格式化（如果有的话）
-      // 如果 paramType 是 tuple 类型，使用 ABI 定义来格式化
-      // 检查 baseType 或 type 是否表示 tuple
-      const isTuple = paramType && (
-        paramType.baseType === 'tuple' || 
-        (paramType.type && paramType.type.startsWith('tuple'))
-      );
-      if (isTuple && paramType.components) {
-        const formatted: any = {};
-        paramType.components.forEach((component, index) => {
-          const componentValue = arr[index];
-          const fieldName = component.name || `field${index}`;
-          formatted[fieldName] = formatValue(componentValue, component);
-        });
-        return formatted;
-      }
-      
-      // 如果 paramType 是数组类型，且数组元素是 tuple
-      if (paramType && paramType.baseType === 'array' && paramType.arrayChildren) {
-        const childType = paramType.arrayChildren;
-        const isChildTuple = childType.baseType === 'tuple' || 
-          (childType.type && childType.type.startsWith('tuple'));
-        if (isChildTuple && childType.components) {
-          return arr.map((item: any) => {
-            if (item && typeof item === 'object' && item.toArray) {
-              const itemArr = item.toArray();
-              const formatted: any = {};
-              childType.components!.forEach((component, index) => {
-                const componentValue = itemArr[index];
-                const fieldName = component.name || `field${index}`;
-                formatted[fieldName] = formatValue(componentValue, component);
-              });
-              return formatted;
-            }
-            return formatValue(item, childType);
-          });
-        }
-        return arr.map((item: any) => formatValue(item, childType));
-      }
-      
-      // 如果没有 paramType 或不是 tuple，尝试提取命名字段（ethers 有时会自动添加命名字段）
-      const namedFields: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in value) {
-        if (!isNaN(Number(key))) continue;
-        hasNamedFields = true;
-        // 找到对应的 component（如果有 paramType）
-        const componentIndex = paramType?.components?.findIndex(c => c.name === key);
-        const component = (componentIndex !== undefined && componentIndex >= 0 && paramType?.components)
-          ? paramType.components[componentIndex]
-          : undefined;
-        namedFields[key] = formatValue(value[key], component);
-      }
-      
-      if (hasNamedFields) {
-        return namedFields;
-      }
-      
-      // 否则返回数组格式
-      return arr.map((item: any) => formatValue(item));
-    }
-    
-    // 普通对象
-    const formatted: any = {};
-    for (const key in value) {
-      if (!isNaN(Number(key))) continue;
-      formatted[key] = formatValue(value[key]);
-    }
-    return formatted;
-  }
-  
-  // 处理数组类型（必须在 Result 对象检查之后）
-  if (Array.isArray(value)) {
-    // 如果是数组类型，检查 paramType 是否是数组
-    if (paramType && (paramType.baseType === 'array' || (paramType.type && paramType.type.endsWith('[]'))) && paramType.arrayChildren) {
-      return value.map((v: any) => formatValue(v, paramType.arrayChildren || undefined));
-    }
-    return value.map((v: any) => formatValue(v));
-  }
-  
-  return value;
-}
 
 /**
  * 从 ABI 中提取所有函数签名

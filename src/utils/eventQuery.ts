@@ -1,5 +1,6 @@
 import { JsonRpcProvider, Interface, Log, EventFragment } from 'ethers';
 import { EventQueryParams, EventQueryResult, ParsedLog, ParsedEvent } from '../types';
+import { toDisplay } from './decodedFormat';
 
 /**
  * 查询指定区块范围内的事件
@@ -134,11 +135,9 @@ export function parseEventLogs(
       });
 
       if (parsed && parsed.name === eventName) {
-        // 格式化参数
         const args: any = {};
         parsed.fragment.inputs.forEach((input, i) => {
-          const value = parsed.args[i];
-          args[input.name || `arg${i}`] = formatValue(value);
+          args[input.name || `arg${i}`] = toDisplay(parsed.args[i], input as any);
         });
 
         parsedLog.parsed = {
@@ -260,49 +259,4 @@ export function validateBlockRange(
   return { valid: true };
 }
 
-/**
- * 格式化值（处理 BigInt 等特殊类型）
- */
-function formatValue(value: any): any {
-  if (typeof value === 'bigint') {
-    return value.toString();
-  }
-  
-  if (Array.isArray(value)) {
-    return value.map(v => formatValue(v));
-  }
-  
-  if (value && typeof value === 'object') {
-    // 检查是否是 ethers 的 Result 对象
-    if (value.toArray && typeof value.toArray === 'function') {
-      const arr = value.toArray();
-      
-      // 尝试提取命名字段
-      const formatted: any = {};
-      let hasNamedFields = false;
-      
-      for (const key in value) {
-        if (!isNaN(Number(key))) continue;
-        hasNamedFields = true;
-        formatted[key] = formatValue(value[key]);
-      }
-      
-      if (hasNamedFields) {
-        return formatted;
-      }
-      
-      return arr.map((item: any) => formatValue(item));
-    }
-    
-    // 普通对象
-    const formatted: any = {};
-    for (const key in value) {
-      if (!isNaN(Number(key))) continue;
-      formatted[key] = formatValue(value[key]);
-    }
-    return formatted;
-  }
-  
-  return value;
-}
 
