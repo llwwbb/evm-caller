@@ -438,7 +438,15 @@
     "namesOn": "已开启",
     "namesOff": "已关闭",
     "contractPresetsCount": "已加载 {{count}} 个合约预设",
-    "refreshMappings": "刷新地址映射"
+    "refreshMappings": "刷新地址映射",
+    "pin": "固定此面板",
+    "unpin": "取消固定",
+    "close": "关闭",
+    "rawInput": "原始输入",
+    "focused": "FOCUSED",
+    "pinnedHint": "已固定 {{count}} 个面板 — 可关闭一些",
+    "closeAll": "全部关闭",
+    "callTree": "调用树"
   },
   "abiEncoder": {
     "title": "ABI 编码器",

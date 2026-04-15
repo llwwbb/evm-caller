@@ -438,7 +438,15 @@
     "namesOn": "ON",
     "namesOff": "OFF",
     "contractPresetsCount": "{{count}} contract preset(s) loaded",
-    "refreshMappings": "Refresh address mappings"
+    "refreshMappings": "Refresh address mappings",
+    "pin": "Pin this panel",
+    "unpin": "Unpin",
+    "close": "Close",
+    "rawInput": "Raw input",
+    "focused": "FOCUSED",
+    "pinnedHint": "{{count}} panels pinned — consider closing some",
+    "closeAll": "Close all",
+    "callTree": "Call tree"
   },
   "abiEncoder": {
     "title": "ABI Encoder",
