@@ -715,7 +715,11 @@ export interface DebugTraceState {
   rawTrace: any; // CallTrace
   parsedTrace: any; // ParsedCallTrace
   expandedNodes: string[]; // Set 转换为数组
-  showAddressNames: boolean;
+  showAddressNames?: boolean; // deprecated: now a global preference in App.tsx
+  // Pin-stack state (new):
+  selectedPath?: string | null;
+  pinnedPaths?: string[];
+  collapsedPaths?: string[];
 }
 
 /**
