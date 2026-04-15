@@ -9,6 +9,8 @@ import HexParserPage from './components/HexParserPage';
 import EventQueryPage from './components/EventQueryPage';
 import AbiEncoderPage from './components/AbiEncoderPage';
 import DebugTracePage from './components/DebugTracePage';
+import StateOverridePage from './components/stateOverride/StateOverridePage';
+import SlotCalcPage from './components/slotCalc/SlotCalcPage';
 import { callViewFunction } from './utils/rpcCaller';
 import { parseAbi } from './utils/abiParser';
 import { RpcConfig as RpcConfigType, ParsedFunction, CallHistory } from './types';
@@ -123,9 +125,6 @@ function App() {
     setCallHistory((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // NOTE: state-override tab is temporarily omitted — its page component is on
-  // a stash (pre-refactor WIP). Task 3.6 of the UI refactor plan will add it
-  // back in the new design system.
   const tabs = [
     { id: 'function-call' as TabId, label: t('tabs.functionCall') },
     { id: 'transaction-parser' as TabId, label: t('tabs.transactionParser') },
@@ -133,6 +132,8 @@ function App() {
     { id: 'hex-parser' as TabId, label: t('tabs.hexParser') },
     { id: 'event-query' as TabId, label: t('tabs.eventQuery') },
     { id: 'abi-encoder' as TabId, label: t('tabs.abiEncoder') },
+    { id: 'state-override' as TabId, label: t('tabs.stateOverride') },
+    { id: 'slot-calc' as TabId, label: t('tabs.slotCalc') },
   ];
 
   return (
@@ -195,6 +196,15 @@ function App() {
           />
         )}
         {activeTab === 'abi-encoder' && <AbiEncoderPage />}
+        {activeTab === 'state-override' && (
+          <StateOverridePage
+            rpcUrl={rpcUrl}
+            mergedAbi={mergedAbi}
+            showAddressNames={showAddressNames}
+            presetRefreshTrigger={presetRefreshTrigger}
+          />
+        )}
+        {activeTab === 'slot-calc' && <SlotCalcPage rpcUrl={rpcUrl} />}
       </main>
 
       <PresetModal

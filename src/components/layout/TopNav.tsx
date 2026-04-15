@@ -8,7 +8,8 @@ export type TabId =
   | 'hex-parser'
   | 'event-query'
   | 'abi-encoder'
-  | 'state-override';
+  | 'state-override'
+  | 'slot-calc';
 
 interface Tab {
   id: TabId;
