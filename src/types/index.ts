@@ -5,6 +5,7 @@ export interface ParsedFunction {
   inputs: ParsedParam[];
   outputs: ParsedParam[];
   stateMutability: string;
+  abiName?: string;      // source ABI preset name (filled in App.tsx)
 }
 
 export interface ParsedParam {
@@ -42,11 +43,16 @@ export interface RpcPreset {
   createdAt: number;
 }
 
+export interface ContractEntry {
+  chainId?: number;      // matches RpcPreset.chainId
+  address: string;       // mixed-case hex
+}
+
 export interface ContractPreset {
   id: string;
   name: string;
-  address: string;
   description?: string;
+  entries: ContractEntry[];   // length >= 1
   createdAt: number;
 }
 
