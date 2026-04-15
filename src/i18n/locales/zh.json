@@ -277,7 +277,9 @@
     "history": "历史记录",
     "clearHistory": "清空历史",
     "confirmClearHistory": "确定要清空所有历史记录吗？",
-    "noHistory": "暂无历史记录"
+    "noHistory": "暂无历史记录",
+    "decode": "解析",
+    "decodedArgs": "解析后的参数"
   },
   "eventQuery": {
     "title": "Event 日志查询",

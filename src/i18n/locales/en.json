@@ -277,7 +277,9 @@
     "history": "History",
     "clearHistory": "Clear History",
     "confirmClearHistory": "Are you sure you want to clear all history?",
-    "noHistory": "No history"
+    "noHistory": "No history",
+    "decode": "Decode",
+    "decodedArgs": "Decoded args"
   },
   "eventQuery": {
     "title": "Event Log Query",
