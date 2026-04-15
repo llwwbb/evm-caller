@@ -1,4 +1,4 @@
-import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory, HexParserHistory } from '../types';
+import { RpcPreset, ContractPreset, AbiPreset, LastUsedConfig, CallHistory, TypeDefPreset, AbiEncoderHistory, HexParserHistory, StateOverridePreset } from '../types';
 
 // localStorage 键名常量
 const STORAGE_KEYS = {
@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   TYPE_DEF_PRESETS: 'evm-caller:type-def-presets',
   ABI_ENCODER_HISTORY: 'evm-caller:abi-encoder-history',
   DEBUG_TRACE_RESULT: 'evm-caller:debug-trace-result',
+  STATE_OVERRIDE_PRESETS: 'evm-caller:state-override-presets',
 };
 
 // 生成唯一 ID
@@ -824,3 +825,41 @@ export function clearHexParserHistory(): void {
   }
 }
 
+
+// ==================== 状态覆盖预设 ====================
+
+export function loadStateOverridePresets(): StateOverridePreset[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.STATE_OVERRIDE_PRESETS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('加载状态覆盖预设失败:', error);
+    return [];
+  }
+}
+
+export function saveStateOverridePreset(
+  name: string,
+  accounts: StateOverridePreset['accounts'],
+  description?: string
+): StateOverridePreset {
+  const presets = loadStateOverridePresets();
+  const newPreset: StateOverridePreset = {
+    id: generateId(),
+    name,
+    description,
+    accounts,
+    createdAt: Date.now(),
+  };
+  presets.unshift(newPreset);
+  localStorage.setItem(STORAGE_KEYS.STATE_OVERRIDE_PRESETS, JSON.stringify(presets));
+  return newPreset;
+}
+
+export function deleteStateOverridePreset(id: string): boolean {
+  const presets = loadStateOverridePresets();
+  const filtered = presets.filter((p) => p.id !== id);
+  if (filtered.length === presets.length) return false;
+  localStorage.setItem(STORAGE_KEYS.STATE_OVERRIDE_PRESETS, JSON.stringify(filtered));
+  return true;
+}

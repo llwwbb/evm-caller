@@ -231,3 +231,43 @@ export interface ParsedCallTrace extends CallTrace {
   calls?: ParsedCallTrace[]; // 递归嵌套
 }
 
+// ==================== 状态覆盖相关类型 ====================
+
+export interface StateOverride {
+  balance?: string;                       // hex string
+  nonce?: number;
+  code?: string;                          // hex string
+  state?: Record<string, string>;         // full replacement: slot => value
+  stateDiff?: Record<string, string>;     // diff: slot => value
+}
+
+export interface AccountOverrideConfig {
+  address: string;
+  override: StateOverride;
+}
+
+export interface StateOverridePreset {
+  id: string;
+  name: string;
+  description?: string;
+  accounts: AccountOverrideConfig[];
+  createdAt: number;
+}
+
+// ==================== 存储槽计算类型 ====================
+
+export interface StorageVariable {
+  name: string;
+  type: string;                 // e.g. uint256, address, mapping(address => uint256)
+  slot: number;                 // base slot
+  offset?: number;              // packed storage offset (bytes)
+  size?: number;                // variable size (bytes)
+}
+
+export interface CalculatedSlot {
+  variable: StorageVariable;
+  slot: string;                 // final computed slot (hex)
+  keys?: any[];                 // mapping/array keys
+  value?: string;               // encoded value (hex)
+  path?: string;                // human-readable path e.g. balances[0x123…]
+}
