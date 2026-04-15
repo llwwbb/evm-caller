@@ -152,6 +152,20 @@
     "copySuccess": "Copied to clipboard",
     "copyFailed": "Copy failed"
   },
+  "txParser": {
+    "statStatus": "status",
+    "statLogs": "logs",
+    "statValue": "value",
+    "statDecoded": "decoded",
+    "decodedInput": "decoded input",
+    "rawInput": "raw input",
+    "logs": "Event logs",
+    "args": "args",
+    "topics": "topics",
+    "data": "data",
+    "each32Bytes": "each 32 bytes",
+    "bytes32Count": "{{count}} chunks"
+  },
   "transactionParser": {
     "title": "Transaction Parser",
     "description": "Parse transaction input data on-chain",

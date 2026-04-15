@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ParsedTransaction } from '../types';
-import { fetchTransaction, fetchTransactionReceipt, formatTransactionInfo, parseTransactionLogs, decodeInputData } from '../utils/transactionParser';
-import { saveTxParserResult, loadTxParserResult } from '../utils/presetStorage';
 import { TransactionResponse, TransactionReceipt, Log } from 'ethers';
+import { ParsedTransaction, ParsedLog } from '../types';
+import {
+  fetchTransaction,
+  fetchTransactionReceipt,
+  formatTransactionInfo,
+  parseTransactionLogs,
+  decodeInputData,
+} from '../utils/transactionParser';
+import { saveTxParserResult, loadTxParserResult } from '../utils/presetStorage';
+import TxBar from './layout/TxBar';
+import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
 interface TransactionParserPageProps {
   rpcUrl: string;
@@ -14,10 +22,9 @@ interface TransactionParserPageProps {
 
 type ParseType = 'hex' | 'address' | 'number' | 'text';
 
-// 将 hex data 按 32 bytes 分割
 const splitInto32Bytes = (data: string): string[] => {
   const hex = data.startsWith('0x') ? data.slice(2) : data;
-  if (!hex || hex === '') return [];
+  if (!hex) return [];
   const chunks: string[] = [];
   for (let i = 0; i < hex.length; i += 64) {
     chunks.push('0x' + hex.slice(i, i + 64).padEnd(64, '0'));
@@ -25,48 +32,73 @@ const splitInto32Bytes = (data: string): string[] => {
   return chunks;
 };
 
-// 解析 32 bytes 数据为不同类型
 const parse32Bytes = (chunk: string, type: ParseType): string => {
   const hex = chunk.startsWith('0x') ? chunk.slice(2) : chunk;
-  
   switch (type) {
     case 'hex':
       return '0x' + hex;
-    
     case 'address':
-      // 取后 40 个字符 (20 bytes)
       return '0x' + hex.slice(-40);
-    
     case 'number':
-      try {
-        const bn = BigInt('0x' + hex);
-        return bn.toString();
-      } catch {
-        return 'Invalid number';
-      }
-    
+      try { return BigInt('0x' + hex).toString(); } catch { return 'Invalid'; }
     case 'text':
       try {
-        // 尝试将 hex 解码为 UTF-8 文本
-        const bytes = hex.match(/.{2}/g)?.map(b => parseInt(b, 16)) || [];
-        // 过滤掉 0x00（padding）
-        const filtered = bytes.filter(b => b !== 0);
-        const text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(filtered));
-        // 检查是否有可打印字符
-        if (/^[\x20-\x7E]*$/.test(text) && text.length > 0) {
-          return text;
-        }
+        const bytes = hex.match(/.{2}/g)?.map((b) => parseInt(b, 16)) || [];
+        const filtered = bytes.filter((b) => b !== 0);
+        const text = new TextDecoder('utf-8', { fatal: false }).decode(
+          new Uint8Array(filtered)
+        );
+        if (/^[\x20-\x7E]*$/.test(text) && text.length > 0) return text;
         return '(non-printable)';
-      } catch {
-        return '(decode error)';
-      }
-    
+      } catch { return '(decode error)'; }
     default:
       return chunk;
   }
 };
 
-const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, selectedAbis, selectedAbiNames }) => {
+function stringifySafe(value: any): string {
+  try {
+    return JSON.stringify(
+      value,
+      (_k, v) => (typeof v === 'bigint' ? v.toString() : v),
+      2
+    );
+  } catch { return String(value); }
+}
+
+const MiniLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+    {children}
+  </div>
+);
+
+const ParseTypeButtons: React.FC<{
+  current: ParseType;
+  onChange: (t: ParseType) => void;
+}> = ({ current, onChange }) => (
+  <div className="flex gap-0.5">
+    {(['hex', 'address', 'number', 'text'] as ParseType[]).map((type) => (
+      <button
+        key={type}
+        onClick={() => onChange(type)}
+        className={
+          'rounded-xs px-1.5 py-0.5 font-mono text-[9px] tracking-[0.05em] ' +
+          (current === type
+            ? 'bg-mint text-bg font-semibold'
+            : 'text-fg-mute hover:bg-surface-2')
+        }
+      >
+        {type}
+      </button>
+    ))}
+  </div>
+);
+
+const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
+  rpcUrl,
+  selectedAbis,
+  selectedAbiNames,
+}) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
   const [rawTx, setRawTx] = useState<TransactionResponse | null>(null);
@@ -75,12 +107,9 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
-  // 存储每个 log 的每个数据块的解析类型: { logIndex: { chunkIndex: type } }
   const [dataParseTypes, setDataParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
-  // 存储每个 log 的每个 topic 的解析类型
   const [topicParseTypes, setTopicParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
 
-  // 加载保存的结果
   useEffect(() => {
     const saved = loadTxParserResult();
     if (saved) {
@@ -89,93 +118,59 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
     }
   }, []);
 
-  // 当 ABI 变化时，重新解析现有交易
+  // Re-parse when ABIs change and we have raw tx data
   useEffect(() => {
     const reParse = async () => {
-      if (rawTx && rawReceipt && selectedAbis.length > 0) {
-        try {
-          // 格式化基本信息
-          const info = formatTransactionInfo(rawTx, rawReceipt);
-
-          // 解析 input data（尝试所有 ABI）
-          let decodedInput = null;
-          for (const abi of selectedAbis) {
-            const decoded = decodeInputData(rawTx.data, abi);
-            if (decoded) {
-              decodedInput = decoded;
-              break;
-            }
-          }
-
-          // 解析 logs
-          const parsedLogs = parseTransactionLogs(rawReceipt.logs as Log[], selectedAbis, selectedAbiNames);
-
-          // 获取区块时间戳
-          let timestamp: number | undefined;
-          try {
-            if (rawTx.blockNumber && rpcUrl) {
-              const provider = new (await import('ethers')).JsonRpcProvider(rpcUrl);
-              const block = await provider.getBlock(rawTx.blockNumber);
-              timestamp = block?.timestamp;
-            }
-          } catch (error) {
-            console.error('获取区块时间戳失败:', error);
-          }
-
-          const parsed: ParsedTransaction = {
-            ...info,
-            timestamp: timestamp || undefined,
-            decodedInput: decodedInput || undefined,
-            logs: parsedLogs,
-          } as ParsedTransaction;
-
-          setParsedTx(parsed);
-          
-          // 保存结果
-          saveTxParserResult({
-            txHash: rawTx.hash,
-            parsedTx: parsed,
-          });
-        } catch (err) {
-          console.error('重新解析失败:', err);
+      if (!rawTx || !rawReceipt) return;
+      if (selectedAbis.length === 0) { setParsedTx(null); return; }
+      try {
+        const info = formatTransactionInfo(rawTx, rawReceipt);
+        let decodedInput = null;
+        for (const abi of selectedAbis) {
+          const decoded = decodeInputData(rawTx.data, abi);
+          if (decoded) { decodedInput = decoded; break; }
         }
-      } else if (selectedAbis.length === 0) {
-        // 如果没有选择 ABI，清空解析结果
-        setParsedTx(null);
+        const parsedLogs = parseTransactionLogs(
+          rawReceipt.logs as Log[],
+          selectedAbis,
+          selectedAbiNames
+        );
+        let timestamp: number | undefined;
+        try {
+          if (rawTx.blockNumber && rpcUrl) {
+            const provider = new (await import('ethers')).JsonRpcProvider(rpcUrl);
+            const block = await provider.getBlock(rawTx.blockNumber);
+            timestamp = block?.timestamp;
+          }
+        } catch (e) { console.error('区块时间戳获取失败:', e); }
+        const parsed: ParsedTransaction = {
+          ...info,
+          timestamp,
+          decodedInput: decodedInput || undefined,
+          logs: parsedLogs,
+        } as ParsedTransaction;
+        setParsedTx(parsed);
+        saveTxParserResult({ txHash: rawTx.hash, parsedTx: parsed });
+      } catch (err) {
+        console.error('重新解析失败:', err);
       }
     };
-
     reParse();
-  }, [selectedAbis, rawTx, rawReceipt, rpcUrl]);
+  }, [selectedAbis, rawTx, rawReceipt, rpcUrl, selectedAbiNames]);
 
   const handleFetch = async () => {
-    if (!txHash.trim()) {
-      setError(t('transactionParser.enterTxHash'));
-      return;
-    }
-
-    if (!rpcUrl.trim()) {
-      setError(t('transactionParser.configureRpc'));
-      return;
-    }
-
+    if (!txHash.trim()) { setError(t('transactionParser.enterTxHash')); return; }
+    if (!rpcUrl.trim()) { setError(t('transactionParser.configureRpc')); return; }
     setIsFetching(true);
     setError(null);
     setParsedTx(null);
-
     try {
       const [tx, receipt] = await Promise.all([
         fetchTransaction(rpcUrl, txHash.trim()),
         fetchTransactionReceipt(rpcUrl, txHash.trim()),
       ]);
-      
       setRawTx(tx);
       setRawReceipt(receipt);
-      
-      // 如果有选中的 ABI，立即解析
-      if (selectedAbis.length > 0) {
-        await parseTransactionWithData(tx, receipt);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('transactionParser.fetchFailed'));
       setRawTx(null);
@@ -185,484 +180,312 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({ rpcUrl, s
     }
   };
 
-  const parseTransaction = async () => {
-    if (!rawTx || !rawReceipt) return;
-    await parseTransactionWithData(rawTx, rawReceipt);
-  };
-
-  const parseTransactionWithData = async (tx: TransactionResponse, receipt: TransactionReceipt) => {
-    try {
-      // 格式化基本信息
-      const info = formatTransactionInfo(tx, receipt);
-
-      // 解析 input data（尝试所有 ABI）
-      let decodedInput = null;
-      for (const abi of selectedAbis) {
-        const decoded = decodeInputData(tx.data, abi);
-        if (decoded) {
-          decodedInput = decoded;
-          break;
-        }
-      }
-
-      // 解析 logs
-      const parsedLogs = parseTransactionLogs(receipt.logs as Log[], selectedAbis, selectedAbiNames);
-
-      // 获取区块时间戳
-      let timestamp: number | undefined;
-      try {
-        if (tx.blockNumber && rpcUrl) {
-          const provider = new (await import('ethers')).JsonRpcProvider(rpcUrl);
-          const block = await provider.getBlock(tx.blockNumber);
-          timestamp = block?.timestamp;
-        }
-      } catch (error) {
-        console.error('获取区块时间戳失败:', error);
-      }
-
-      const parsed: ParsedTransaction = {
-        ...info,
-        timestamp: timestamp || undefined,
-        decodedInput: decodedInput || undefined,
-        logs: parsedLogs,
-      } as ParsedTransaction;
-
-      setParsedTx(parsed);
-      
-      // 保存结果
-      saveTxParserResult({
-        txHash: tx.hash,
-        parsedTx: parsed,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('transactionParser.parseFailed'));
-    }
-  };
-
   const toggleLog = (index: number) => {
-    const newExpanded = new Set(expandedLogs);
-    if (newExpanded.has(index)) {
-      newExpanded.delete(index);
-    } else {
-      newExpanded.add(index);
-    }
-    setExpandedLogs(newExpanded);
+    setExpandedLogs((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
   };
 
-  const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return t('transactionParser.unknown');
-    return new Date(timestamp * 1000).toLocaleString(t('transactionParser.locale'));
+  const stats: StatCell[] | null = useMemo(() => {
+    if (!parsedTx) return null;
+    const valueEth = (BigInt(parsedTx.value) * 10000n) / (10n ** 18n);
+    const valueDisplay = Number(valueEth) / 10000;
+    return [
+      {
+        label: t('txParser.statStatus'),
+        value: parsedTx.status === 1 ? 'OK' : 'FAILED',
+        variant: parsedTx.status === 1 ? 'ok' : 'warn',
+      },
+      {
+        label: t('txParser.statLogs'),
+        value: parsedTx.logs.length,
+      },
+      {
+        label: t('txParser.statValue'),
+        value: `${valueDisplay.toString()} ETH`,
+      },
+      {
+        label: t('txParser.statDecoded'),
+        value: parsedTx.decodedInput ? 'yes' : 'no',
+        variant: parsedTx.decodedInput ? 'ok' : 'default',
+      },
+    ];
+  }, [parsedTx, t]);
+
+  const txBarItems = parsedTx
+    ? [
+        { kicker: 'tx', value: `${parsedTx.hash.slice(0, 10)}…${parsedTx.hash.slice(-6)}` },
+        { kicker: 'block', value: parsedTx.blockNumber?.toLocaleString() ?? '—' },
+        { kicker: 'abis', value: <span className="text-mint">{selectedAbis.length}</span> },
+      ]
+    : [];
+
+  const shortAddr = (addr: string | null | undefined) => {
+    if (!addr) return '—';
+    return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
   };
 
-  const shortenAddress = (address: string) => {
-    if (address.length < 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  const formatTimestamp = (ts?: number) =>
+    ts ? new Date(ts * 1000).toLocaleString() : '—';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-      {/* 左列：输入区 + 交易基本信息 */}
-      <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">{t('transactionParser.title')}</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('transactionParser.txHash')}
-              </label>
-              <input
-                type="text"
-                value={txHash}
-                onChange={(e) => setTxHash(e.target.value)}
-                placeholder={t('transactionParser.txHashPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-              />
-            </div>
-
+    <div className="flex h-full min-h-0 flex-col">
+      {parsedTx ? (
+        <TxBar
+          items={txBarItems}
+          actions={
             <button
               onClick={handleFetch}
               disabled={isFetching}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+              className="rounded-sm border border-line px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
             >
-              {isFetching ? t('transactionParser.fetching') : t('transactionParser.fetchTransaction')}
+              {isFetching ? t('transactionParser.fetching') : t('debugTrace.refetch')}
             </button>
-
-            {rawTx && selectedAbis.length === 0 && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-800">
-                  👈 {t('transactionParser.selectAbiToParseHint')}
-                </p>
-              </div>
-            )}
-
-            {rawTx && selectedAbis.length > 0 && !parsedTx && (
-              <button
-                onClick={parseTransaction}
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors font-medium"
-              >
-                {t('transactionParser.parseTransaction')}
-              </button>
-            )}
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-
-            {rawTx && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">
-                  ✅ {t('transactionParser.transactionFetched')}
-                  {selectedAbis.length > 0 && parsedTx && (
-                    <span className="ml-2">· {t('transactionParser.parsed')}</span>
-                  )}
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  {t('transactionParser.usingAbis', { count: selectedAbis.length })}
-                </p>
-              </div>
-            )}
-          </div>
+          }
+        />
+      ) : (
+        <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-mute">
+            tx hash
+          </span>
+          <input
+            value={txHash}
+            onChange={(e) => setTxHash(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleFetch(); }}
+            placeholder="0x..."
+            className="flex-1 rounded-sm border border-line bg-bg px-3 py-1.5 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-mute">
+            abis
+          </span>
+          <span className="font-mono text-[11px] text-mint">{selectedAbis.length}</span>
+          <button
+            onClick={handleFetch}
+            disabled={isFetching}
+            className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[11px] font-semibold text-bg disabled:opacity-50"
+          >
+            {isFetching ? t('transactionParser.fetching') : t('transactionParser.fetchTransaction')}
+          </button>
         </div>
+      )}
 
-        {/* 交易基本信息 */}
-        {parsedTx && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-800">{t('transactionParser.transactionInfo')}</h3>
-            
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.status')}：</span>
-                <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                  parsedTx.status === 1 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {parsedTx.status === 1 ? t('transactionParser.success') : t('transactionParser.failed')}
-                </span>
-              </div>
+      {error && (
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[12px] text-call-red">
+          {error}
+        </div>
+      )}
 
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.blockNumber')}：</span>
-                <span className="ml-2 text-gray-800 font-mono">{parsedTx.blockNumber}</span>
-              </div>
+      {stats && <StatsRibbon stats={stats} />}
 
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.time')}：</span>
-                <span className="ml-2 text-gray-800">{formatTimestamp(parsedTx.timestamp)}</span>
-              </div>
-
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.from')}：</span>
-                <span className="ml-2 text-gray-800 font-mono text-xs" title={parsedTx.from}>
-                  {shortenAddress(parsedTx.from)}
-                </span>
-              </div>
-
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.to')}：</span>
-                <span className="ml-2 text-gray-800 font-mono text-xs" title={parsedTx.to || ''}>
-                  {parsedTx.to ? shortenAddress(parsedTx.to) : t('transactionParser.contractCreation')}
-                </span>
-              </div>
-
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.value')}：</span>
-                <span className="ml-2 text-gray-800 font-mono">
-                  {(BigInt(parsedTx.value) / BigInt(10 ** 18)).toString()} ETH
-                </span>
-              </div>
-
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.gasLimit')}：</span>
-                <span className="ml-2 text-gray-800 font-mono">{parsedTx.gasLimit}</span>
-              </div>
-
+      {parsedTx ? (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* Top: tx header + decoded input */}
+          <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[11px]">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+              <div><span className="text-fg-mute">from </span><span className="text-fg" title={parsedTx.from}>{shortAddr(parsedTx.from)}</span></div>
+              <div><span className="text-fg-mute">to </span><span className="text-fg" title={parsedTx.to || ''}>{parsedTx.to ? shortAddr(parsedTx.to) : t('transactionParser.contractCreation')}</span></div>
+              <div><span className="text-fg-mute">value </span><span className="text-fg">{(BigInt(parsedTx.value) / BigInt(10 ** 18)).toString()} ETH</span></div>
+              <div><span className="text-fg-mute">nonce </span><span className="text-fg">{parsedTx.nonce}</span></div>
+              <div><span className="text-fg-mute">gas limit </span><span className="text-fg">{parsedTx.gasLimit}</span></div>
               {parsedTx.gasPrice && (
-                <div>
-                  <span className="font-medium text-gray-600">{t('transactionParser.gasPrice')}：</span>
-                  <span className="ml-2 text-gray-800 font-mono">
-                    {(BigInt(parsedTx.gasPrice) / BigInt(10 ** 9)).toString()} Gwei
-                  </span>
-                </div>
+                <div><span className="text-fg-mute">gas price </span><span className="text-fg">{(BigInt(parsedTx.gasPrice) / BigInt(10 ** 9)).toString()} gwei</span></div>
               )}
-
-              <div>
-                <span className="font-medium text-gray-600">{t('transactionParser.nonce')}：</span>
-                <span className="ml-2 text-gray-800 font-mono">{parsedTx.nonce}</span>
-              </div>
-
-              <div className="pt-3 border-t border-gray-200">
-                <span className="font-medium text-gray-600 block mb-2">{t('transactionParser.inputData')}：</span>
-                <div className="bg-gray-50 p-2 rounded font-mono text-xs break-all max-h-32 overflow-y-auto">
-                  {parsedTx.inputData}
-                </div>
-              </div>
+              <div className="col-span-2"><span className="text-fg-mute">time </span><span className="text-fg">{formatTimestamp(parsedTx.timestamp)}</span></div>
             </div>
-          </div>
-        )}
-      </div>
 
-      {/* 右列：解析结果 */}
-      <div className="flex flex-col space-y-4 overflow-y-auto pr-2">
-        {parsedTx && (
-          <>
-            {/* Input Data 解析 */}
-            {parsedTx.decodedInput && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold mb-4 text-gray-800">{t('transactionParser.functionCall')}</h3>
-                
-                <div className="space-y-3">
-                  <div>
-                    <span className="font-medium text-gray-600">{t('transactionParser.function')}：</span>
-                    <span className="ml-2 text-blue-700 font-mono text-sm font-semibold">
-                      {parsedTx.decodedInput.functionName}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-gray-600">{t('transactionParser.signature')}：</span>
-                    <span className="ml-2 text-gray-600 font-mono text-xs">
-                      {parsedTx.decodedInput.signature}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="font-medium text-gray-600 block mb-2">{t('transactionParser.parameters')}：</span>
-                    <div className="bg-gray-50 p-3 rounded">
-                      <pre className="text-xs overflow-x-auto">
-                        {JSON.stringify(parsedTx.decodedInput.args, null, 2)}
-                      </pre>
-                    </div>
-                  </div>
+            {parsedTx.decodedInput ? (
+              <div className="mt-4 border-t border-line-soft pt-3">
+                <MiniLabel>
+                  {t('txParser.decodedInput')} — {parsedTx.decodedInput.functionName}
+                </MiniLabel>
+                <div className="mb-1 text-[10px] text-fg-mute">
+                  {parsedTx.decodedInput.signature}
                 </div>
+                <pre className="mt-1 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                  {stringifySafe(parsedTx.decodedInput.args)}
+                </pre>
+              </div>
+            ) : (
+              <div className="mt-4 border-t border-line-soft pt-3">
+                <MiniLabel>{t('txParser.rawInput')}</MiniLabel>
+                <pre className="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                  {parsedTx.inputData}
+                </pre>
               </div>
             )}
+          </div>
 
-            {/* Logs 解析 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-800">
-                {t('transactionParser.eventLogs')}
-                <span className="ml-2 text-sm text-gray-500">
-                  ({parsedTx.logs.length})
-                </span>
-              </h3>
+          {/* Bottom: logs */}
+          <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[10px]">
+            <span className="uppercase tracking-[0.22em] text-fg-mute">
+              {t('txParser.logs')}
+            </span>
+            <span className="text-fg-mute">·</span>
+            <span className="text-fg">{parsedTx.logs.length}</span>
+          </div>
 
-              {parsedTx.logs.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('transactionParser.noLogs')}</p>
-              ) : (
-                <div className="space-y-3">
-                  {parsedTx.logs.map((log, index) => (
-                    <div
-                      key={index}
-                      className={`border-2 rounded-lg overflow-hidden ${
-                        log.parsed 
-                          ? 'border-green-200 bg-green-50' 
-                          : 'border-gray-200 bg-gray-50'
-                      }`}
-                    >
-                      <div
-                        onClick={() => toggleLog(index)}
-                        className="px-4 py-3 cursor-pointer hover:bg-opacity-80 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono text-gray-500">
-                                Log #{log.logIndex}
-                              </span>
-                              {log.parsed ? (
-                                <span className="text-sm font-semibold text-green-800">
-                                  {log.parsed.eventName}
-                                </span>
-                              ) : (
-                                <span className="text-sm text-gray-500">
-                                  {t('transactionParser.unparsed')}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1 font-mono">
-                              {log.address}
-                            </div>
+          {parsedTx.logs.length === 0 ? (
+            <div className="p-5 font-ui text-[12px] text-fg-mute">
+              {t('transactionParser.noLogs')}
+            </div>
+          ) : (
+            parsedTx.logs.map((log: ParsedLog, index: number) => {
+              const expanded = expandedLogs.has(index);
+              const isParsed = !!log.parsed;
+              return (
+                <div key={index} className="border-b border-line-soft">
+                  <div
+                    onClick={() => toggleLog(index)}
+                    className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[11px] hover:bg-surface-2"
+                  >
+                    <span className="text-[10px] text-fg-mute">#{log.logIndex}</span>
+                    {isParsed ? (
+                      <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-mint">
+                        {log.parsed!.eventName}
+                      </span>
+                    ) : (
+                      <span className="rounded-xs bg-line px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-fg-mute">
+                        RAW
+                      </span>
+                    )}
+                    <span className="truncate text-fg-dim" title={log.address}>
+                      {log.address}
+                    </span>
+                    <span className="ml-auto text-fg-mute">
+                      {expanded ? '▾' : '▸'}
+                    </span>
+                  </div>
+
+                  {expanded && (
+                    <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
+                      {isParsed ? (
+                        <>
+                          <div className="mb-1.5">
+                            <span className="text-fg-mute">signature </span>
+                            <span className="text-fg">{log.parsed!.signature}</span>
                           </div>
-                          
-                          <svg
-                            className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                              expandedLogs.has(index) ? 'rotate-180' : ''
-                            }`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {expandedLogs.has(index) && (
-                        <div className="px-4 pb-4 space-y-3">
-                          {log.parsed ? (
-                            <>
-                              <div>
-                                <span className="text-xs font-medium text-gray-600">{t('transactionParser.signature')}：</span>
-                                <span className="ml-2 text-xs text-gray-600 font-mono">
-                                  {log.parsed.signature}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-gray-600">Topic：</span>
-                                <span className="ml-2 text-xs text-blue-600 font-mono break-all">
-                                  {log.parsed.topic}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-gray-600">{t('transactionParser.abiSource')}：</span>
-                                <span className="ml-2 text-xs text-purple-600 font-medium">
-                                  {log.parsed.abiName}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">{t('transactionParser.parameters')}：</span>
-                                <div className="bg-white p-2 rounded border border-gray-200">
-                                  <pre className="text-xs overflow-x-auto">
-                                    {JSON.stringify(log.parsed.args, null, 2)}
-                                  </pre>
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {log.error && (
-                                <div className="text-xs text-red-600 mb-2 whitespace-pre-wrap bg-red-50 p-2 rounded border border-red-200">
-                                  {log.error}
-                                </div>
-                              )}
-                              
-                              {/* Topics 智能解析 */}
-                              <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">
-                                  {t('transactionParser.topics')}：
-                                  <span className="text-gray-400 ml-1">({t('transactionParser.each32Bytes')})</span>
-                                </span>
-                                <div className="bg-white p-2 rounded border border-gray-200 space-y-2">
-                                  {log.topics.map((topic, i) => {
-                                    const selectedType = topicParseTypes[index]?.[i] || 'hex';
-                                    return (
-                                      <div key={i} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-xs text-gray-500">[{i}]</span>
-                                          {i > 0 && ( // topic[0] 是 event signature，不需要解析
-                                            <div className="flex gap-1">
-                                              {(['hex', 'address', 'number', 'text'] as ParseType[]).map(type => (
-                                                <button
-                                                  key={type}
-                                                  onClick={() => {
-                                                    setTopicParseTypes(prev => ({
-                                                      ...prev,
-                                                      [index]: { ...prev[index], [i]: type }
-                                                    }));
-                                                  }}
-                                                  className={`px-1.5 py-0.5 text-xs rounded ${
-                                                    selectedType === type
-                                                      ? 'bg-blue-500 text-white'
-                                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                  }`}
-                                                >
-                                                  {type}
-                                                </button>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="text-xs font-mono break-all text-gray-700 pl-4">
-                                          {i === 0 ? (
-                                            <span className="text-purple-600">{topic}</span>
-                                          ) : (
-                                            <span className={selectedType === 'address' ? 'text-blue-600' : selectedType === 'number' ? 'text-green-600' : ''}>
-                                              {parse32Bytes(topic, selectedType)}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              {/* Data 智能解析 */}
-                              <div>
-                                <span className="text-xs font-medium text-gray-600 block mb-1">
-                                  {t('transactionParser.data')}：
-                                  <span className="text-gray-400 ml-1">
-                                    ({t('transactionParser.bytes32Count', { count: splitInto32Bytes(log.data).length })})
-                                  </span>
-                                </span>
-                                {log.data && log.data !== '0x' ? (
-                                  <div className="bg-white p-2 rounded border border-gray-200 space-y-2">
-                                    {splitInto32Bytes(log.data).map((chunk, i) => {
-                                      const selectedType = dataParseTypes[index]?.[i] || 'hex';
-                                      return (
-                                        <div key={i} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs text-gray-500">[{i}]</span>
-                                            <div className="flex gap-1">
-                                              {(['hex', 'address', 'number', 'text'] as ParseType[]).map(type => (
-                                                <button
-                                                  key={type}
-                                                  onClick={() => {
-                                                    setDataParseTypes(prev => ({
-                                                      ...prev,
-                                                      [index]: { ...prev[index], [i]: type }
-                                                    }));
-                                                  }}
-                                                  className={`px-1.5 py-0.5 text-xs rounded ${
-                                                    selectedType === type
-                                                      ? 'bg-blue-500 text-white'
-                                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                  }`}
-                                                >
-                                                  {type}
-                                                </button>
-                                              ))}
-                                            </div>
-                                          </div>
-                                          <div className="text-xs font-mono break-all pl-4">
-                                            <span className={
-                                              selectedType === 'address' ? 'text-blue-600' : 
-                                              selectedType === 'number' ? 'text-green-600' : 
-                                              selectedType === 'text' ? 'text-orange-600' :
-                                              'text-gray-700'
-                                            }>
-                                              {parse32Bytes(chunk, selectedType)}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <div className="bg-white p-2 rounded border border-gray-200 text-xs text-gray-400">
-                                    {t('transactionParser.empty')}
-                                  </div>
-                                )}
-                              </div>
-                            </>
+                          <div className="mb-1.5">
+                            <span className="text-fg-mute">topic </span>
+                            <span className="break-all text-fg">{log.parsed!.topic}</span>
+                          </div>
+                          <div className="mb-3">
+                            <span className="text-fg-mute">abi </span>
+                            <span className="text-mint">{log.parsed!.abiName}</span>
+                          </div>
+                          <MiniLabel>{t('txParser.args')}</MiniLabel>
+                          <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                            {stringifySafe(log.parsed!.args)}
+                          </pre>
+                        </>
+                      ) : (
+                        <>
+                          {log.error && (
+                            <div className="mb-3 whitespace-pre-wrap rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
+                              {log.error}
+                            </div>
                           )}
-                        </div>
+                          <MiniLabel>
+                            {t('txParser.topics')} · {t('txParser.each32Bytes')}
+                          </MiniLabel>
+                          <div className="mb-3 space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
+                            {log.topics.map((topic, i) => {
+                              const selType = topicParseTypes[index]?.[i] || 'hex';
+                              return (
+                                <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
+                                  <div className="mb-0.5 flex items-center gap-2">
+                                    <span className="text-fg-mute">[{i}]</span>
+                                    {i > 0 && (
+                                      <ParseTypeButtons
+                                        current={selType}
+                                        onChange={(type) =>
+                                          setTopicParseTypes((prev) => ({
+                                            ...prev,
+                                            [index]: { ...prev[index], [i]: type },
+                                          }))
+                                        }
+                                      />
+                                    )}
+                                  </div>
+                                  <div className="break-all pl-4 text-fg">
+                                    {i === 0 ? (
+                                      <span className="text-call-violet">{topic}</span>
+                                    ) : (
+                                      <span className={
+                                        selType === 'address' ? 'text-call-blue' :
+                                        selType === 'number' ? 'text-mint' :
+                                        selType === 'text' ? 'text-call-amber' : ''
+                                      }>
+                                        {parse32Bytes(topic, selType)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <MiniLabel>
+                            {t('txParser.data')} · {t('txParser.bytes32Count', { count: splitInto32Bytes(log.data).length })}
+                          </MiniLabel>
+                          {log.data && log.data !== '0x' ? (
+                            <div className="space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
+                              {splitInto32Bytes(log.data).map((chunk, i) => {
+                                const selType = dataParseTypes[index]?.[i] || 'hex';
+                                return (
+                                  <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
+                                    <div className="mb-0.5 flex items-center gap-2">
+                                      <span className="text-fg-mute">[{i}]</span>
+                                      <ParseTypeButtons
+                                        current={selType}
+                                        onChange={(type) =>
+                                          setDataParseTypes((prev) => ({
+                                            ...prev,
+                                            [index]: { ...prev[index], [i]: type },
+                                          }))
+                                        }
+                                      />
+                                    </div>
+                                    <div className="break-all pl-4">
+                                      <span className={
+                                        selType === 'address' ? 'text-call-blue' :
+                                        selType === 'number' ? 'text-mint' :
+                                        selType === 'text' ? 'text-call-amber' : 'text-fg'
+                                      }>
+                                        {parse32Bytes(chunk, selType)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-fg-mute">
+                              (empty)
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-1 min-h-0 items-center justify-center text-center">
+          <div>
+            <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
+            <p className="font-ui text-[13px] text-fg-dim">
+              {t('transactionParser.enterTxHashToStart')}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default TransactionParserPage;
-
