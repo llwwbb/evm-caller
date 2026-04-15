@@ -198,6 +198,7 @@ function App() {
           <DebugTracePage
             rpcUrl={rpcUrl}
             selectedAbis={selectedAbis}
+            showAddressNames={showAddressNames}
             presetRefreshTrigger={presetRefreshTrigger}
           />
         )}

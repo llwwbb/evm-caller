@@ -447,7 +447,13 @@
     "pinnedHint": "已固定 {{count}} 个面板 — 可关闭一些",
     "closeAll": "全部关闭",
     "callTree": "调用树",
-    "clickNodeToViewDetail": "点击左侧节点查看详情 · ⌘/Shift+点击追加到栈"
+    "clickNodeToViewDetail": "点击左侧节点查看详情 · ⌘/Shift+点击追加到栈",
+    "statCalls": "调用数",
+    "statDepth": "最大深度",
+    "statGas": "总 GAS",
+    "statReverts": "回滚",
+    "statDecoded": "已解析",
+    "refetch": "重新获取"
   },
   "abiEncoder": {
     "title": "ABI 编码器",

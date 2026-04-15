@@ -1,411 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ParsedCallTrace, CallTrace } from '../types';
-import { 
-  fetchDebugTrace, 
-  parseTraceWithAbi, 
-  formatGas, 
-  calculateGasPercentage
-} from '../utils/debugTrace';
-import { loadContractPresets, saveDebugTraceResult, loadDebugTraceResult } from '../utils/presetStorage';
+import { fetchDebugTrace, parseTraceWithAbi } from '../utils/debugTrace';
+import {
+  loadContractPresets,
+  saveDebugTraceResult,
+  loadDebugTraceResult,
+} from '../utils/presetStorage';
+import { buildAddressNameMap } from '../utils/addressDisplay';
+import TxBar from './layout/TxBar';
+import StatsRibbon, { StatCell } from './layout/StatsRibbon';
+import CallTree from './debugTrace/CallTree';
+import NodeStack from './debugTrace/NodeStack';
+import { usePinStack } from '../hooks/usePinStack';
 
 interface DebugTracePageProps {
   rpcUrl: string;
   selectedAbis: string[];
+  showAddressNames: boolean;
   presetRefreshTrigger: number;
 }
 
-interface TraceCallNodeProps {
-  trace: ParsedCallTrace;
-  depth: number;
-  expandedNodes: Set<string>;
-  toggleNode: (path: string) => void;
-  nodePath: string;
-  showAddressNames: boolean;
-  addressNameMap: Map<string, string>;
+function gasNum(gas: string | undefined): number {
+  if (!gas) return 0;
+  const n = typeof gas === 'string' ? parseInt(gas, 16) : Number(gas);
+  return isNaN(n) ? 0 : n;
 }
 
-// 复制到剪贴板
-const copyToClipboard = (text: string) => {
-  navigator.clipboard.writeText(text);
-};
+function walkStats(
+  node: ParsedCallTrace,
+  acc: {
+    calls: number;
+    maxDepth: number;
+    totalGas: number;
+    reverts: number;
+    decoded: number;
+  },
+  depth = 0
+) {
+  acc.calls++;
+  acc.maxDepth = Math.max(acc.maxDepth, depth);
+  acc.totalGas += gasNum(node.gasUsed);
+  if (node.error) acc.reverts++;
+  if (node.decodedInput) acc.decoded++;
+  if (node.calls) for (const c of node.calls) walkStats(c, acc, depth + 1);
+}
 
-// 递归渲染调用节点
-const TraceCallNode: React.FC<TraceCallNodeProps> = ({ 
-  trace, 
-  depth, 
-  expandedNodes, 
-  toggleNode, 
-  nodePath,
-  showAddressNames,
-  addressNameMap
-}) => {
-  const { t } = useTranslation();
-  const expanded = expandedNodes.has(nodePath);
-  const [showRawInput, setShowRawInput] = useState(false);
-  const [showRawOutput, setShowRawOutput] = useState(false);
-  
-  const hasValue = trace.value && BigInt(trace.value) > BigInt(0);
-  const hasError = !!trace.error;
-  const hasCalls = trace.calls && trace.calls.length > 0;
-  const gasPercentage = calculateGasPercentage(trace.gasUsed, trace.gas);
-  
-  // 获取地址显示名称
-  const getAddressDisplay = (address: string): string => {
-    if (!address) return address;
-    const lowerAddr = address.toLowerCase();
-    if (showAddressNames && addressNameMap.has(lowerAddr)) {
-      const name = addressNameMap.get(lowerAddr)!;
-      console.log(`✅ 地址匹配: ${address} -> ${name}`);
-      return name;
+function findNodeByPath(
+  root: ParsedCallTrace | null,
+  path: string
+): ParsedCallTrace | null {
+  if (!root) return null;
+  if (path === '0') return root;
+  const parts = path.split('-').slice(1).map(Number);
+  let node: ParsedCallTrace | undefined = root;
+  for (const i of parts) {
+    if (!node?.calls || i < 0 || i >= node.calls.length) return null;
+    node = node.calls[i];
+  }
+  return node ?? null;
+}
+
+function allPaths(node: ParsedCallTrace, path = '0'): string[] {
+  const out = [path];
+  if (node.calls) {
+    for (let i = 0; i < node.calls.length; i++) {
+      out.push(...allPaths(node.calls[i], `${path}-${i}`));
     }
-    return address;
-  };
+  }
+  return out;
+}
 
-  // 层级缩进样式
-  const indentPx = depth * 16; // 每层 16px 缩进，不限制最大值
-  
-  return (
-    <div className="mb-2" style={{ paddingLeft: `${indentPx}px` }}>
-      <div
-        className={`border-2 rounded-lg overflow-hidden ${
-          hasError 
-            ? 'border-red-300 bg-red-50' 
-            : trace.decodedInput 
-            ? 'border-green-300 bg-green-50' 
-            : 'border-gray-300 bg-gray-50'
-        }`}
-      >
-        {/* 节点头部 - 可点击展开/折叠 */}
-        <div
-          onClick={() => toggleNode(nodePath)}
-          className="px-4 py-3 cursor-pointer hover:bg-opacity-80 transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* 层级深度标识 */}
-                {depth > 0 && (
-                  <span className="text-xs font-mono text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">
-                    L{depth}
-                  </span>
-                )}
-                
-                {/* 调用类型 */}
-                <span 
-                  className="px-2 py-0.5 rounded text-xs font-mono font-semibold"
-                  style={{
-                    backgroundColor: trace.type === 'CALL' ? '#dbeafe' : 
-                                   trace.type === 'DELEGATECALL' ? '#fef3c7' : 
-                                   trace.type === 'STATICCALL' ? '#e0e7ff' : 
-                                   trace.type === 'CREATE' || trace.type === 'CREATE2' ? '#dcfce7' : 
-                                   '#fecaca',
-                    color: trace.type === 'CALL' ? '#1e40af' : 
-                          trace.type === 'DELEGATECALL' ? '#92400e' : 
-                          trace.type === 'STATICCALL' ? '#3730a3' : 
-                          trace.type === 'CREATE' || trace.type === 'CREATE2' ? '#166534' : 
-                          '#991b1b'
-                  }}
-                >
-                  {trace.type}
-                </span>
-                
-                {/* From -> To */}
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="flex items-center gap-1">
-                    <span className="text-gray-600 font-mono" title={trace.from}>
-                      {getAddressDisplay(trace.from)}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(trace.from);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title={t('result.copy')}
-                    >
-                      📋
-                    </button>
-                  </div>
-                  <span className="text-gray-400">→</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-blue-700 font-semibold font-mono" title={trace.to || 'Contract Creation'}>
-                      {trace.to ? getAddressDisplay(trace.to) : t('debugTrace.contractCreation')}
-                    </span>
-                    {trace.to && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyToClipboard(trace.to!);
-                        }}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                        title={t('result.copy')}
-                      >
-                        📋
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                {/* 函数名（如果已解析） */}
-                {trace.decodedInput && (
-                  <span className="text-purple-700 font-semibold text-sm">
-                    {trace.decodedInput.functionName}()
-                  </span>
-                )}
-                
-                {/* Value 标识 */}
-                {hasValue && (
-                  <span className="text-amber-600 text-sm flex items-center gap-1">
-                    💰 {(() => {
-                      const value = BigInt(trace.value!);
-                      const eth = value / BigInt(10 ** 18);
-                      const remainder = value % BigInt(10 ** 18);
-                      if (remainder === BigInt(0)) {
-                        return eth.toString();
-                      }
-                      // 格式化小数部分，展示完整精度，去除末尾的 0
-                      const decimalStr = remainder.toString().padStart(18, '0').replace(/0+$/, '');
-                      return `${eth}.${decimalStr}`;
-                    })()} ETH
-                  </span>
-                )}
-                
-                {/* Error 标识 */}
-                {hasError && (
-                  <span className="text-red-600 text-sm font-semibold">
-                    ⚠️ {t('debugTrace.reverted')}
-                  </span>
-                )}
-              </div>
-              
-              {/* Gas 使用情况 */}
-              <div className="mt-2 flex items-center gap-3">
-                <div className="flex-1 max-w-xs">
-                  <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                    <span>{t('debugTrace.gasUsage')}</span>
-                    <span>
-                      {formatGas(trace.gasUsed)} / {formatGas(trace.gas)} ({gasPercentage.toFixed(1)}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        gasPercentage > 90 ? 'bg-red-500' : 
-                        gasPercentage > 70 ? 'bg-amber-500' : 
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(gasPercentage, 100)}%` }}
-                    />
-                  </div>
-                </div>
-                
-                {/* 展开/折叠图标 */}
-                <svg
-                  className={`w-5 h-5 text-gray-500 transform transition-transform flex-shrink-0 ${
-                    expanded ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* 节点详情 - 展开时显示 */}
-        {expanded && (
-          <div className="px-4 pb-4 space-y-3 border-t border-gray-200 min-w-0">
-            {/* Input 数据 */}
-            <div className="relative">
-              <div className="mb-2 flex items-start gap-2">
-                <span className="text-sm font-semibold text-gray-700">{t('debugTrace.input')}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowRawInput(!showRawInput);
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
-                >
-                  {showRawInput ? t('debugTrace.hideRaw') : t('debugTrace.showRaw')}
-                </button>
-              </div>
-              
-              {trace.decodedInput ? (
-                <div className="bg-white p-3 rounded border border-gray-200">
-                  <div className="mb-2">
-                    <span className="text-xs text-gray-600">{t('debugTrace.function')}:</span>
-                    <span className="ml-2 text-sm font-mono text-blue-700">
-                      {trace.decodedInput.functionName}
-                    </span>
-                  </div>
-                  <div className="mb-2">
-                    <span className="text-xs text-gray-600">{t('debugTrace.signature')}:</span>
-                    <span className="ml-2 text-xs font-mono text-gray-600">
-                      {trace.decodedInput.signature}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-600">{t('debugTrace.parameters')}:</span>
-                    <pre className="mt-1 text-xs overflow-x-auto bg-gray-50 p-2 rounded">
-                      {JSON.stringify(trace.decodedInput.args, null, 2)}
-                    </pre>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-xs text-gray-500 italic">
-                  {t('debugTrace.cannotDecode')}
-                </div>
-              )}
-              
-              {showRawInput && (
-                <div className="mt-2 bg-gray-100 p-2 rounded">
-                  <div className="text-xs text-gray-600 mb-1">{t('debugTrace.rawData')}:</div>
-                  <div className="text-xs font-mono break-all text-gray-800">
-                    {trace.input}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Output 数据 */}
-            {trace.output && trace.output !== '0x' && (
-              <div className="relative">
-                <div className="mb-2 flex items-start gap-2">
-                  <span className="text-sm font-semibold text-gray-700">{t('debugTrace.output')}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowRawOutput(!showRawOutput);
-                    }}
-                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline whitespace-nowrap"
-                  >
-                    {showRawOutput ? t('debugTrace.hideRaw') : t('debugTrace.showRaw')}
-                  </button>
-                </div>
-                
-                {trace.decodedOutput ? (
-                  <div className="bg-white p-3 rounded border border-gray-200">
-                    <pre className="text-xs overflow-x-auto">
-                      {JSON.stringify(trace.decodedOutput, null, 2)}
-                    </pre>
-                  </div>
-                ) : (
-                  <div className="text-xs text-gray-500 italic">
-                    {t('debugTrace.cannotDecode')}
-                  </div>
-                )}
-                
-                {showRawOutput && (
-                  <div className="mt-2 bg-gray-100 p-2 rounded">
-                    <div className="text-xs text-gray-600 mb-1">{t('debugTrace.rawData')}:</div>
-                    <div className="text-xs font-mono break-all text-gray-800">
-                      {trace.output}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Error 数据 */}
-            {trace.error && (
-              <div>
-                <span className="text-sm font-semibold text-red-700 block mb-2">
-                  {t('debugTrace.error')}
-                </span>
-                
-                <div className="bg-red-100 p-3 rounded border border-red-300">
-                  {/* 显示 revertReason */}
-                  {trace.revertReason && (
-                    <div className="mb-3 p-2 bg-red-200 rounded">
-                      <span className="text-xs text-red-700 font-semibold">{t('debugTrace.revertReason')}:</span>
-                      <div className="text-sm text-red-900 font-medium mt-1">
-                        {trace.revertReason}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {trace.decodedError ? (
-                    <>
-                      {trace.decodedError.errorName && (
-                        <div className="mb-2">
-                          <span className="text-xs text-red-700">{t('debugTrace.errorName')}:</span>
-                          <span className="ml-2 text-sm font-mono text-red-800 font-semibold">
-                            {trace.decodedError.errorName}
-                          </span>
-                        </div>
-                      )}
-                      {trace.decodedError.signature && (
-                        <div className="mb-2">
-                          <span className="text-xs text-red-700">{t('debugTrace.signature')}:</span>
-                          <span className="ml-2 text-xs font-mono text-red-700">
-                            {trace.decodedError.signature}
-                          </span>
-                        </div>
-                      )}
-                      {trace.decodedError.args && (
-                        <div>
-                          <span className="text-xs text-red-700">{t('debugTrace.errorArgs')}:</span>
-                          <pre className="mt-1 text-xs overflow-x-auto bg-white p-2 rounded">
-                            {JSON.stringify(trace.decodedError.args, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                      {trace.decodedError.message && !trace.decodedError.errorName && (
-                        <div className="text-sm text-red-800">
-                          {trace.decodedError.message}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="text-xs font-mono break-all text-red-800">
-                      {trace.error}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* 子调用统计 */}
-            {hasCalls && (
-              <div className="pt-2 border-t border-gray-300">
-                <span className="text-xs font-semibold text-gray-600">
-                  {t('debugTrace.nestedCalls')}: {trace.calls!.length}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      
-      {/* 递归渲染子调用 - 只有当前节点展开时才渲染 */}
-      {expanded && hasCalls && (
-        <div className="mt-2 space-y-2">
-          {trace.calls!.map((call, index) => (
-            <TraceCallNode 
-              key={`${nodePath}-${index}`} 
-              trace={call} 
-              depth={depth + 1}
-              expandedNodes={expandedNodes}
-              toggleNode={toggleNode}
-              nodePath={`${nodePath}-${index}`}
-              showAddressNames={showAddressNames}
-              addressNameMap={addressNameMap}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DebugTracePage: React.FC<DebugTracePageProps> = ({ 
-  rpcUrl, 
+const DebugTracePage: React.FC<DebugTracePageProps> = ({
+  rpcUrl,
   selectedAbis,
-  presetRefreshTrigger
+  showAddressNames,
+  presetRefreshTrigger,
 }) => {
   const { t } = useTranslation();
   const [txHash, setTxHash] = useState('');
@@ -413,353 +83,259 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
   const [parsedTrace, setParsedTrace] = useState<ParsedCallTrace | null>(null);
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['0'])); // 默认展开根节点
-  const [showAddressNames, setShowAddressNames] = useState(true); // 是否显示合约名称
-  const [addressNameMap, setAddressNameMap] = useState<Map<string, string>>(new Map());
-  
-  // 从 localStorage 恢复状态
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['0']));
+  const [addressNameMap, setAddressNameMap] = useState(() => buildAddressNameMap([]));
+  const [didHydrate, setDidHydrate] = useState(false);
+
+  const pin = usePinStack();
+
+  // Hydrate from localStorage once
   useEffect(() => {
-    const savedState = loadDebugTraceResult();
-    if (savedState) {
-      setTxHash(savedState.txHash || '');
-      if (savedState.rawTrace) {
-        setRawTrace(savedState.rawTrace);
-        // 如果恢复时有 rawTrace，让后续的 useEffect 根据 selectedAbis 重新解析
-        // 而不是直接使用保存的 parsedTrace（可能已过期）
-      }
-      if (savedState.expandedNodes && savedState.expandedNodes.length > 0) {
-        setExpandedNodes(new Set(savedState.expandedNodes));
-      }
-      if (savedState.showAddressNames !== undefined) {
-        setShowAddressNames(savedState.showAddressNames);
-      }
-    }
-  }, []);
-  
-  // 保存状态到 localStorage
-  useEffect(() => {
-    if (rawTrace || parsedTrace) {
-      saveDebugTraceResult({
-        txHash,
-        rawTrace,
-        parsedTrace,
-        expandedNodes: Array.from(expandedNodes),
-        showAddressNames,
+    const saved = loadDebugTraceResult();
+    if (saved) {
+      setTxHash(saved.txHash || '');
+      if (saved.rawTrace) setRawTrace(saved.rawTrace);
+      if (saved.expandedNodes?.length) setExpandedPaths(new Set(saved.expandedNodes));
+      pin.hydrate({
+        selectedPath: saved.selectedPath ?? null,
+        pinnedPaths: saved.pinnedPaths ?? [],
+        collapsedPaths: saved.collapsedPaths ?? [],
       });
     }
-  }, [txHash, rawTrace, parsedTrace, expandedNodes, showAddressNames]);
-  
-  // 加载合约预设，构建地址->名称映射
-  const loadAddressMapping = () => {
-    const contracts = loadContractPresets();
-    const map = new Map<string, string>();
-    contracts.forEach(contract => {
-      map.set(contract.address.toLowerCase(), contract.name);
+    setDidHydrate(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist on change (skip until hydrated to avoid stomping restored state)
+  useEffect(() => {
+    if (!didHydrate) return;
+    saveDebugTraceResult({
+      txHash,
+      rawTrace,
+      parsedTrace,
+      expandedNodes: [...expandedPaths],
+      selectedPath: pin.selectedPath,
+      pinnedPaths: [...pin.pinnedPaths],
+      collapsedPaths: [...pin.collapsedPaths],
     });
-    console.log('📝 加载合约预设:', contracts.length, '个');
-    console.log('📋 地址映射:', Array.from(map.entries()));
-    setAddressNameMap(map);
-  };
-  
-  // 当 presetRefreshTrigger 变化时重新加载
+  }, [
+    didHydrate,
+    txHash,
+    rawTrace,
+    parsedTrace,
+    expandedPaths,
+    pin.selectedPath,
+    pin.pinnedPaths,
+    pin.collapsedPaths,
+  ]);
+
+  // Refresh address name map when presets change
   useEffect(() => {
-    loadAddressMapping();
+    setAddressNameMap(buildAddressNameMap(loadContractPresets()));
   }, [presetRefreshTrigger]);
-  
-  // 当 ABI 变化时，重新解析现有 trace
+
+  // Re-parse whenever ABIs or rawTrace change
   useEffect(() => {
-    if (rawTrace && selectedAbis.length > 0) {
-      try {
-        const parsed = parseTraceWithAbi(rawTrace, selectedAbis);
-        setParsedTrace(parsed);
-      } catch (err) {
-        console.error('Failed to parse trace with ABI:', err);
-      }
-    } else if (rawTrace) {
-      // 没有 ABI 时，直接显示原始 trace
+    if (!rawTrace) {
+      setParsedTrace(null);
+      return;
+    }
+    try {
+      const parsed =
+        selectedAbis.length > 0
+          ? parseTraceWithAbi(rawTrace, selectedAbis)
+          : (rawTrace as ParsedCallTrace);
+      setParsedTrace(parsed);
+    } catch (err) {
+      console.error('Failed to parse trace with ABI:', err);
       setParsedTrace(rawTrace as ParsedCallTrace);
     }
   }, [selectedAbis, rawTrace]);
-  
+
+  const stats: StatCell[] | null = useMemo(() => {
+    if (!parsedTrace) return null;
+    const acc = { calls: 0, maxDepth: 0, totalGas: 0, reverts: 0, decoded: 0 };
+    walkStats(parsedTrace, acc);
+    return [
+      { label: t('debugTrace.statCalls'), value: acc.calls },
+      { label: t('debugTrace.statDepth'), value: acc.maxDepth },
+      { label: t('debugTrace.statGas'), value: acc.totalGas.toLocaleString('en-US') },
+      {
+        label: t('debugTrace.statReverts'),
+        value: acc.reverts,
+        variant: acc.reverts > 0 ? 'warn' : 'default',
+      },
+      {
+        label: t('debugTrace.statDecoded'),
+        value: (
+          <>
+            {acc.decoded}
+            <span className="text-[12px] text-fg-mute">/{acc.calls}</span>
+          </>
+        ),
+        variant: acc.decoded === acc.calls ? 'ok' : 'default',
+      },
+    ];
+  }, [parsedTrace, t]);
+
+  const getNodeByPath = useCallback(
+    (path: string) => findNodeByPath(parsedTrace, path),
+    [parsedTrace]
+  );
+
+  const handleToggleExpand = useCallback((path: string) => {
+    setExpandedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
+  const expandAll = () => {
+    if (!parsedTrace) return;
+    setExpandedPaths(new Set(allPaths(parsedTrace)));
+  };
+  const collapseAll = () => setExpandedPaths(new Set(['0']));
+
   const handleFetch = async () => {
     if (!txHash.trim()) {
       setError(t('debugTrace.enterTxHash'));
       return;
     }
-    
     if (!rpcUrl.trim()) {
       setError(t('debugTrace.configureRpc'));
       return;
     }
-    
     setIsFetching(true);
     setError(null);
-    setParsedTrace(null);
     setRawTrace(null);
-    
+    setParsedTrace(null);
     try {
       const trace = await fetchDebugTrace(rpcUrl, txHash.trim());
       setRawTrace(trace);
-      
-      // 如果有 ABI，立即解析
-      if (selectedAbis.length > 0) {
-        const parsed = parseTraceWithAbi(trace, selectedAbis);
-        setParsedTrace(parsed);
-      } else {
-        setParsedTrace(trace as ParsedCallTrace);
-      }
-      
-      // 默认展开根节点
-      setExpandedNodes(new Set(['0']));
+      setExpandedPaths(new Set(['0']));
+      pin.clearAll();
     } catch (err) {
-      console.error('Failed to fetch trace:', err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      
-      // 提供更友好的错误提示
-      if (errorMessage.includes('debug_traceTransaction')) {
-        setError(t('debugTrace.rpcNotSupport'));
-      } else if (errorMessage.includes('not found') || errorMessage.includes('does not exist')) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('debug_traceTransaction')) setError(t('debugTrace.rpcNotSupport'));
+      else if (msg.includes('not found') || msg.includes('does not exist'))
         setError(t('debugTrace.txNotFound'));
-      } else {
-        setError(t('debugTrace.fetchFailed') + ': ' + errorMessage);
-      }
+      else setError(t('debugTrace.fetchFailed') + ': ' + msg);
     } finally {
       setIsFetching(false);
     }
   };
-  
-  // 切换节点展开/折叠
-  const toggleNode = (path: string) => {
-    setExpandedNodes(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(path)) {
-        // 折叠：只移除该节点，保留子节点的状态
-        newSet.delete(path);
-      } else {
-        // 展开：添加该节点
-        newSet.add(path);
-      }
-      return newSet;
-    });
-  };
-  
-  // 全部展开
-  const expandAll = () => {
-    if (!parsedTrace) return;
-    const allPaths = new Set<string>();
-    
-    const collectPaths = (trace: ParsedCallTrace, path: string) => {
-      allPaths.add(path);
-      if (trace.calls) {
-        trace.calls.forEach((call, index) => {
-          collectPaths(call, `${path}-${index}`);
-        });
-      }
-    };
-    
-    collectPaths(parsedTrace, '0');
-    setExpandedNodes(allPaths);
-  };
-  
-  // 全部折叠
-  const collapseAll = () => {
-    setExpandedNodes(new Set(['0'])); // 只保留根节点展开
-  };
-  
+
+  const txBarItems = rawTrace
+    ? [
+        { kicker: 'tx', value: `${txHash.slice(0, 10)}…${txHash.slice(-6)}` },
+        { kicker: 'abis', value: <span className="text-mint">{selectedAbis.length}</span> },
+      ]
+    : [];
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-      {/* 左侧：输入区 */}
-      <div className="lg:col-span-4 flex flex-col space-y-4 overflow-y-auto pr-2">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">
-            {t('debugTrace.title')}
-          </h2>
-          
-          <p className="text-sm text-gray-600 mb-4">
-            {t('debugTrace.description')}
-          </p>
-          
-          <div className="space-y-4">
-            {/* RPC 状态 */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <div className="text-sm">
-                <span className="font-medium text-blue-800">RPC:</span>
-                <span className="ml-2 text-blue-700 text-xs break-all">
-                  {rpcUrl || t('debugTrace.notConfigured')}
-                </span>
-              </div>
-              {selectedAbis.length > 0 && (
-                <div className="text-sm mt-2">
-                  <span className="font-medium text-blue-800">{t('debugTrace.selectedAbis')}:</span>
-                  <span className="ml-2 text-blue-700">
-                    {selectedAbis.length} {t('debugTrace.abiCount')}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* 交易哈希输入 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('debugTrace.txHash')}
-              </label>
-              <input
-                type="text"
-                value={txHash}
-                onChange={(e) => setTxHash(e.target.value)}
-                placeholder={t('debugTrace.txHashPlaceholder')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-              />
-            </div>
-            
-            {/* 获取按钮 */}
+    <div className="flex h-full min-h-0 flex-col">
+      {rawTrace ? (
+        <TxBar
+          items={txBarItems}
+          actions={
             <button
               onClick={handleFetch}
               disabled={isFetching}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+              className="rounded-sm border border-line px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
             >
-              {isFetching ? t('debugTrace.fetching') : t('debugTrace.fetchTrace')}
+              {isFetching ? t('debugTrace.fetching') : t('debugTrace.refetch')}
             </button>
-            
-            {/* 展开/折叠控制 */}
-            {parsedTrace && (
-              <div className="flex gap-2">
-                <button
-                  onClick={expandAll}
-                  className="flex-1 bg-green-600 text-white py-2 px-3 rounded-md hover:bg-green-700 transition-colors text-sm"
-                >
+          }
+        />
+      ) : (
+        <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-mute">
+            tx hash
+          </span>
+          <input
+            value={txHash}
+            onChange={(e) => setTxHash(e.target.value)}
+            placeholder="0x..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleFetch();
+            }}
+            className="flex-1 rounded-sm border border-line bg-bg px-3 py-1.5 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          />
+          <button
+            onClick={handleFetch}
+            disabled={isFetching}
+            className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[11px] font-semibold text-bg disabled:opacity-50"
+          >
+            {isFetching ? t('debugTrace.fetching') : t('debugTrace.fetchTrace')}
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[12px] text-call-red">
+          {error}
+        </div>
+      )}
+
+      {stats && <StatsRibbon stats={stats} />}
+
+      {parsedTrace ? (
+        <div
+          className="grid flex-1 min-h-0"
+          style={{ gridTemplateColumns: '1.4fr 1fr' }}
+        >
+          <div className="flex min-h-0 flex-col border-r border-line">
+            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[10px]">
+              <span className="uppercase tracking-[0.22em] text-fg-mute">
+                {t('debugTrace.callTree')}
+              </span>
+              <div className="ml-auto flex gap-3 text-fg-mute">
+                <button onClick={expandAll} className="hover:text-fg">
                   {t('debugTrace.expandAll')}
                 </button>
-                <button
-                  onClick={collapseAll}
-                  className="flex-1 bg-gray-600 text-white py-2 px-3 rounded-md hover:bg-gray-700 transition-colors text-sm"
-                >
+                <button onClick={collapseAll} className="hover:text-fg">
                   {t('debugTrace.collapseAll')}
                 </button>
               </div>
-            )}
-            
-            {/* 地址显示切换 - 只要有预设就显示 */}
-            {addressNameMap.size > 0 && (
-              <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-purple-800 font-medium">{t('debugTrace.showContractNames')}</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => loadAddressMapping()}
-                      className="px-2 py-1 rounded-md text-xs text-purple-600 hover:bg-purple-100 transition-colors"
-                      title={t('debugTrace.refreshMappings')}
-                    >
-                      🔄
-                    </button>
-                    <button
-                      onClick={() => setShowAddressNames(!showAddressNames)}
-                      className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                        showAddressNames 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {showAddressNames ? t('debugTrace.namesOn') : t('debugTrace.namesOff')}
-                    </button>
-                  </div>
-                </div>
-                <div className="text-xs text-purple-600">
-                  {t('debugTrace.contractPresetsCount', { count: addressNameMap.size })}
-                </div>
-              </div>
-            )}
-            
-            {/* ABI 提示 */}
-            {rawTrace && selectedAbis.length === 0 && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-800">
-                  👈 {t('debugTrace.selectAbiHint')}
-                </p>
-              </div>
-            )}
-            
-            {/* 错误信息 */}
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-            
-            {/* 成功提示 */}
-            {rawTrace && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-800">
-                  ✅ {t('debugTrace.traceFetched')}
-                  {selectedAbis.length > 0 && parsedTrace && (
-                    <span className="ml-2">· {t('debugTrace.parsed')}</span>
-                  )}
-                </p>
-              </div>
-            )}
+            </div>
+            <CallTree
+              root={parsedTrace}
+              expandedPaths={expandedPaths}
+              selectedPath={pin.selectedPath}
+              pinnedPaths={pin.pinnedPaths}
+              addressNameMap={addressNameMap}
+              showAddressNames={showAddressNames}
+              onRowClick={pin.clickPath}
+              onToggleExpand={handleToggleExpand}
+            />
+          </div>
+          <NodeStack
+            cards={pin.cards}
+            selectedPath={pin.selectedPath}
+            pinnedPaths={pin.pinnedPaths}
+            collapsedPaths={pin.collapsedPaths}
+            getNodeByPath={getNodeByPath}
+            addressNameMap={addressNameMap}
+            showAddressNames={showAddressNames}
+            onTogglePin={pin.togglePin}
+            onClose={pin.closeCard}
+            onToggleCollapse={pin.toggleCollapse}
+            onCloseAll={pin.clearAll}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-1 min-h-0 items-center justify-center text-center">
+          <div>
+            <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
+            <p className="font-ui text-[13px] text-fg-dim">{t('debugTrace.noResult')}</p>
+            <p className="mt-1 font-mono text-[10px] text-fg-mute">
+              {t('debugTrace.enterTxHashToStart')}
+            </p>
           </div>
         </div>
-        
-        {/* 使用提示 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-3 text-gray-800">
-            {t('debugTrace.usageTips')}
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            <li className="flex items-start gap-2">
-              <span className="text-blue-500 mt-0.5">•</span>
-              <span>{t('debugTrace.tip1')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-500 mt-0.5">•</span>
-              <span>{t('debugTrace.tip2')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-500 mt-0.5">•</span>
-              <span>{t('debugTrace.tip3')}</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">⚠️</span>
-              <span>{t('debugTrace.tip4')}</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-      
-      {/* 右侧：调用链展示 */}
-      <div className="lg:col-span-8 flex flex-col overflow-y-auto pr-2">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-4 text-gray-800">
-            {t('debugTrace.callChain')}
-          </h3>
-          
-          {parsedTrace ? (
-            <div className="overflow-x-auto">
-              <div className="space-y-3 min-w-fit">
-                <TraceCallNode 
-                  trace={parsedTrace} 
-                  depth={0}
-                  expandedNodes={expandedNodes}
-                  toggleNode={toggleNode}
-                  nodePath="0"
-                  showAddressNames={showAddressNames}
-                  addressNameMap={addressNameMap}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">🔬</div>
-              <p className="text-gray-500">
-                {t('debugTrace.noResult')}
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                {t('debugTrace.enterTxHashToStart')}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
