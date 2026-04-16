@@ -136,6 +136,7 @@ export function migrateContractPresets(): void {
 }
 
 export function loadContractPresets(): ContractPreset[] {
+  migrateContractPresets();
   try {
     const data = localStorage.getItem(STORAGE_KEYS.CONTRACT_PRESETS);
     return data ? JSON.parse(data) : [];
