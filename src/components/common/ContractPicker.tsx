@@ -38,10 +38,11 @@ const ContractPicker: React.FC<Props> = ({
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
   const [showAllChains, setShowAllChains] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const presets = useMemo(() => loadContractPresets(), [refreshToken]);
-  const q = value.trim().toLowerCase();
+  const q = isTyping ? value.trim().toLowerCase() : '';
 
   const rows: Row[] = useMemo(() => {
     const out: Row[] = [];
@@ -68,7 +69,10 @@ const ContractPicker: React.FC<Props> = ({
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!wrapRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setIsTyping(false);
+      }
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -77,36 +81,55 @@ const ContractPicker: React.FC<Props> = ({
   const pick = (r: Row) => {
     onChange(r.entry.address, r.preset, r.entry);
     setOpen(false);
+    setIsTyping(false);
   };
 
   return (
     <div ref={wrapRef} className="relative" style={{ width }}>
-      <input
-        value={value}
-        onFocus={() => setOpen(true)}
-        onChange={(e) => {
-          onChange(e.target.value);
-          setOpen(true);
-          setActiveIdx(0);
-        }}
-        onKeyDown={(e) => {
-          if (!open) return;
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            setActiveIdx((i) => Math.min(i + 1, rows.length - 1));
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setActiveIdx((i) => Math.max(i - 1, 0));
-          } else if (e.key === 'Enter' && rows[activeIdx]) {
-            e.preventDefault();
-            pick(rows[activeIdx]);
-          } else if (e.key === 'Escape') {
-            setOpen(false);
-          }
-        }}
-        placeholder={placeholder ?? '0x...'}
-        className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
-      />
+      <div className="relative">
+        <input
+          value={value}
+          onFocus={() => { setOpen(true); setIsTyping(false); setActiveIdx(0); }}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+            setIsTyping(true);
+            setActiveIdx(0);
+          }}
+          onKeyDown={(e) => {
+            if (!open) return;
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setActiveIdx((i) => Math.min(i + 1, rows.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActiveIdx((i) => Math.max(i - 1, 0));
+            } else if (e.key === 'Enter' && rows[activeIdx]) {
+              e.preventDefault();
+              pick(rows[activeIdx]);
+            } else if (e.key === 'Escape') {
+              setOpen(false);
+              setIsTyping(false);
+            }
+          }}
+          placeholder={placeholder ?? '0x...'}
+          className="w-full rounded-sm border border-line bg-bg py-1 pl-2 pr-6 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+        />
+        {value && (
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onChange('');
+              setOpen(true);
+              setIsTyping(false);
+              setActiveIdx(0);
+            }}
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[10px] text-fg-mute hover:text-fg"
+          >
+            ×
+          </button>
+        )}
+      </div>
       {open && (
         <div className="absolute left-0 right-0 z-40 mt-0.5 rounded-sm border border-line bg-surface font-mono text-[11px] shadow-lg">
           {currentChainId != null && (
