@@ -9,6 +9,10 @@
     "stateOverride": "状态覆盖",
     "slotCalc": "存储槽"
   },
+  "common": {
+    "fetch": "获取",
+    "fetching": "获取中..."
+  },
   "contractPreset": {
     "namePlaceholder": "名称（如 USDC）",
     "addEntry": "添加地址"
@@ -95,7 +99,7 @@
     "hexDataPlaceholder": "0x...",
     "hexDataLabel": "Hex 数据",
     "enterHexData": "请输入 Hex 数据",
-    "selectAbiFirst": "请在左侧选择至少一个 ABI",
+    "selectAbiFirst": "请先在顶部预设中选择至少一个 ABI",
     "parseFailed": "解析失败",
     "history": "历史记录",
     "confirmClearHistory": "确定要清空所有历史记录吗？",
@@ -118,7 +122,7 @@
   "eventQuery": {
     "configureRpcFirst": "请先配置 RPC URL",
     "configureContractFirst": "请先配置合约地址",
-    "selectAbiFirst": "请在左侧选择至少一个 ABI",
+    "selectAbiFirst": "请先在顶部预设中选择至少一个 ABI",
     "selectEventFirst": "请选择事件",
     "blockRangeInvalid": "区块范围无效",
     "alreadyLatest": "已经是最新区块",

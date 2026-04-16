@@ -9,6 +9,10 @@
     "stateOverride": "State Override",
     "slotCalc": "Storage Slot"
   },
+  "common": {
+    "fetch": "Fetch",
+    "fetching": "Fetching..."
+  },
   "contractPreset": {
     "namePlaceholder": "Name (e.g. USDC)",
     "addEntry": "add address"
@@ -95,7 +99,7 @@
     "hexDataPlaceholder": "0x...",
     "hexDataLabel": "Hex Data",
     "enterHexData": "Please enter Hex data",
-    "selectAbiFirst": "Please select at least one ABI from the left",
+    "selectAbiFirst": "Please select at least one ABI from presets first",
     "parseFailed": "Parse failed",
     "history": "History",
     "confirmClearHistory": "Are you sure you want to clear all history?",
@@ -118,7 +122,7 @@
   "eventQuery": {
     "configureRpcFirst": "Please configure RPC URL first",
     "configureContractFirst": "Please configure contract address first",
-    "selectAbiFirst": "Please select at least one ABI from the left",
+    "selectAbiFirst": "Please select at least one ABI from presets first",
     "selectEventFirst": "Please select event",
     "blockRangeInvalid": "Block range invalid",
     "alreadyLatest": "Already at latest block",

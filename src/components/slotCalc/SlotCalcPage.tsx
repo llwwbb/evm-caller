@@ -607,7 +607,7 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
                 key={i}
                 className="flex items-center gap-3 border-b border-line-soft px-3 py-1.5 last:border-b-0"
               >
-                <span className="w-[210px] truncate text-fg-mute" title={r.slot}>
+                <span className="break-all text-fg-mute">
                   {r.slot}
                 </span>
                 <div className="flex gap-0.5">

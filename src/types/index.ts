@@ -156,6 +156,7 @@ export interface DecodedData {
   args?: any;
   fragment?: any; // ethers Fragment
   error?: string;
+  abiName?: string;
 }
 
 // 解析后的事件定义

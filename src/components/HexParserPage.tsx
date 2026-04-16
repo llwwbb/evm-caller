@@ -23,6 +23,8 @@ type DecodeType = 'auto' | 'function' | 'event' | 'error';
 
 interface HexParserPageProps {
   mergedAbi: string;
+  selectedAbis: string[];
+  selectedAbiNames: string[];
   currentChainId: number | null;
   presetRefreshTrigger: number;
   showAddressNames: boolean;
@@ -49,6 +51,8 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
 
 const HexParserPage: React.FC<HexParserPageProps> = ({
   mergedAbi,
+  selectedAbis,
+  selectedAbiNames,
   currentChainId,
   presetRefreshTrigger,
   showAddressNames,
@@ -86,24 +90,35 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
     setError(null);
 
     const trimmed = hexData.trim();
-    try {
-      let decoded: DecodedData;
+    const decodeFn = (abi: string) => {
       switch (decodeType) {
-        case 'function':
-          decoded = decodeHexAsFunction(trimmed, mergedAbi);
+        case 'function': return decodeHexAsFunction(trimmed, abi);
+        case 'event':    return decodeHexAsEvent(trimmed, abi);
+        case 'error':    return decodeHexAsError(trimmed, abi);
+        default:         return autoDetectAndDecode(trimmed, abi);
+      }
+    };
+
+    try {
+      // Try each ABI individually to identify the source
+      let decoded: DecodedData | null = null;
+      for (let i = 0; i < selectedAbis.length; i++) {
+        const result = decodeFn(selectedAbis[i]);
+        if (result.type !== 'unknown') {
+          decoded = { ...result, abiName: selectedAbiNames[i] || undefined };
           break;
-        case 'event':
-          decoded = decodeHexAsEvent(trimmed, mergedAbi);
-          break;
-        case 'error':
-          decoded = decodeHexAsError(trimmed, mergedAbi);
-          break;
-        default:
-          decoded = autoDetectAndDecode(trimmed, mergedAbi);
+        }
+      }
+      // Fallback: try merged ABI (covers cross-ABI edge cases)
+      if (!decoded) {
+        decoded = decodeFn(mergedAbi);
       }
       saveHexParserResult({ hexData: trimmed, decodeType, result: decoded });
-      addHexParserHistory({ hexData: trimmed, decodeType, result: decoded, success: true });
+      addHexParserHistory({ hexData: trimmed, decodeType, result: decoded, success: decoded.type !== 'unknown' });
       setHistory(loadHexParserHistory());
+      if (decoded.type === 'unknown' && decoded.error) {
+        setError(decoded.error);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('hexParser.parseFailed');
       setError(msg);
@@ -236,8 +251,8 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
                         {h.success ? 'OK' : 'ERR'}
                       </span>
                       <TypeBadge type={type} />
-                      <span className="truncate text-fg-dim">
-                        {r?.name || h.hexData.slice(0, 20) + '…'}
+                      <span className="min-w-0 break-all text-fg-dim">
+                        {r?.name || h.hexData}
                       </span>
                       <span className="ml-auto text-fg-mute">
                         {new Date(h.timestamp).toLocaleTimeString()}
@@ -266,6 +281,12 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
                               <div className="mb-1.5">
                                 <span className="text-fg-mute">signature </span>
                                 <span className="text-fg">{r.signature}</span>
+                              </div>
+                            )}
+                            {r.abiName && (
+                              <div className="mb-1.5">
+                                <span className="text-fg-mute">abi </span>
+                                <span className="text-mint">{r.abiName}</span>
                               </div>
                             )}
                             {r.args !== undefined && (

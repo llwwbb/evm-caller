@@ -233,53 +233,23 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
 
   const txBarExtra = rawTrace
     ? [
-        { kicker: 'tx', value: `${txHash.slice(0, 10)}…${txHash.slice(-6)}` },
         { kicker: 'abis', value: <span className="text-mint">{selectedAbis.length}</span> },
       ]
     : [];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {rawTrace ? (
-        <TxBar
-          rpcUrl={rpcUrl}
-          onRpcChange={(url) => onRpcUrlChange(url)}
-          currentChainId={currentChainId}
-          extra={txBarExtra}
-          refreshToken={presetRefreshTrigger}
-          actions={
-            <button
-              onClick={handleFetch}
-              disabled={isFetching}
-              className="rounded-sm border border-line px-2.5 py-1 text-[10px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
-            >
-              {isFetching ? t('debugTrace.fetching') : t('debugTrace.refetch')}
-            </button>
-          }
-        />
-      ) : (
-        <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-mute">
-            tx hash
-          </span>
-          <input
-            value={txHash}
-            onChange={(e) => setTxHash(e.target.value)}
-            placeholder="0x..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleFetch();
-            }}
-            className="flex-1 rounded-sm border border-line bg-bg px-3 py-1.5 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
-          />
-          <button
-            onClick={handleFetch}
-            disabled={isFetching}
-            className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[11px] font-semibold text-bg disabled:opacity-50"
-          >
-            {isFetching ? t('debugTrace.fetching') : t('debugTrace.fetchTrace')}
-          </button>
-        </div>
-      )}
+      <TxBar
+        rpcUrl={rpcUrl}
+        onRpcChange={(url) => onRpcUrlChange(url)}
+        txHash={txHash}
+        onTxHashChange={setTxHash}
+        onTxHashSubmit={handleFetch}
+        isFetching={isFetching}
+        currentChainId={currentChainId}
+        extra={txBarExtra}
+        refreshToken={presetRefreshTrigger}
+      />
 
       {error && (
         <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[12px] text-call-red">

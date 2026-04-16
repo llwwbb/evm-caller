@@ -18,9 +18,13 @@ export function buildAddressNameLookup(
     for (const e of c.entries) {
       if (!e.address) continue;
       const key = e.address.toLowerCase();
-      if (currentChainId != null && e.chainId === currentChainId) {
+      if (e.chainId == null) {
+        // "all chains" entry — strict but lower priority than chain-specific
+        if (!strict.has(key)) strict.set(key, c.name);
+      } else if (currentChainId != null && e.chainId === currentChainId) {
         strict.set(key, c.name);
-      } else if (e.chainId == null || currentChainId == null) {
+      } else {
+        // Different chain — loose match (still shown, without ?)
         if (!loose.has(key)) loose.set(key, c.name);
       }
     }
@@ -47,8 +51,7 @@ export function formatAddress(
 }
 
 function truncate(addr: string): string {
-  if (addr.length <= 10) return addr;
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  return addr;
 }
 
 export const CALL_TYPE_STYLE: Record<

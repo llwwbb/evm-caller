@@ -131,8 +131,13 @@ const ContractPresetColumn: React.FC<Props> = ({
                           : 'text-fg-dim hover:bg-surface hover:text-fg disabled:hover:bg-transparent')
                       }
                     >
-                      <span className="inline-block w-12 flex-shrink-0 rounded-xs bg-surface-2 px-1 text-center text-[9px] text-fg-dim">
-                        {entry.chainId ?? '—'}
+                      <span className={
+                        'inline-block w-12 flex-shrink-0 rounded-xs px-1 text-center text-[9px] ' +
+                        (entry.chainId == null
+                          ? 'bg-mint/15 font-bold text-mint'
+                          : 'bg-surface-2 text-fg-dim')
+                      }>
+                        {entry.chainId ?? 'ALL'}
                       </span>
                       <span className="truncate">{entry.address || '(empty)'}</span>
                     </button>
@@ -185,7 +190,7 @@ const NewContractForm: React.FC<{
                   chainId: e.target.value ? Number(e.target.value) : undefined,
                 })
               }
-              placeholder="chainId"
+              placeholder="ALL"
               className={`w-[84px] ${inputCls}`}
             />
             <input
@@ -274,7 +279,7 @@ const EditContractForm: React.FC<{
                   chainId: e.target.value ? Number(e.target.value) : undefined,
                 })
               }
-              placeholder="chainId"
+              placeholder="ALL"
               className={`w-[84px] ${inputCls}`}
             />
             <input

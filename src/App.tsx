@@ -222,6 +222,8 @@ function App() {
         {activeTab === 'hex-parser' && (
           <HexParserPage
             mergedAbi={mergedAbi}
+            selectedAbis={selectedAbis}
+            selectedAbiNames={selectedAbiNames}
             currentChainId={currentChainId}
             presetRefreshTrigger={presetRefreshTrigger}
             showAddressNames={showAddressNames}

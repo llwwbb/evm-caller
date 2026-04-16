@@ -136,11 +136,9 @@ const ContractPicker: React.FC<Props> = ({
                     (i === activeIdx ? 'bg-surface-2' : '')
                   }
                 >
-                  {r.entry.chainId != null && (
-                    <span className="rounded-xs bg-mint/15 px-1.5 text-[9px] font-bold text-mint">
-                      {chainLabel(r.entry.chainId)}
-                    </span>
-                  )}
+                  <span className="rounded-xs bg-mint/15 px-1.5 text-[9px] font-bold text-mint">
+                    {r.entry.chainId != null ? chainLabel(r.entry.chainId) : 'ALL'}
+                  </span>
                   <span className="text-fg">{r.preset.name}</span>
                   <span className="ml-auto truncate text-fg-dim">
                     {r.entry.address}

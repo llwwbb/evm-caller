@@ -253,7 +253,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
       {/* TxBar: contract + event + blocks + actions */}
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
         <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
-        <span className="max-w-[260px] truncate text-fg" title={contractAddress}>
+        <span className="break-all text-fg">
           {contractAddress || '—'}
         </span>
 
@@ -423,8 +423,8 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
                       RAW
                     </span>
                   )}
-                  <span className="truncate text-fg-dim" title={log.transactionHash}>
-                    {log.transactionHash.slice(0, 10)}…{log.transactionHash.slice(-6)}
+                  <span className="break-all text-fg-dim">
+                    {log.transactionHash}
                   </span>
                   <span className="ml-auto flex items-center gap-2">
                     <button
