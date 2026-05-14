@@ -199,6 +199,7 @@ const PresetModal: React.FC<PresetModalProps> = ({
             addDetailPlaceholder={t('presetModal.abiPlaceholder')}
             addDetailMultiline
             onBulkSet={(idSet) => commitAbis(idSet)}
+            searchable
           />
         </div>
       </div>

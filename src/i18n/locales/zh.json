@@ -43,6 +43,8 @@
     "delete": "删除",
     "confirmDelete": "确认删除？",
     "empty": "暂无预设",
+    "noMatch": "无匹配项",
+    "searchByName": "按名称搜索",
     "selectAll": "全选",
     "clearAll": "取消全选",
     "descriptionPlaceholder": "备注（可选）"

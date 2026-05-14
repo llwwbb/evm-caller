@@ -43,6 +43,8 @@
     "delete": "delete",
     "confirmDelete": "Confirm delete?",
     "empty": "No presets yet",
+    "noMatch": "No matches",
+    "searchByName": "Search by name",
     "selectAll": "select all",
     "clearAll": "clear",
     "descriptionPlaceholder": "Description (optional)"

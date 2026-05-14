@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface PresetColumnItem {
@@ -23,6 +23,8 @@ interface PresetColumnProps {
   addDetailMultiline?: boolean;
   /** Only meaningful in mode="multi". Replaces the entire selection in one call. */
   onBulkSet?: (ids: Set<string>) => void;
+  /** When true, renders a name-filter input and sorts items alphabetically by label. */
+  searchable?: boolean;
 }
 
 const PresetColumn: React.FC<PresetColumnProps> = ({
@@ -38,9 +40,11 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
   addDetailPlaceholder,
   addDetailMultiline = false,
   onBulkSet,
+  searchable = false,
 }) => {
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
+  const [search, setSearch] = useState('');
   const [draftLabel, setDraftLabel] = useState('');
   const [draftDetail, setDraftDetail] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,20 +73,38 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
     }
   };
 
+  const displayItems = useMemo(() => {
+    if (!searchable) return items;
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? items.filter((it) => it.label.toLowerCase().includes(q))
+      : items;
+    return [...filtered].sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { sensitivity: 'base' })
+    );
+  }, [items, search, searchable]);
+
   return (
     <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
         <h3 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
           {title}
         </h3>
-        {mode === 'multi' && onBulkSet && items.length > 0 && (() => {
-          const allSelected = items.every((i) => selectedIds.has(i.id));
+        {mode === 'multi' && onBulkSet && displayItems.length > 0 && (() => {
+          const visibleIds = displayItems.map((i) => i.id);
+          const allSelected = visibleIds.every((id) => selectedIds.has(id));
           return (
             <button
-              onClick={() =>
-                onBulkSet(allSelected ? new Set() : new Set(items.map((i) => i.id)))
-              }
-              className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
+              onClick={() => {
+                const next = new Set(selectedIds);
+                if (allSelected) {
+                  for (const id of visibleIds) next.delete(id);
+                } else {
+                  for (const id of visibleIds) next.add(id);
+                }
+                onBulkSet(next);
+              }}
+              className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[12px] text-fg-dim hover:bg-surface-2"
             >
               {allSelected ? t('presetModal.clearAll') : t('presetModal.selectAll')}
             </button>
@@ -91,13 +113,34 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
         <button
           onClick={() => setIsAdding(!isAdding)}
           className={
-            'rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2 ' +
-            (mode === 'multi' && onBulkSet && items.length > 0 ? '' : 'ml-auto')
+            'rounded-sm px-2 py-0.5 font-mono text-[12px] text-fg-dim hover:bg-surface-2 ' +
+            (mode === 'multi' && onBulkSet && displayItems.length > 0 ? '' : 'ml-auto')
           }
         >
           {isAdding ? '×' : '+ add'}
         </button>
       </div>
+
+      {searchable && (
+        <div className="border-b border-line-soft bg-bg px-3 py-2">
+          <div className="relative">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('presetModal.searchByName')}
+              className="w-full rounded-sm border border-line bg-bg px-2 py-1 pr-6 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[12px] text-fg-mute hover:text-fg"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {isAdding && (
         <div className="space-y-2 border-b border-line bg-surface-2 p-3">
@@ -138,7 +181,12 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
             {t('presetModal.empty')}
           </div>
         )}
-        {items.map((item) => {
+        {items.length > 0 && displayItems.length === 0 && (
+          <div className="p-4 font-ui text-[13px] text-fg-mute">
+            {t('presetModal.noMatch')}
+          </div>
+        )}
+        {displayItems.map((item) => {
           const selected = selectedIds.has(item.id);
           const editing = editingId === item.id;
           return (
