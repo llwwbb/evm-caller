@@ -26,6 +26,8 @@ interface EventOption {
   name: string;
   inputs: any[];
   abiName?: string;
+  topicHash?: string;
+  signature?: string;
 }
 
 const EventQueryPage: React.FC<EventQueryPageProps> = ({
@@ -347,6 +349,27 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Selected event signature + topic hash */}
+      {selectedEventObj?.topicHash && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line-soft bg-surface px-5 py-1.5 font-mono text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="uppercase tracking-[0.2em] text-fg-mute">sig</span>
+            <span className="break-all text-fg-dim">{selectedEventObj.signature}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="uppercase tracking-[0.2em] text-fg-mute">topic</span>
+            <span className="break-all text-call-violet">{selectedEventObj.topicHash}</span>
+            <button
+              onClick={() => navigator.clipboard?.writeText(selectedEventObj.topicHash!)}
+              className="rounded-xs px-1.5 py-0.5 text-fg-mute hover:bg-surface-2 hover:text-fg"
+              title="copy"
+            >
+              ⎘
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Indexed filters row */}
       {showFilters && hasIndexed && (

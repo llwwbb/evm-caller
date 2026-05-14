@@ -164,6 +164,8 @@ export interface ParsedEvent {
   name: string;
   inputs: ParsedParam[];
   anonymous?: boolean;
+  topicHash?: string;
+  signature?: string;
 }
 
 // Hex 解析器历史记录

@@ -177,6 +177,8 @@ export function extractEvents(abi: string): ParsedEvent[] {
           internalType: input.baseType,
         })),
         anonymous: eventFragment.anonymous,
+        topicHash: eventFragment.topicHash,
+        signature: eventFragment.format('sighash'),
       });
     });
     
