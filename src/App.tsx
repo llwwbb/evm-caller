@@ -22,7 +22,13 @@ import {
   saveCallHistory,
   loadCallHistory,
   loadRpcPresets,
+  loadAbiPresets,
   updateRpcPreset,
+  saveLastRpcUrl,
+  saveLastContractAddress,
+  saveLastBlockTag,
+  saveLastAbiIds,
+  loadLastAbiIds,
 } from './utils/presetStorage';
 
 function App() {
@@ -49,12 +55,42 @@ function App() {
   }, []);
 
   // Restore last-used config once on mount
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     const last = loadLastUsedConfig();
     if (last.rpcUrl) setRpcUrl(last.rpcUrl);
     if (last.contractAddress) setContractAddress(last.contractAddress);
     if (last.blockTag) setBlockTag(last.blockTag);
+    const savedIds = loadLastAbiIds();
+    if (savedIds.length > 0) {
+      const presets = loadAbiPresets();
+      const byId = new Map(presets.map((p) => [p.id, p]));
+      const abis: string[] = [];
+      const names: string[] = [];
+      for (const id of savedIds) {
+        const p = byId.get(id);
+        if (p) { abis.push(p.abi); names.push(p.name); }
+      }
+      if (abis.length > 0) {
+        setSelectedAbis(abis);
+        setSelectedAbiNames(names);
+      }
+    }
+    setHydrated(true);
   }, []);
+
+  // Persist last-used values whenever they change (after initial hydration).
+  useEffect(() => { if (hydrated) saveLastRpcUrl(rpcUrl); }, [rpcUrl, hydrated]);
+  useEffect(() => { if (hydrated) saveLastContractAddress(contractAddress); }, [contractAddress, hydrated]);
+  useEffect(() => { if (hydrated) saveLastBlockTag(blockTag); }, [blockTag, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    const presets = loadAbiPresets();
+    const ids = selectedAbis
+      .map((abi) => presets.find((p) => p.abi === abi)?.id)
+      .filter((id): id is string => typeof id === 'string');
+    saveLastAbiIds(ids);
+  }, [selectedAbis, hydrated]);
 
   useEffect(() => {
     if (selectedAbis.length === 0) {

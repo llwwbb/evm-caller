@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   LAST_RPC_URL: 'evm-caller:last-rpc-url',
   LAST_CONTRACT_ADDRESS: 'evm-caller:last-contract-address',
   LAST_ABI: 'evm-caller:last-abi',
+  LAST_ABI_IDS: 'evm-caller:last-abi-ids',
   LAST_BLOCK_TAG: 'evm-caller:last-block-tag',
   CALL_HISTORY: 'evm-caller:call-history',
   TX_PARSER_RESULT: 'evm-caller:tx-parser-result',
@@ -302,6 +303,26 @@ export function loadLastAbi(): string | null {
   } catch (error) {
     console.error('加载最后使用的 ABI 失败:', error);
     return null;
+  }
+}
+
+export function saveLastAbiIds(ids: string[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.LAST_ABI_IDS, JSON.stringify(ids));
+  } catch (error) {
+    console.error('保存最后使用的 ABI 选择失败:', error);
+  }
+}
+
+export function loadLastAbiIds(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LAST_ABI_IDS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : [];
+  } catch (error) {
+    console.error('加载最后使用的 ABI 选择失败:', error);
+    return [];
   }
 }
 

@@ -54,6 +54,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<ParsedLog[]>([]);
   const [expandedResults, setExpandedResults] = useState<Set<number>>(new Set());
+  const [copiedTopic, setCopiedTopic] = useState(false);
 
   const lookup = useMemo(
     () => buildAddressNameLookup(loadContractPresets(), currentChainId),
@@ -113,6 +114,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
 
   const handleEventChange = (name: string) => {
     setSelectedEvent(name);
+    setCopiedTopic(false);
     const e = events.find((x) => x.name === name);
     if (e) updateIndexedParams(e);
   };
@@ -361,11 +363,20 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
             <span className="uppercase tracking-[0.2em] text-fg-mute">topic</span>
             <span className="break-all text-call-violet">{selectedEventObj.topicHash}</span>
             <button
-              onClick={() => navigator.clipboard?.writeText(selectedEventObj.topicHash!)}
-              className="rounded-xs px-1.5 py-0.5 text-fg-mute hover:bg-surface-2 hover:text-fg"
+              onClick={() => {
+                navigator.clipboard?.writeText(selectedEventObj.topicHash!);
+                setCopiedTopic(true);
+                window.setTimeout(() => setCopiedTopic(false), 1200);
+              }}
+              className={
+                'rounded-xs px-1.5 py-0.5 transition-colors ' +
+                (copiedTopic
+                  ? 'bg-mint/15 text-mint'
+                  : 'text-fg-mute hover:bg-surface-2 hover:text-fg')
+              }
               title="copy"
             >
-              ⎘
+              {copiedTopic ? '✓ copied' : '⎘'}
             </button>
           </div>
         </div>
