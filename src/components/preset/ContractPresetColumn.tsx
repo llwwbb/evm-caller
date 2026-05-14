@@ -183,13 +183,18 @@ const NewContractForm: React.FC<{
         {entries.map((entry, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <input
-              value={entry.chainId ?? ''}
-              onChange={(e) =>
-                update(i, {
-                  ...entry,
-                  chainId: e.target.value ? Number(e.target.value) : undefined,
-                })
+              value={
+                typeof entry.chainId === 'number' && Number.isFinite(entry.chainId)
+                  ? entry.chainId
+                  : ''
               }
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '' || /^\d+$/.test(v)) {
+                  update(i, { ...entry, chainId: v === '' ? undefined : Number(v) });
+                }
+              }}
+              inputMode="numeric"
               placeholder="ALL"
               className={`w-[84px] ${inputCls}`}
             />
@@ -272,13 +277,18 @@ const EditContractForm: React.FC<{
         {entries.map((entry, i) => (
           <div key={i} className="flex items-center gap-1.5">
             <input
-              value={entry.chainId ?? ''}
-              onChange={(e) =>
-                update(i, {
-                  ...entry,
-                  chainId: e.target.value ? Number(e.target.value) : undefined,
-                })
+              value={
+                typeof entry.chainId === 'number' && Number.isFinite(entry.chainId)
+                  ? entry.chainId
+                  : ''
               }
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === '' || /^\d+$/.test(v)) {
+                  update(i, { ...entry, chainId: v === '' ? undefined : Number(v) });
+                }
+              }}
+              inputMode="numeric"
               placeholder="ALL"
               className={`w-[84px] ${inputCls}`}
             />
