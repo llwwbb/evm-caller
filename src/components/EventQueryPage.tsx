@@ -7,11 +7,13 @@ import { saveEventQueryResults, loadEventQueryResults, loadContractPresets } fro
 import { buildAddressNameLookup } from '../utils/addressDisplay';
 import DecodedValue from './common/DecodedValue';
 import AddressBadge from './common/AddressBadge';
+import ContractPicker from './common/ContractPicker';
 import StatsRibbon, { StatCell } from './layout/StatsRibbon';
 
 interface EventQueryPageProps {
   rpcUrl: string;
   contractAddress: string;
+  onContractAddressChange: (addr: string) => void;
   mergedAbi: string;
   selectedAbiNames: string[];
   selectedAbis: string[];
@@ -29,6 +31,7 @@ interface EventOption {
 const EventQueryPage: React.FC<EventQueryPageProps> = ({
   rpcUrl,
   contractAddress,
+  onContractAddressChange,
   mergedAbi,
   selectedAbiNames,
   selectedAbis,
@@ -253,9 +256,13 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
       {/* TxBar: contract + event + blocks + actions */}
       <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
         <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
-        <span className="break-all text-fg">
-          {contractAddress || '—'}
-        </span>
+        <ContractPicker
+          value={contractAddress}
+          onChange={(addr) => onContractAddressChange(addr)}
+          currentChainId={currentChainId}
+          width="360px"
+          refreshToken={presetRefreshTrigger}
+        />
 
         <span className="text-line">/</span>
         <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">event</span>

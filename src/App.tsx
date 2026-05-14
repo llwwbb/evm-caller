@@ -233,6 +233,7 @@ function App() {
           <EventQueryPage
             rpcUrl={rpcUrl}
             contractAddress={contractAddress}
+            onContractAddressChange={setContractAddress}
             mergedAbi={mergedAbi}
             selectedAbiNames={selectedAbiNames}
             selectedAbis={selectedAbis}
