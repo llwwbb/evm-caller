@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContractPreset, ContractEntry } from '../../types';
 
@@ -28,6 +28,7 @@ const ContractPresetColumn: React.FC<Props> = ({
   const { t } = useTranslation();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const matched = new Set<string>();
   const loweredCurrent = currentAddress.toLowerCase();
@@ -36,6 +37,20 @@ const ContractPresetColumn: React.FC<Props> = ({
       if (e.address.toLowerCase() === loweredCurrent && loweredCurrent) matched.add(p.id);
     }
   }
+
+  const displayItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? items.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.entries.some((e) => e.address.toLowerCase().includes(q)),
+        )
+      : items;
+    return [...filtered].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+  }, [items, search]);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
@@ -61,11 +76,33 @@ const ContractPresetColumn: React.FC<Props> = ({
         </div>
       )}
 
+      <div className="border-b border-line-soft bg-bg px-3 py-2">
+        <div className="relative">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('presetModal.searchByName')}
+            className="w-full rounded-sm border border-line bg-bg px-2 py-1 pr-6 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[12px] text-fg-mute hover:text-fg"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 && !isAdding && (
           <div className="p-4 font-ui text-[13px] text-fg-mute">{t('presetModal.empty')}</div>
         )}
-        {items.map((preset) => {
+        {items.length > 0 && displayItems.length === 0 && (
+          <div className="p-4 font-ui text-[13px] text-fg-mute">{t('presetModal.noMatch')}</div>
+        )}
+        {displayItems.map((preset) => {
           const selected = matched.has(preset.id);
           const editing = editingId === preset.id;
           if (editing) {
