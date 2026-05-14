@@ -85,7 +85,8 @@
     "each32Bytes": "每 32 字节",
     "bytes32Count": "{{count}} 段",
     "viewDecoded": "decoded",
-    "viewRaw": "raw"
+    "viewChunks": "chunks",
+    "viewHex": "hex"
   },
   "transactionParser": {
     "enterTxHash": "请输入交易哈希",

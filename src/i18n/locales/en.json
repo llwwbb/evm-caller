@@ -85,7 +85,8 @@
     "each32Bytes": "each 32 bytes",
     "bytes32Count": "{{count}} chunks",
     "viewDecoded": "decoded",
-    "viewRaw": "raw"
+    "viewChunks": "chunks",
+    "viewHex": "hex"
   },
   "transactionParser": {
     "enterTxHash": "Please enter transaction hash",

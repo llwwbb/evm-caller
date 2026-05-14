@@ -108,7 +108,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
-  const [rawViewLogs, setRawViewLogs] = useState<Set<number>>(new Set());
+  const [logViewMode, setLogViewMode] = useState<Record<number, 'decoded' | 'chunks' | 'hex'>>({});
   const [dataParseTypes, setDataParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
   const [topicParseTypes, setTopicParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
 
@@ -325,14 +325,15 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
             parsedTx.logs.map((log: ParsedLog, index: number) => {
               const expanded = expandedLogs.has(index);
               const isParsed = !!log.parsed;
-              const showRaw = !isParsed || rawViewLogs.has(index);
-              const renderRawView = () => (
+              const mode = logViewMode[index] ?? (isParsed ? 'decoded' : 'chunks');
+              const setMode = (m: 'decoded' | 'chunks' | 'hex') =>
+                setLogViewMode((prev) => ({ ...prev, [index]: m }));
+              const availableModes: ('decoded' | 'chunks' | 'hex')[] = isParsed
+                ? ['decoded', 'chunks', 'hex']
+                : ['chunks', 'hex'];
+
+              const renderChunksView = () => (
                 <>
-                  {log.error && (
-                    <div className="mb-3 whitespace-pre-wrap rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
-                      {log.error}
-                    </div>
-                  )}
                   <MiniLabel>
                     {t('txParser.topics')} · {t('txParser.each32Bytes')}
                   </MiniLabel>
@@ -413,6 +414,33 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                   )}
                 </>
               );
+
+              const renderHexView = () => (
+                <>
+                  <MiniLabel>{t('txParser.topics')}</MiniLabel>
+                  <div className="mb-3 space-y-1 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
+                    {log.topics.map((topic, i) => (
+                      <div key={i} className="flex gap-2">
+                        <span className="flex-shrink-0 text-fg-mute">[{i}]</span>
+                        <span className={'break-all ' + (i === 0 ? 'text-call-violet' : 'text-fg')}>
+                          {topic}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <MiniLabel>{t('txParser.data')}</MiniLabel>
+                  {log.data && log.data !== '0x' ? (
+                    <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-fg">
+                      {log.data}
+                    </pre>
+                  ) : (
+                    <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-fg-mute">
+                      (empty)
+                    </div>
+                  )}
+                </>
+              );
+
               return (
                 <div key={index} className="border-b border-line-soft">
                   <div
@@ -437,36 +465,35 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
 
                   {expanded && (
                     <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
-                      {isParsed && (
-                        <div className="mb-3 flex gap-0.5">
-                          {(['decoded', 'raw'] as const).map((mode) => {
-                            const active = (mode === 'raw') === showRaw;
-                            return (
-                              <button
-                                key={mode}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setRawViewLogs((prev) => {
-                                    const next = new Set(prev);
-                                    if (mode === 'raw') next.add(index);
-                                    else next.delete(index);
-                                    return next;
-                                  });
-                                }}
-                                className={
-                                  'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
-                                  (active
-                                    ? 'bg-mint text-bg font-semibold'
-                                    : 'text-fg-mute hover:bg-surface-2')
-                                }
-                              >
-                                {mode === 'decoded' ? t('txParser.viewDecoded') : t('txParser.viewRaw')}
-                              </button>
-                            );
-                          })}
+                      <div className="mb-3 flex gap-0.5">
+                        {availableModes.map((m) => (
+                          <button
+                            key={m}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMode(m);
+                            }}
+                            className={
+                              'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
+                              (mode === m
+                                ? 'bg-mint text-bg font-semibold'
+                                : 'text-fg-mute hover:bg-surface-2')
+                            }
+                          >
+                            {m === 'decoded'
+                              ? t('txParser.viewDecoded')
+                              : m === 'chunks'
+                              ? t('txParser.viewChunks')
+                              : t('txParser.viewHex')}
+                          </button>
+                        ))}
+                      </div>
+                      {log.error && mode !== 'decoded' && (
+                        <div className="mb-3 whitespace-pre-wrap rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
+                          {log.error}
                         </div>
                       )}
-                      {isParsed && !showRaw ? (
+                      {mode === 'decoded' && isParsed ? (
                         <>
                           <div className="mb-1.5">
                             <span className="text-fg-mute">signature </span>
@@ -485,8 +512,10 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                             <DecodedValue value={log.parsed!.args as any} lookup={lookup} showNames={showAddressNames} />
                           </div>
                         </>
+                      ) : mode === 'hex' ? (
+                        renderHexView()
                       ) : (
-                        renderRawView()
+                        renderChunksView()
                       )}
                     </div>
                   )}
