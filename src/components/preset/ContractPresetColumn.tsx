@@ -40,10 +40,10 @@ const ContractPresetColumn: React.FC<Props> = ({
   return (
     <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">{title}</h3>
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">{title}</h3>
         <button
           onClick={() => setIsAdding((v) => !v)}
-          className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           {isAdding ? '×' : '+ add'}
         </button>
@@ -63,7 +63,7 @@ const ContractPresetColumn: React.FC<Props> = ({
 
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 && !isAdding && (
-          <div className="p-4 font-ui text-[12px] text-fg-mute">{t('presetModal.empty')}</div>
+          <div className="p-4 font-ui text-[13px] text-fg-mute">{t('presetModal.empty')}</div>
         )}
         {items.map((preset) => {
           const selected = matched.has(preset.id);
@@ -94,11 +94,11 @@ const ContractPresetColumn: React.FC<Props> = ({
               }
             >
               <div className="flex items-start justify-between gap-2">
-                <div className="font-ui text-[13px] font-medium text-fg">{preset.name}</div>
+                <div className="font-ui text-[14px] font-medium text-fg">{preset.name}</div>
                 <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     onClick={() => setEditingId(preset.id)}
-                    className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+                    className="rounded-sm px-1.5 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
                   >
                     {t('presetModal.edit')}
                   </button>
@@ -106,14 +106,14 @@ const ContractPresetColumn: React.FC<Props> = ({
                     onClick={() => {
                       if (window.confirm(t('presetModal.confirmDelete'))) onDelete(preset.id);
                     }}
-                    className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] text-call-red hover:bg-surface-2"
+                    className="rounded-sm px-1.5 py-0.5 font-mono text-[11px] text-call-red hover:bg-surface-2"
                   >
                     {t('presetModal.delete')}
                   </button>
                 </div>
               </div>
               {preset.description && (
-                <div className="mb-1 mt-0.5 font-ui text-[11px] text-fg-dim">{preset.description}</div>
+                <div className="mb-1 mt-0.5 font-ui text-[12px] text-fg-dim">{preset.description}</div>
               )}
               <div className="mt-1 space-y-0.5">
                 {preset.entries.map((entry, i) => {
@@ -132,7 +132,7 @@ const ContractPresetColumn: React.FC<Props> = ({
                       }
                     >
                       <span className={
-                        'inline-block w-12 flex-shrink-0 rounded-xs px-1 text-center text-[9px] ' +
+                        'inline-block w-12 flex-shrink-0 rounded-xs px-1 text-center text-[10px] ' +
                         (entry.chainId == null
                           ? 'bg-mint/15 font-bold text-mint'
                           : 'bg-surface-2 text-fg-dim')
@@ -155,7 +155,7 @@ const ContractPresetColumn: React.FC<Props> = ({
 // -------- inner forms --------
 
 const inputCls =
-  'rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none';
+  'rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none';
 
 const NewContractForm: React.FC<{
   onCancel: () => void;
@@ -212,7 +212,7 @@ const NewContractForm: React.FC<{
         ))}
         <button
           onClick={() => setEntries((prev) => [...prev, makeEmptyEntry()])}
-          className="rounded-sm border border-line bg-surface px-2 py-0.5 text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="rounded-sm border border-line bg-surface px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           + {t('contractPreset.addEntry')}
         </button>
@@ -233,13 +233,13 @@ const NewContractForm: React.FC<{
             )
           }
           disabled={!canSave}
-          className="rounded-sm bg-mint px-3 py-1 font-mono text-[10px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
+          className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
         >
           {t('presetModal.save')}
         </button>
         <button
           onClick={onCancel}
-          className="rounded-sm border border-line px-3 py-1 font-mono text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="rounded-sm border border-line px-3 py-1 font-mono text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           {t('presetModal.cancel')}
         </button>
@@ -300,7 +300,7 @@ const EditContractForm: React.FC<{
         ))}
         <button
           onClick={() => setEntries((prev) => [...prev, makeEmptyEntry()])}
-          className="rounded-sm border border-line bg-surface px-2 py-0.5 text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="rounded-sm border border-line bg-surface px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           + {t('contractPreset.addEntry')}
         </button>
@@ -321,13 +321,13 @@ const EditContractForm: React.FC<{
             })
           }
           disabled={!canSave}
-          className="rounded-sm bg-mint px-3 py-1 font-mono text-[10px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
+          className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
         >
           {t('presetModal.save')}
         </button>
         <button
           onClick={onCancel}
-          className="rounded-sm border border-line px-3 py-1 font-mono text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="rounded-sm border border-line px-3 py-1 font-mono text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           {t('presetModal.cancel')}
         </button>

@@ -64,7 +64,7 @@ const parse32Bytes = (chunk: string, type: ParseType): string => {
 };
 
 const MiniLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
     {children}
   </div>
 );
@@ -79,7 +79,7 @@ const ParseTypeButtons: React.FC<{
         key={type}
         onClick={() => onChange(type)}
         className={
-          'rounded-xs px-1.5 py-0.5 font-mono text-[9px] tracking-[0.05em] ' +
+          'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
           (current === type
             ? 'bg-mint text-bg font-semibold'
             : 'text-fg-mute hover:bg-surface-2')
@@ -108,6 +108,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<number>>(new Set());
+  const [rawViewLogs, setRawViewLogs] = useState<Set<number>>(new Set());
   const [dataParseTypes, setDataParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
   const [topicParseTypes, setTopicParseTypes] = useState<Record<number, Record<number, ParseType>>>({});
 
@@ -246,7 +247,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
       />
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[12px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[13px] text-call-red">
           {error}
         </div>
       )}
@@ -256,7 +257,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
       {parsedTx ? (
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Top: tx header + decoded input */}
-          <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[11px]">
+          <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[12px]">
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
               <div><span className="text-fg-mute">from </span><AddressBadge addr={parsedTx.from} lookup={lookup} showNames={showAddressNames} /></div>
               <div><span className="text-fg-mute">to </span>{parsedTx.to ? <AddressBadge addr={parsedTx.to} lookup={lookup} showNames={showAddressNames} /> : <span className="text-fg">{t('transactionParser.contractCreation')}</span>}</div>
@@ -274,7 +275,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                 <MiniLabel>
                   {t('txParser.decodedInput')} — {parsedTx.decodedInput.functionName}
                 </MiniLabel>
-                <div className="mb-1 text-[10px] text-fg-mute">
+                <div className="mb-1 text-[11px] text-fg-mute">
                   {parsedTx.decodedInput.signature}
                 </div>
                 <div className="mt-1 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
@@ -292,7 +293,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
           </div>
 
           {/* Bottom: logs */}
-          <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[10px]">
+          <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[11px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('txParser.logs')}
             </span>
@@ -317,26 +318,114 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
           </div>
 
           {parsedTx.logs.length === 0 ? (
-            <div className="p-5 font-ui text-[12px] text-fg-mute">
+            <div className="p-5 font-ui text-[13px] text-fg-mute">
               {t('transactionParser.noLogs')}
             </div>
           ) : (
             parsedTx.logs.map((log: ParsedLog, index: number) => {
               const expanded = expandedLogs.has(index);
               const isParsed = !!log.parsed;
+              const showRaw = !isParsed || rawViewLogs.has(index);
+              const renderRawView = () => (
+                <>
+                  {log.error && (
+                    <div className="mb-3 whitespace-pre-wrap rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
+                      {log.error}
+                    </div>
+                  )}
+                  <MiniLabel>
+                    {t('txParser.topics')} · {t('txParser.each32Bytes')}
+                  </MiniLabel>
+                  <div className="mb-3 space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
+                    {log.topics.map((topic, i) => {
+                      const selType = topicParseTypes[index]?.[i] || 'hex';
+                      return (
+                        <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
+                          <div className="mb-0.5 flex items-center gap-2">
+                            <span className="text-fg-mute">[{i}]</span>
+                            {i > 0 && (
+                              <ParseTypeButtons
+                                current={selType}
+                                onChange={(type) =>
+                                  setTopicParseTypes((prev) => ({
+                                    ...prev,
+                                    [index]: { ...prev[index], [i]: type },
+                                  }))
+                                }
+                              />
+                            )}
+                          </div>
+                          <div className="break-all pl-4 text-fg">
+                            {i === 0 ? (
+                              <span className="text-call-violet">{topic}</span>
+                            ) : (
+                              <span className={
+                                selType === 'address' ? 'text-call-blue' :
+                                selType === 'number' ? 'text-mint' :
+                                selType === 'text' ? 'text-call-amber' : ''
+                              }>
+                                {parse32Bytes(topic, selType)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <MiniLabel>
+                    {t('txParser.data')} · {t('txParser.bytes32Count', { count: splitInto32Bytes(log.data).length })}
+                  </MiniLabel>
+                  {log.data && log.data !== '0x' ? (
+                    <div className="space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
+                      {splitInto32Bytes(log.data).map((chunk, i) => {
+                        const selType = dataParseTypes[index]?.[i] || 'hex';
+                        return (
+                          <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
+                            <div className="mb-0.5 flex items-center gap-2">
+                              <span className="text-fg-mute">[{i}]</span>
+                              <ParseTypeButtons
+                                current={selType}
+                                onChange={(type) =>
+                                  setDataParseTypes((prev) => ({
+                                    ...prev,
+                                    [index]: { ...prev[index], [i]: type },
+                                  }))
+                                }
+                              />
+                            </div>
+                            <div className="break-all pl-4">
+                              <span className={
+                                selType === 'address' ? 'text-call-blue' :
+                                selType === 'number' ? 'text-mint' :
+                                selType === 'text' ? 'text-call-amber' : 'text-fg'
+                              }>
+                                {parse32Bytes(chunk, selType)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-fg-mute">
+                      (empty)
+                    </div>
+                  )}
+                </>
+              );
               return (
                 <div key={index} className="border-b border-line-soft">
                   <div
                     onClick={() => toggleLog(index)}
-                    className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[11px] hover:bg-surface-2"
+                    className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[12px] hover:bg-surface-2"
                   >
-                    <span className="text-[10px] text-fg-mute">#{log.logIndex}</span>
+                    <span className="text-[11px] text-fg-mute">#{log.logIndex}</span>
                     {isParsed ? (
-                      <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-mint">
+                      <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-mint">
                         {log.parsed!.eventName}
                       </span>
                     ) : (
-                      <span className="rounded-xs bg-line px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] text-fg-mute">
+                      <span className="rounded-xs bg-line px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-fg-mute">
                         RAW
                       </span>
                     )}
@@ -348,7 +437,36 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
 
                   {expanded && (
                     <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
-                      {isParsed ? (
+                      {isParsed && (
+                        <div className="mb-3 flex gap-0.5">
+                          {(['decoded', 'raw'] as const).map((mode) => {
+                            const active = (mode === 'raw') === showRaw;
+                            return (
+                              <button
+                                key={mode}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRawViewLogs((prev) => {
+                                    const next = new Set(prev);
+                                    if (mode === 'raw') next.add(index);
+                                    else next.delete(index);
+                                    return next;
+                                  });
+                                }}
+                                className={
+                                  'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
+                                  (active
+                                    ? 'bg-mint text-bg font-semibold'
+                                    : 'text-fg-mute hover:bg-surface-2')
+                                }
+                              >
+                                {mode === 'decoded' ? t('txParser.viewDecoded') : t('txParser.viewRaw')}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {isParsed && !showRaw ? (
                         <>
                           <div className="mb-1.5">
                             <span className="text-fg-mute">signature </span>
@@ -368,91 +486,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                           </div>
                         </>
                       ) : (
-                        <>
-                          {log.error && (
-                            <div className="mb-3 whitespace-pre-wrap rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
-                              {log.error}
-                            </div>
-                          )}
-                          <MiniLabel>
-                            {t('txParser.topics')} · {t('txParser.each32Bytes')}
-                          </MiniLabel>
-                          <div className="mb-3 space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
-                            {log.topics.map((topic, i) => {
-                              const selType = topicParseTypes[index]?.[i] || 'hex';
-                              return (
-                                <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
-                                  <div className="mb-0.5 flex items-center gap-2">
-                                    <span className="text-fg-mute">[{i}]</span>
-                                    {i > 0 && (
-                                      <ParseTypeButtons
-                                        current={selType}
-                                        onChange={(type) =>
-                                          setTopicParseTypes((prev) => ({
-                                            ...prev,
-                                            [index]: { ...prev[index], [i]: type },
-                                          }))
-                                        }
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="break-all pl-4 text-fg">
-                                    {i === 0 ? (
-                                      <span className="text-call-violet">{topic}</span>
-                                    ) : (
-                                      <span className={
-                                        selType === 'address' ? 'text-call-blue' :
-                                        selType === 'number' ? 'text-mint' :
-                                        selType === 'text' ? 'text-call-amber' : ''
-                                      }>
-                                        {parse32Bytes(topic, selType)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <MiniLabel>
-                            {t('txParser.data')} · {t('txParser.bytes32Count', { count: splitInto32Bytes(log.data).length })}
-                          </MiniLabel>
-                          {log.data && log.data !== '0x' ? (
-                            <div className="space-y-1.5 rounded-sm border border-line-soft bg-bg px-2.5 py-2">
-                              {splitInto32Bytes(log.data).map((chunk, i) => {
-                                const selType = dataParseTypes[index]?.[i] || 'hex';
-                                return (
-                                  <div key={i} className="border-b border-line-soft pb-1.5 last:border-b-0 last:pb-0">
-                                    <div className="mb-0.5 flex items-center gap-2">
-                                      <span className="text-fg-mute">[{i}]</span>
-                                      <ParseTypeButtons
-                                        current={selType}
-                                        onChange={(type) =>
-                                          setDataParseTypes((prev) => ({
-                                            ...prev,
-                                            [index]: { ...prev[index], [i]: type },
-                                          }))
-                                        }
-                                      />
-                                    </div>
-                                    <div className="break-all pl-4">
-                                      <span className={
-                                        selType === 'address' ? 'text-call-blue' :
-                                        selType === 'number' ? 'text-mint' :
-                                        selType === 'text' ? 'text-call-amber' : 'text-fg'
-                                      }>
-                                        {parse32Bytes(chunk, selType)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-fg-mute">
-                              (empty)
-                            </div>
-                          )}
-                        </>
+                        renderRawView()
                       )}
                     </div>
                   )}
@@ -465,7 +499,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
         <div className="flex flex-1 min-h-0 items-center justify-center text-center">
           <div>
             <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
-            <p className="font-ui text-[13px] text-fg-dim">
+            <p className="font-ui text-[14px] text-fg-dim">
               {t('transactionParser.enterTxHashToStart')}
             </p>
           </div>

@@ -44,7 +44,7 @@ const TopNav: React.FC<TopNavProps> = ({
   };
 
   return (
-    <nav className="flex items-center gap-6 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
+    <nav className="flex items-center gap-6 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
       <span className="font-bold tracking-wider text-white">
         evm-caller
         <span className="mx-2 text-mint">·</span>

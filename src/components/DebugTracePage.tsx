@@ -174,7 +174,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
         value: (
           <>
             {acc.decoded}
-            <span className="text-[12px] text-fg-mute">/{acc.calls}</span>
+            <span className="text-[13px] text-fg-mute">/{acc.calls}</span>
           </>
         ),
         variant: acc.decoded === acc.calls ? 'ok' : 'default',
@@ -252,7 +252,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
       />
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[12px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[13px] text-call-red">
           {error}
         </div>
       )}
@@ -265,7 +265,7 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
           style={{ gridTemplateColumns: '1.4fr 1fr' }}
         >
           <div className="flex min-h-0 flex-col border-r border-line">
-            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[10px]">
+            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
               <span className="uppercase tracking-[0.22em] text-fg-mute">
                 {t('debugTrace.callTree')}
               </span>
@@ -307,8 +307,8 @@ const DebugTracePage: React.FC<DebugTracePageProps> = ({
         <div className="flex flex-1 min-h-0 items-center justify-center text-center">
           <div>
             <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
-            <p className="font-ui text-[13px] text-fg-dim">{t('debugTrace.noResult')}</p>
-            <p className="mt-1 font-mono text-[10px] text-fg-mute">
+            <p className="font-ui text-[14px] text-fg-dim">{t('debugTrace.noResult')}</p>
+            <p className="mt-1 font-mono text-[11px] text-fg-mute">
               {t('debugTrace.enterTxHashToStart')}
             </p>
           </div>

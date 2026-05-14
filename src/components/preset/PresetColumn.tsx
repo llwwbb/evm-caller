@@ -5,6 +5,8 @@ export interface PresetColumnItem {
   id: string;
   label: string;
   detail?: string;
+  /** If set, the edit form pre-fills with this instead of `detail`. Use when `detail` is a short preview (e.g. "100 chars") rather than the full value. */
+  editDetail?: string;
 }
 
 interface PresetColumnProps {
@@ -48,7 +50,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
   const startEdit = (item: PresetColumnItem) => {
     setEditingId(item.id);
     setEditLabel(item.label);
-    setEditDetail(item.detail ?? '');
+    setEditDetail(item.editDetail ?? item.detail ?? '');
   };
 
   const commitEdit = () => {
@@ -70,7 +72,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
   return (
     <div className="flex min-h-0 min-w-0 flex-col border-r border-line last:border-r-0">
       <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-        <h3 className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+        <h3 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
           {title}
         </h3>
         {mode === 'multi' && onBulkSet && items.length > 0 && (() => {
@@ -80,7 +82,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
               onClick={() =>
                 onBulkSet(allSelected ? new Set() : new Set(items.map((i) => i.id)))
               }
-              className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2"
+              className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
             >
               {allSelected ? t('presetModal.clearAll') : t('presetModal.selectAll')}
             </button>
@@ -89,7 +91,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
         <button
           onClick={() => setIsAdding(!isAdding)}
           className={
-            'rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2 ' +
+            'rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2 ' +
             (mode === 'multi' && onBulkSet && items.length > 0 ? '' : 'ml-auto')
           }
         >
@@ -103,7 +105,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
             value={draftLabel}
             onChange={(e) => setDraftLabel(e.target.value)}
             placeholder={addLabelPlaceholder}
-            className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[12px] text-fg placeholder:text-fg-mute"
+            className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[13px] text-fg placeholder:text-fg-mute"
           />
           {addDetailMultiline ? (
             <textarea
@@ -111,19 +113,19 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
               onChange={(e) => setDraftDetail(e.target.value)}
               placeholder={addDetailPlaceholder}
               rows={5}
-              className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute"
+              className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute"
             />
           ) : (
             <input
               value={draftDetail}
               onChange={(e) => setDraftDetail(e.target.value)}
               placeholder={addDetailPlaceholder}
-              className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute"
+              className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute"
             />
           )}
           <button
             onClick={commitAdd}
-            className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] text-bg"
+            className="rounded-sm bg-mint px-3 py-1 font-mono text-[12px] text-bg"
           >
             {t('presetModal.save')}
           </button>
@@ -132,7 +134,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
 
       <div className="flex-1 overflow-y-auto">
         {items.length === 0 && !isAdding && (
-          <div className="p-4 font-ui text-[12px] text-fg-mute">
+          <div className="p-4 font-ui text-[13px] text-fg-mute">
             {t('presetModal.empty')}
           </div>
         )}
@@ -152,32 +154,32 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
                   <input
                     value={editLabel}
                     onChange={(e) => setEditLabel(e.target.value)}
-                    className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[12px]"
+                    className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[13px]"
                   />
                   {addDetailMultiline ? (
                     <textarea
                       value={editDetail}
                       onChange={(e) => setEditDetail(e.target.value)}
                       rows={5}
-                      className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px]"
+                      className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px]"
                     />
                   ) : (
                     <input
                       value={editDetail}
                       onChange={(e) => setEditDetail(e.target.value)}
-                      className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px]"
+                      className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px]"
                     />
                   )}
                   <div className="flex gap-2">
                     <button
                       onClick={commitEdit}
-                      className="rounded-sm bg-mint px-2 py-0.5 font-mono text-[10px] text-bg"
+                      className="rounded-sm bg-mint px-2 py-0.5 font-mono text-[11px] text-bg"
                     >
                       {t('presetModal.save')}
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="rounded-sm px-2 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2"
+                      className="rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
                     >
                       {t('presetModal.cancel')}
                     </button>
@@ -188,7 +190,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
                   <button
                     onClick={() => onToggle(item.id)}
                     className={
-                      'mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-xs border text-[10px] ' +
+                      'mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-xs border text-[11px] ' +
                       (selected
                         ? 'border-mint bg-mint text-bg'
                         : 'border-line bg-bg')
@@ -198,11 +200,11 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
                     {selected && (mode === 'single' ? '●' : '✓')}
                   </button>
                   <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onToggle(item.id)}>
-                    <div className="font-ui text-[13px] font-medium text-fg">
+                    <div className="font-ui text-[14px] font-medium text-fg">
                       {item.label}
                     </div>
                     {item.detail && (
-                      <div className="mt-0.5 truncate font-mono text-[10px] text-fg-mute">
+                      <div className="mt-0.5 truncate font-mono text-[11px] text-fg-mute">
                         {item.detail}
                       </div>
                     )}
@@ -210,7 +212,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => startEdit(item)}
-                      className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] text-fg-dim hover:bg-surface-2"
+                      className="rounded-sm px-1.5 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
                     >
                       {t('presetModal.edit')}
                     </button>
@@ -220,7 +222,7 @@ const PresetColumn: React.FC<PresetColumnProps> = ({
                           onDelete(item.id);
                         }
                       }}
-                      className="rounded-sm px-1.5 py-0.5 font-mono text-[10px] text-call-red hover:bg-surface-2"
+                      className="rounded-sm px-1.5 py-0.5 font-mono text-[11px] text-call-red hover:bg-surface-2"
                     >
                       {t('presetModal.delete')}
                     </button>

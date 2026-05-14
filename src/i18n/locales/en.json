@@ -83,7 +83,9 @@
     "topics": "topics",
     "data": "data",
     "each32Bytes": "each 32 bytes",
-    "bytes32Count": "{{count}} chunks"
+    "bytes32Count": "{{count}} chunks",
+    "viewDecoded": "decoded",
+    "viewRaw": "raw"
   },
   "transactionParser": {
     "enterTxHash": "Please enter transaction hash",

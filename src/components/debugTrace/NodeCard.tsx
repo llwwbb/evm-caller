@@ -26,13 +26,13 @@ interface NodeCardProps {
 
 const KV: React.FC<{ k: string; v: React.ReactNode }> = ({ k, v }) => (
   <div className="mb-0.5 grid grid-cols-[68px_1fr] gap-1.5">
-    <span className="text-[10px] text-fg-mute">{k}</span>
+    <span className="text-[11px] text-fg-mute">{k}</span>
     <span className="break-all text-[10.5px] text-fg">{v}</span>
   </div>
 );
 
 const MiniLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mb-1 mt-2.5 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+  <div className="mb-1 mt-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
     {children}
   </div>
 );
@@ -76,11 +76,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
   return (
     <div className={isFocused ? 'bg-surface-2' : 'bg-surface'}>
       <div
-        className="flex cursor-pointer items-center gap-2.5 border-b border-line-soft px-3.5 py-2 font-mono text-[10px]"
+        className="flex cursor-pointer items-center gap-2.5 border-b border-line-soft px-3.5 py-2 font-mono text-[11px]"
         onClick={() => onToggleCollapse(path)}
       >
         <span
-          className="rounded-xs px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em]"
+          className="rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em]"
           style={{ background: style.bg, color: style.fg }}
         >
           {style.label}
@@ -89,7 +89,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
           {crumb}
         </span>
         {isFocused && (
-          <span className="text-[9px] uppercase tracking-[0.18em] text-mint">
+          <span className="text-[10px] uppercase tracking-[0.18em] text-mint">
             {t('debugTrace.focused')}
           </span>
         )}
@@ -99,7 +99,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             onTogglePin(path);
           }}
           title={isPinned ? t('debugTrace.unpin') : t('debugTrace.pin')}
-          className={`rounded-sm px-1.5 py-0.5 text-[11px] hover:bg-surface-2 ${
+          className={`rounded-sm px-1.5 py-0.5 text-[12px] hover:bg-surface-2 ${
             isPinned ? 'text-mint' : 'text-fg-mute'
           }`}
         >
@@ -111,7 +111,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             onClose(path);
           }}
           title={t('debugTrace.close')}
-          className="rounded-sm px-1.5 py-0.5 text-[12px] text-fg-mute hover:bg-surface-2"
+          className="rounded-sm px-1.5 py-0.5 text-[13px] text-fg-mute hover:bg-surface-2"
         >
           ×
         </button>

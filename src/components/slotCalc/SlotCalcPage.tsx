@@ -69,7 +69,7 @@ const ModeBtn: React.FC<{
   <button
     onClick={onClick}
     className={
-      'rounded-sm px-2.5 py-1 text-[10px] ' +
+      'rounded-sm px-2.5 py-1 text-[11px] ' +
       (active ? 'bg-mint font-semibold text-bg' : 'text-fg-dim hover:bg-surface-2')
     }
   >
@@ -86,7 +86,7 @@ const CopyBtn: React.FC<{ text: string }> = ({ text }) => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1200);
       }}
-      className="rounded-sm px-1.5 py-0.5 text-[9px] text-fg-mute hover:bg-surface-2"
+      className="rounded-sm px-1.5 py-0.5 text-[10px] text-fg-mute hover:bg-surface-2"
     >
       {copied ? '✓ copied' : 'copy'}
     </button>
@@ -181,10 +181,10 @@ const ManualMode: React.FC = () => {
   return (
     <div className="grid flex-1 min-h-0" style={{ gridTemplateColumns: '2fr 3fr' }}>
       <div className="flex min-h-0 flex-col border-r border-line p-5">
-        <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {t('slotCalc.variable')}
         </div>
-        <div className="space-y-2 font-mono text-[11px]">
+        <div className="space-y-2 font-mono text-[12px]">
           <div className="grid grid-cols-[80px_1fr] items-center gap-3">
             <span className="text-fg-mute">name</span>
             <input
@@ -213,7 +213,7 @@ const ManualMode: React.FC = () => {
 
           {isMapping && (
             <div className="mt-3">
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                 {t('slotCalc.mappingKeys')} · {expectedKeyCount} level{expectedKeyCount !== 1 ? 's' : ''}
               </div>
               {Array.from({ length: expectedKeyCount }).map((_, i) => (
@@ -226,7 +226,7 @@ const ManualMode: React.FC = () => {
                     setKeys(next);
                   }}
                   placeholder={`key[${i}]`}
-                  className="mb-1 w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                  className="mb-1 w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                 />
               ))}
             </div>
@@ -234,27 +234,27 @@ const ManualMode: React.FC = () => {
 
           {isArray && (
             <div className="mt-3">
-              <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+              <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                 {t('slotCalc.arrayIndex')}
               </div>
               <input
                 value={arrayIndex}
                 onChange={(e) => setArrayIndex(e.target.value)}
                 placeholder="0"
-                className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                className="w-full rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
               />
             </div>
           )}
 
           <button
             onClick={handleCompute}
-            className="mt-2 w-full rounded-sm bg-mint px-3 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80"
+            className="mt-2 w-full rounded-sm bg-mint px-3 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80"
           >
             {t('slotCalc.computeSlot')}
           </button>
 
           {error && (
-            <div className="mt-2 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 text-[10px] text-call-red">
+            <div className="mt-2 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 text-[11px] text-call-red">
               {error}
             </div>
           )}
@@ -262,24 +262,24 @@ const ManualMode: React.FC = () => {
       </div>
 
       <div className="flex min-h-0 flex-col p-5">
-        <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+        <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {t('slotCalc.computedSlot')}
         </div>
         {computedSlot ? (
-          <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[12px] text-mint">
+          <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[13px] text-mint">
             <span className="flex-1 break-all">{computedSlot}</span>
             <CopyBtn text={computedSlot} />
           </div>
         ) : (
-          <div className="rounded-sm border border-line-soft bg-surface px-3 py-2 font-ui text-[11px] text-fg-mute">
+          <div className="rounded-sm border border-line-soft bg-surface px-3 py-2 font-ui text-[12px] text-fg-mute">
             {t('slotCalc.computeHint')}
           </div>
         )}
 
-        <div className="mt-6 mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+        <div className="mt-6 mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {t('slotCalc.encodeValue')}
         </div>
-        <div className="space-y-2 font-mono text-[11px]">
+        <div className="space-y-2 font-mono text-[12px]">
           <input
             value={valueToEncode}
             onChange={(e) => setValueToEncode(e.target.value)}
@@ -288,20 +288,20 @@ const ManualMode: React.FC = () => {
           />
           <button
             onClick={handleEncodeValue}
-            className="rounded-sm border border-line px-3 py-1 text-[10px] text-fg-dim hover:bg-surface-2"
+            className="rounded-sm border border-line px-3 py-1 text-[11px] text-fg-dim hover:bg-surface-2"
           >
             {t('slotCalc.encode')}
           </button>
           {encodedValue && (
-            <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 text-[11px] text-fg">
+            <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 text-[12px] text-fg">
               <span className="flex-1 break-all">{encodedValue}</span>
               <CopyBtn text={encodedValue} />
             </div>
           )}
         </div>
 
-        <div className="mt-6 rounded-sm border border-line-soft bg-surface p-3 font-ui text-[11px] leading-relaxed text-fg-dim">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+        <div className="mt-6 rounded-sm border border-line-soft bg-surface p-3 font-ui text-[12px] leading-relaxed text-fg-dim">
+          <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
             {t('slotCalc.tips')}
           </div>
           {t('slotCalc.manualTips')}
@@ -375,7 +375,7 @@ const LayoutJsonMode: React.FC = () => {
   return (
     <div className="grid flex-1 min-h-0" style={{ gridTemplateColumns: '2fr 3fr' }}>
       <div className="flex min-h-0 flex-col border-r border-line p-5">
-        <div className="mb-2 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
           {t('slotCalc.jsonInput')}
         </div>
         <textarea
@@ -386,12 +386,12 @@ const LayoutJsonMode: React.FC = () => {
         />
         <button
           onClick={handleParse}
-          className="rounded-sm bg-mint px-3 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80"
+          className="rounded-sm bg-mint px-3 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80"
         >
           {t('slotCalc.parseLayout')}
         </button>
         {error && (
-          <div className="mt-2 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[10px] text-call-red">
+          <div className="mt-2 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[11px] text-call-red">
             {error}
           </div>
         )}
@@ -399,12 +399,12 @@ const LayoutJsonMode: React.FC = () => {
 
       <div className="flex min-h-0 flex-col overflow-y-auto p-5">
         {!vars ? (
-          <div className="rounded-sm border border-line-soft bg-surface p-4 font-ui text-[11px] text-fg-mute">
+          <div className="rounded-sm border border-line-soft bg-surface p-4 font-ui text-[12px] text-fg-mute">
             {t('slotCalc.jsonHint')}
           </div>
         ) : (
           <>
-            <div className="mb-2 flex items-center gap-2 font-mono text-[10px]">
+            <div className="mb-2 flex items-center gap-2 font-mono text-[11px]">
               <span className="uppercase tracking-[0.22em] text-fg-mute">
                 {t('slotCalc.variables')}
               </span>
@@ -422,13 +422,13 @@ const LayoutJsonMode: React.FC = () => {
                     setComputeError(null);
                   }}
                   className={
-                    'cursor-pointer border-b border-line-soft px-3 py-1.5 font-mono text-[11px] last:border-b-0 ' +
+                    'cursor-pointer border-b border-line-soft px-3 py-1.5 font-mono text-[12px] last:border-b-0 ' +
                     (selected === v ? 'bg-mint/5 text-mint' : 'hover:bg-surface-2')
                   }
                 >
                   <span className="text-fg">{v.label}</span>
                   <span className="ml-2 text-fg-mute">{v.type}</span>
-                  <span className="ml-2 text-[9px] text-fg-mute">
+                  <span className="ml-2 text-[10px] text-fg-mute">
                     slot {v.slot}
                     {v.offset > 0 ? ` · offset ${v.offset}` : ''}
                   </span>
@@ -438,11 +438,11 @@ const LayoutJsonMode: React.FC = () => {
 
             {selected && (
               <>
-                <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+                <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                   {t('slotCalc.compute')} — {selected.label}
                 </div>
                 {expectedKeyCount > 0 ? (
-                  <div className="mb-2 space-y-1 font-mono text-[11px]">
+                  <div className="mb-2 space-y-1 font-mono text-[12px]">
                     {Array.from({ length: expectedKeyCount }).map((_, i) => (
                       <input
                         key={i}
@@ -458,23 +458,23 @@ const LayoutJsonMode: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="mb-2 font-mono text-[10px] text-fg-mute">
+                  <div className="mb-2 font-mono text-[11px] text-fg-mute">
                     {t('slotCalc.simpleVar')}
                   </div>
                 )}
                 <button
                   onClick={handleCompute}
-                  className="mb-2 rounded-sm bg-mint px-3 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80"
+                  className="mb-2 rounded-sm bg-mint px-3 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80"
                 >
                   {t('slotCalc.computeSlot')}
                 </button>
                 {computeError && (
-                  <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[10px] text-call-red">
+                  <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[11px] text-call-red">
                     {computeError}
                   </div>
                 )}
                 {computedSlot && (
-                  <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[12px] text-mint">
+                  <div className="flex items-center gap-2 rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[13px] text-mint">
                     <span className="flex-1 break-all">{computedSlot}</span>
                     <CopyBtn text={computedSlot} />
                   </div>
@@ -550,9 +550,9 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
 
   return (
     <div className="flex flex-1 min-h-0 flex-col p-5">
-      <div className="mb-3 flex items-end gap-3 font-mono text-[11px]">
+      <div className="mb-3 flex items-end gap-3 font-mono text-[12px]">
         <div className="flex-1">
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+          <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
             {t('slotCalc.contract')}
           </div>
           <input
@@ -563,7 +563,7 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
           />
         </div>
         <div>
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+          <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
             {t('slotCalc.fromSlot')}
           </div>
           <input
@@ -573,7 +573,7 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
           />
         </div>
         <div>
-          <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+          <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
             {t('slotCalc.toSlot')}
           </div>
           <input
@@ -585,20 +585,20 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
         <button
           onClick={handleFetch}
           disabled={loading}
-          className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80 disabled:opacity-50"
+          className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80 disabled:opacity-50"
         >
           {loading ? t('slotCalc.fetching') : t('slotCalc.fetchSlots')}
         </button>
       </div>
 
       {error && (
-        <div className="mb-3 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[11px] text-call-red">
+        <div className="mb-3 rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-1.5 font-mono text-[12px] text-call-red">
           {error}
         </div>
       )}
 
       {rows.length > 0 ? (
-        <div className="flex-1 overflow-y-auto rounded-sm border border-line bg-bg font-mono text-[11px]">
+        <div className="flex-1 overflow-y-auto rounded-sm border border-line bg-bg font-mono text-[12px]">
           {rows.map((r, i) => {
             const type = viewAs[i] ?? 'hex';
             const isZero = /^0x0*$/.test(r.value);
@@ -616,7 +616,7 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
                       key={tp}
                       onClick={() => setViewAs((prev) => ({ ...prev, [i]: tp }))}
                       className={
-                        'rounded-xs px-1.5 py-0.5 text-[9px] ' +
+                        'rounded-xs px-1.5 py-0.5 text-[10px] ' +
                         (type === tp
                           ? 'bg-mint text-bg font-semibold'
                           : 'text-fg-mute hover:bg-surface-2')
@@ -643,7 +643,7 @@ const ProbeMode: React.FC<{ rpcUrl: string }> = ({ rpcUrl }) => {
         <div className="flex flex-1 items-center justify-center text-center">
           <div>
             <div className="mb-3 font-mono text-[40px] text-fg-mute">◇</div>
-            <p className="font-ui text-[12px] text-fg-mute">{t('slotCalc.probeHint')}</p>
+            <p className="font-ui text-[13px] text-fg-mute">{t('slotCalc.probeHint')}</p>
           </div>
         </div>
       )}
@@ -659,8 +659,8 @@ const SlotCalcPage: React.FC<SlotCalcPageProps> = ({ rpcUrl }) => {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
+      <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
+        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
         <div className="flex gap-0.5">
           <ModeBtn active={mode === 'manual'} onClick={() => setMode('manual')}>
             {t('slotCalc.modeManual')}
@@ -672,7 +672,7 @@ const SlotCalcPage: React.FC<SlotCalcPageProps> = ({ rpcUrl }) => {
             {t('slotCalc.modeProbe')}
           </ModeBtn>
         </div>
-        <span className="ml-auto text-[10px] text-fg-mute">
+        <span className="ml-auto text-[11px] text-fg-mute">
           {mode === 'manual' && t('slotCalc.manualSubtitle')}
           {mode === 'layout-json' && t('slotCalc.jsonSubtitle')}
           {mode === 'probe' && t('slotCalc.probeSubtitle')}

@@ -76,29 +76,29 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-line px-5 py-3">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-dim">
+          <h2 className="font-mono text-[12px] uppercase tracking-[0.22em] text-fg-dim">
             {t('configManager.title')}
           </h2>
           <button
             onClick={onClose}
-            className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
+            className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[12px] text-fg-dim hover:bg-surface-2"
           >
             Esc
           </button>
         </div>
 
-        <div className="space-y-5 p-5 font-ui text-[12px] text-fg-dim">
+        <div className="space-y-5 p-5 font-ui text-[13px] text-fg-dim">
           {/* Export */}
           <div>
-            <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+            <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
               {t('configManager.exportTitle')}
             </div>
-            <p className="mb-2 text-[11px] text-fg-mute">
+            <p className="mb-2 text-[12px] text-fg-mute">
               {t('configManager.exportDescription')}
             </p>
             <button
               onClick={handleExport}
-              className="rounded-sm border border-line px-3 py-1.5 font-mono text-[11px] text-fg hover:bg-surface-2"
+              className="rounded-sm border border-line px-3 py-1.5 font-mono text-[12px] text-fg hover:bg-surface-2"
             >
               ↓ {t('configManager.exportButton')}
             </button>
@@ -106,14 +106,14 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
 
           {/* Import */}
           <div className="border-t border-line pt-4">
-            <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+            <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
               {t('configManager.importTitle')}
             </div>
-            <p className="mb-2 text-[11px] text-fg-mute">
+            <p className="mb-2 text-[12px] text-fg-mute">
               {t('configManager.importDescription')}
             </p>
             <div className="mb-3 flex gap-2">
-              <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px]">
+              <label className="flex cursor-pointer items-center gap-2 font-mono text-[12px]">
                 <input
                   type="radio"
                   name="importMode"
@@ -124,7 +124,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
                 />
                 <span className="text-fg">{t('configManager.mergeMode')}</span>
               </label>
-              <label className="flex cursor-pointer items-center gap-2 font-mono text-[11px]">
+              <label className="flex cursor-pointer items-center gap-2 font-mono text-[12px]">
                 <input
                   type="radio"
                   name="importMode"
@@ -145,7 +145,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
             />
             <button
               onClick={handleImportClick}
-              className="rounded-sm bg-mint px-3 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-mint/80"
+              className="rounded-sm bg-mint px-3 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80"
             >
               ↑ {t('configManager.importButton')}
             </button>
@@ -154,7 +154,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
           {importResult && (
             <div
               className={
-                'rounded-sm border px-3 py-2 font-mono text-[11px] ' +
+                'rounded-sm border px-3 py-2 font-mono text-[12px] ' +
                 (importResult.success
                   ? 'border-mint/30 bg-mint/5 text-mint'
                   : 'border-call-red/30 bg-call-red/5 text-call-red')
@@ -162,7 +162,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ open, onClose, onImportComple
             >
               <div className="font-semibold">{importResult.message}</div>
               {importResult.success && (
-                <div className="mt-1 text-[10px] text-fg-dim">
+                <div className="mt-1 text-[11px] text-fg-dim">
                   rpc: {importResult.imported.rpc} · contracts:{' '}
                   {importResult.imported.contract} · abis: {importResult.imported.abi}
                 </div>

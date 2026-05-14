@@ -44,7 +44,7 @@ const AbiSelector: React.FC<Props> = ({
 
   return (
     <div className="flex min-h-0 flex-col border-r border-line">
-      <div className="flex items-center gap-2 border-b border-line px-3 py-2 font-mono text-[10px]">
+      <div className="flex items-center gap-2 border-b border-line px-3 py-2 font-mono text-[11px]">
         <span className="uppercase tracking-[0.22em] text-fg-dim">
           {t('presetModal.abis')}
         </span>
@@ -62,7 +62,7 @@ const AbiSelector: React.FC<Props> = ({
       </div>
       <div className="flex-1 overflow-y-auto">
         {presets.length === 0 ? (
-          <div className="p-3 font-ui text-[11px] text-fg-dim">
+          <div className="p-3 font-ui text-[12px] text-fg-dim">
             {t('presetModal.empty')}
           </div>
         ) : (
@@ -72,7 +72,7 @@ const AbiSelector: React.FC<Props> = ({
               <label
                 key={p.id}
                 className={
-                  'flex cursor-pointer items-center gap-2 border-b border-line-soft px-3 py-1.5 font-mono text-[11px] transition-colors ' +
+                  'flex cursor-pointer items-center gap-2 border-b border-line-soft px-3 py-1.5 font-mono text-[12px] transition-colors ' +
                   (checked
                     ? 'border-l-2 border-l-mint bg-mint/5 pl-[10px]'
                     : 'border-l-2 border-l-transparent pl-[10px] hover:bg-surface-2')
@@ -92,7 +92,7 @@ const AbiSelector: React.FC<Props> = ({
       <div className="border-t border-line px-3 py-2">
         <button
           onClick={onOpenPresets}
-          className="w-full rounded-sm border border-line bg-surface px-2 py-1 text-center font-mono text-[10px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+          className="w-full rounded-sm border border-line bg-surface px-2 py-1 text-center font-mono text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
         >
           + {t('functionCall.addAbi')}
         </button>

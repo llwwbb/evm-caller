@@ -230,7 +230,7 @@ const AbiEncoderPage: React.FC = () => {
     <button
       onClick={onClick}
       className={
-        'rounded-sm px-2 py-0.5 text-[10px] ' +
+        'rounded-sm px-2 py-0.5 text-[11px] ' +
         (active ? 'bg-mint font-semibold text-bg' : 'text-fg-dim hover:bg-surface-2')
       }
     >
@@ -241,8 +241,8 @@ const AbiEncoderPage: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* TxBar: mode + operation */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[11px]">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
+        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
         <div className="flex gap-0.5">
           <ModeBtn active={encodingMode === 'abi'} onClick={() => setEncodingMode('abi')}>
             abi
@@ -256,7 +256,7 @@ const AbiEncoderPage: React.FC = () => {
         </div>
 
         <span className="text-line">/</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">op</span>
+        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">op</span>
         <div className="flex gap-0.5">
           <ModeBtn
             active={operationType === 'encode'}
@@ -273,7 +273,7 @@ const AbiEncoderPage: React.FC = () => {
         </div>
 
         <span className="text-line">/</span>
-        <span className="text-[10px] uppercase tracking-[0.2em] text-fg-mute">preset</span>
+        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">preset</span>
         <select
           value={selectedPresetId}
           onChange={(e) => selectPreset(e.target.value)}
@@ -289,14 +289,14 @@ const AbiEncoderPage: React.FC = () => {
         {selectedPresetId && (
           <button
             onClick={() => handleDeletePreset(selectedPresetId)}
-            className="rounded-sm px-1.5 py-0.5 text-[10px] text-fg-mute hover:bg-surface-2"
+            className="rounded-sm px-1.5 py-0.5 text-[11px] text-fg-mute hover:bg-surface-2"
           >
             × preset
           </button>
         )}
         <button
           onClick={() => setSavingPreset(!savingPreset)}
-          className="rounded-sm border border-line px-2 py-0.5 text-[10px] text-fg-dim hover:bg-surface-2"
+          className="rounded-sm border border-line px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2"
         >
           {savingPreset ? 'cancel' : '+ save preset'}
         </button>
@@ -304,7 +304,7 @@ const AbiEncoderPage: React.FC = () => {
         <div className="ml-auto">
           <button
             onClick={handleExecute}
-            className="rounded-sm bg-mint px-4 py-1 font-mono text-[11px] font-semibold text-bg"
+            className="rounded-sm bg-mint px-4 py-1 font-mono text-[12px] font-semibold text-bg"
           >
             {operationType === 'encode'
               ? t('abiEncoder.encode')
@@ -319,11 +319,11 @@ const AbiEncoderPage: React.FC = () => {
             value={newPresetName}
             onChange={(e) => setNewPresetName(e.target.value)}
             placeholder={t('abiEncoder.newPresetName')}
-            className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+            className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
           />
           <button
             onClick={handleSavePreset}
-            className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] text-bg"
+            className="rounded-sm bg-mint px-3 py-1 font-mono text-[12px] text-bg"
           >
             {t('presetModal.save')}
           </button>
@@ -331,7 +331,7 @@ const AbiEncoderPage: React.FC = () => {
       )}
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[11px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[12px] text-call-red">
           {error}
         </div>
       )}
@@ -342,7 +342,7 @@ const AbiEncoderPage: React.FC = () => {
       >
         {/* LEFT: types + values / hex input */}
         <div className="flex min-h-0 flex-col border-r border-line">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[10px]">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('abiEncoder.typesSection')}
             </span>
@@ -350,18 +350,18 @@ const AbiEncoderPage: React.FC = () => {
             <span className="text-fg">{typeEntries.length}</span>
             <button
               onClick={addType}
-              className="ml-auto rounded-sm px-2 py-0.5 text-[10px] text-fg-dim hover:bg-surface-2"
+              className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2"
             >
               + add
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 font-mono text-[11px]">
+          <div className="flex-1 overflow-y-auto p-4 font-mono text-[12px]">
             {typeEntries.map((entry, idx) => (
               <div
                 key={entry.id}
                 className="mb-2 flex items-start gap-2 border-b border-line-soft pb-2 last:border-b-0"
               >
-                <span className="w-6 pt-1.5 text-[10px] text-fg-mute">[{idx}]</span>
+                <span className="w-6 pt-1.5 text-[11px] text-fg-mute">[{idx}]</span>
                 <div className="flex-1 space-y-1">
                   <input
                     list={`common-types-${entry.id}`}
@@ -388,21 +388,21 @@ const AbiEncoderPage: React.FC = () => {
                   <button
                     onClick={() => moveType(entry.id, 'up')}
                     disabled={idx === 0}
-                    className="rounded-xs px-1 text-[10px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
+                    className="rounded-xs px-1 text-[11px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
                   >
                     ↑
                   </button>
                   <button
                     onClick={() => moveType(entry.id, 'down')}
                     disabled={idx === typeEntries.length - 1}
-                    className="rounded-xs px-1 text-[10px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
+                    className="rounded-xs px-1 text-[11px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
                   >
                     ↓
                   </button>
                   <button
                     onClick={() => removeType(entry.id)}
                     disabled={typeEntries.length <= 1}
-                    className="rounded-xs px-1 text-[10px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
+                    className="rounded-xs px-1 text-[11px] text-fg-mute hover:bg-surface-2 disabled:opacity-30"
                   >
                     ×
                   </button>
@@ -412,7 +412,7 @@ const AbiEncoderPage: React.FC = () => {
 
             {operationType === 'decode' && (
               <div className="mt-3">
-                <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+                <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                   {t('abiEncoder.hexInput')}
                 </div>
                 <textarea
@@ -420,9 +420,9 @@ const AbiEncoderPage: React.FC = () => {
                   onChange={(e) => setHexInput(e.target.value)}
                   placeholder="0x..."
                   rows={6}
-                  className="w-full resize-none rounded-sm border border-line bg-bg px-2 py-1.5 font-mono text-[11px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                  className="w-full resize-none rounded-sm border border-line bg-bg px-2 py-1.5 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                 />
-                <label className="mt-2 flex items-center gap-2 text-[10px] text-fg-dim">
+                <label className="mt-2 flex items-center gap-2 text-[11px] text-fg-dim">
                   <input
                     type="checkbox"
                     checked={outputAsHex}
@@ -440,23 +440,23 @@ const AbiEncoderPage: React.FC = () => {
           {/* Output */}
           <div className="border-b border-line bg-surface px-5 py-4">
             <div className="mb-2 flex items-center gap-2">
-              <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                 {t('abiEncoder.output')}
               </span>
             </div>
             {result ? (
-              <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 font-mono text-[11px] text-fg">
+              <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 font-mono text-[12px] text-fg">
                 {result}
               </pre>
             ) : (
-              <div className="font-ui text-[12px] text-fg-mute">
+              <div className="font-ui text-[13px] text-fg-mute">
                 {t('abiEncoder.outputPlaceholder')}
               </div>
             )}
           </div>
 
           {/* History */}
-          <div className="flex items-center gap-2 border-b border-line px-5 py-2 font-mono text-[10px]">
+          <div className="flex items-center gap-2 border-b border-line px-5 py-2 font-mono text-[11px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('abiEncoder.history')}
             </span>
@@ -465,7 +465,7 @@ const AbiEncoderPage: React.FC = () => {
             {history.length > 0 && (
               <button
                 onClick={handleClearHistory}
-                className="ml-auto rounded-sm px-2 py-0.5 text-[10px] text-fg-mute hover:bg-surface-2"
+                className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-mute hover:bg-surface-2"
               >
                 {t('debugTrace.closeAll')}
               </button>
@@ -473,7 +473,7 @@ const AbiEncoderPage: React.FC = () => {
           </div>
           <div className="flex-1">
             {history.length === 0 ? (
-              <div className="p-5 font-ui text-[12px] text-fg-mute">
+              <div className="p-5 font-ui text-[13px] text-fg-mute">
                 {t('abiEncoder.noHistory')}
               </div>
             ) : (
@@ -482,12 +482,12 @@ const AbiEncoderPage: React.FC = () => {
                 return (
                   <div key={h.id} className="border-b border-line-soft">
                     <div
-                      className="flex cursor-pointer items-center gap-2 px-5 py-2 font-mono text-[10px] hover:bg-surface-2"
+                      className="flex cursor-pointer items-center gap-2 px-5 py-2 font-mono text-[11px] hover:bg-surface-2"
                       onClick={() => toggleCollapse(h.id)}
                     >
                       <span
                         className={
-                          'rounded-xs px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em] ' +
+                          'rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] ' +
                           (h.success ? 'bg-mint/15 text-mint' : 'bg-call-red/15 text-call-red')
                         }
                       >
@@ -514,13 +514,13 @@ const AbiEncoderPage: React.FC = () => {
                     </div>
                     {!isCollapsed && (
                       <div className="bg-surface-2 px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
-                        <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+                        <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                           {t('abiEncoder.input')}
                         </div>
                         <pre className="mb-3 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg-dim">
                           {h.inputValues.join('\n')}
                         </pre>
-                        <div className="mb-1 font-mono text-[9px] uppercase tracking-[0.22em] text-fg-mute">
+                        <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
                           {t('abiEncoder.output')}
                         </div>
                         <pre
