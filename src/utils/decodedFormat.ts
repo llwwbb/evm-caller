@@ -10,6 +10,13 @@ export function toDisplay(
   param?: ParsedParam | ParsedParam[],
 ): DisplayValue {
   if (Array.isArray(param)) {
+    // ethers v6 unwraps single-output view returns to the bare value
+    // (string for address, bigint for uint, Result for tuple, …) — indexing
+    // into it would walk into the value's own structure (e.g. char 0 of a
+    // hex address string), so wrap it directly.
+    if (param.length === 1) {
+      return [toDisplay(value, param[0])];
+    }
     return param.map((p, i) => toDisplay((value as any)?.[p.name ?? i] ?? (value as any)?.[i], p));
   }
 
