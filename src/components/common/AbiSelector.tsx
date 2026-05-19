@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AbiPreset } from '../../types';
 import { loadAbiPresets } from '../../utils/presetStorage';
@@ -21,6 +21,17 @@ const AbiSelector: React.FC<Props> = ({
   const { t } = useTranslation();
   const presets = useMemo<AbiPreset[]>(() => loadAbiPresets(), [refreshToken]);
   const selectedSet = useMemo(() => new Set(selectedAbiNames), [selectedAbiNames]);
+  const [search, setSearch] = useState('');
+
+  const displayPresets = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = q
+      ? presets.filter((p) => p.name.toLowerCase().includes(q))
+      : presets;
+    return [...filtered].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+    );
+  }, [presets, search]);
 
   const toggle = (p: AbiPreset) => {
     const wasSelected = selectedSet.has(p.name);
@@ -60,13 +71,35 @@ const AbiSelector: React.FC<Props> = ({
           {t('presetModal.clearAll')}
         </button>
       </div>
+      <div className="border-b border-line-soft bg-bg px-3 py-2">
+        <div className="relative">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('presetModal.searchByName')}
+            className="w-full rounded-sm border border-line bg-bg px-2 py-1 pr-6 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[12px] text-fg-mute hover:text-fg"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto">
         {presets.length === 0 ? (
           <div className="p-3 font-ui text-[12px] text-fg-dim">
             {t('presetModal.empty')}
           </div>
+        ) : displayPresets.length === 0 ? (
+          <div className="p-3 font-ui text-[12px] text-fg-mute">
+            {t('presetModal.noMatch')}
+          </div>
         ) : (
-          presets.map((p) => {
+          displayPresets.map((p) => {
             const checked = selectedSet.has(p.name);
             return (
               <label
