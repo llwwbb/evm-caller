@@ -44,8 +44,8 @@ const TxBar: React.FC<TxBarProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
-      <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">rpc</span>
+    <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[13px]">
+      <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">rpc</span>
       <RpcPicker
         value={rpcUrl}
         onChange={onRpcChange}
@@ -55,7 +55,7 @@ const TxBar: React.FC<TxBarProps> = ({
       {onContractChange && (
         <>
           <span className="text-line">/</span>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
+          <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
           <ContractPicker
             value={contractAddress ?? ''}
             onChange={onContractChange}
@@ -68,19 +68,19 @@ const TxBar: React.FC<TxBarProps> = ({
       {onTxHashChange && (
         <>
           <span className="text-line">/</span>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">tx</span>
+          <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">tx</span>
           <input
             value={txHash ?? ''}
             onChange={(e) => onTxHashChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && onTxHashSubmit) onTxHashSubmit(); }}
             placeholder="0x..."
-            className="w-[400px] rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+            className="w-[400px] rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
           />
           {onTxHashSubmit && (
             <button
               onClick={onTxHashSubmit}
               disabled={isFetching}
-              className="rounded-sm border border-line bg-surface px-3 py-1 font-mono text-[11px] font-semibold text-fg hover:bg-surface-2 hover:text-fg disabled:opacity-50"
+              className="rounded-sm border border-line bg-surface px-3 py-1 font-mono text-[12px] font-semibold text-fg hover:bg-surface-2 hover:text-fg disabled:opacity-50"
             >
               {isFetching ? t('common.fetching') : t('common.fetch')}
             </button>
@@ -90,7 +90,7 @@ const TxBar: React.FC<TxBarProps> = ({
       {extra?.map((it, idx) => (
         <React.Fragment key={`${it.kicker}-${idx}`}>
           <span className="text-line">/</span>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">{it.kicker}</span>
+          <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">{it.kicker}</span>
           <span className="text-fg">{it.value}</span>
         </React.Fragment>
       ))}

@@ -361,13 +361,13 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Control bar */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">method</span>
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[13px]">
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">method</span>
         <div className="flex gap-0.5">
           <button
             onClick={() => setRpcMethod('eth_call')}
             className={
-              'rounded-sm px-2 py-0.5 text-[11px] ' +
+              'rounded-sm px-2 py-0.5 text-[12px] ' +
               (rpcMethod === 'eth_call'
                 ? 'bg-mint font-semibold text-bg'
                 : 'text-fg-dim hover:bg-surface-2')
@@ -378,7 +378,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
           <button
             onClick={() => setRpcMethod('debug_traceCall')}
             className={
-              'rounded-sm px-2 py-0.5 text-[11px] ' +
+              'rounded-sm px-2 py-0.5 text-[12px] ' +
               (rpcMethod === 'debug_traceCall'
                 ? 'bg-mint font-semibold text-bg'
                 : 'text-fg-dim hover:bg-surface-2')
@@ -388,7 +388,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
           </button>
         </div>
         <span className="text-line">/</span>
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">from</span>
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">from</span>
         <input
           value={fromAddress}
           onChange={(e) => setFromAddress(e.target.value)}
@@ -398,7 +398,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
         <button
           onClick={handleExecute}
           disabled={loading}
-          className="ml-auto rounded-sm bg-mint px-4 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80 disabled:opacity-50"
+          className="ml-auto rounded-sm bg-mint px-4 py-1.5 font-mono text-[13px] font-semibold text-bg hover:bg-mint/80 disabled:opacity-50"
         >
           {loading ? t('stateOverride.executing') : t('stateOverride.execute')}
         </button>
@@ -407,7 +407,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
       <StatsRibbon stats={stats} />
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[12px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[13px] text-call-red">
           {error}
         </div>
       )}
@@ -415,7 +415,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
       <div className="grid flex-1 min-h-0" style={{ gridTemplateColumns: '2fr 3fr' }}>
         {/* LEFT: account overrides */}
         <div className="flex min-h-0 flex-col border-r border-line">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('stateOverride.accounts')}
             </span>
@@ -423,7 +423,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
             <span className="text-fg">{accounts.length}</span>
             <button
               onClick={handleAddAccount}
-              className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2"
+              className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-dim hover:bg-surface-2"
             >
               + add
             </button>
@@ -431,7 +431,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
 
           <div className="flex-shrink-0 overflow-y-auto" style={{ maxHeight: '30%' }}>
             {accounts.length === 0 ? (
-              <div className="p-5 font-ui text-[12px] text-fg-mute">
+              <div className="p-5 font-ui text-[13px] text-fg-mute">
                 {t('stateOverride.noAccountsHint')}
               </div>
             ) : (
@@ -447,7 +447,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                     key={i}
                     onClick={() => setSelectedAccountIdx(i)}
                     className={
-                      'cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[12px] ' +
+                      'cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[13px] ' +
                       (selectedAccountIdx === i
                         ? 'border-l-2 border-l-mint bg-mint/5 pl-[14px]'
                         : 'border-l-2 border-l-transparent pl-[14px] hover:bg-surface-2')
@@ -468,7 +468,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                       </button>
                     </div>
                     {parts.length > 0 && (
-                      <div className="mt-0.5 text-[11px] text-fg-mute">
+                      <div className="mt-0.5 text-[12px] text-fg-mute">
                         {parts.join(' · ')}
                       </div>
                     )}
@@ -480,7 +480,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-line">
             {selectedAccount ? (
-              <div className="space-y-3 p-5 font-mono text-[12px]">
+              <div className="space-y-3 p-5 font-mono text-[13px]">
                 <div className="grid grid-cols-[80px_1fr] items-center gap-3">
                   <span className="text-fg-mute">address</span>
                   <input
@@ -514,7 +514,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                   />
                 </div>
                 <div>
-                  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                  <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                     code
                   </div>
                   <textarea
@@ -522,12 +522,12 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                     onChange={(e) => updateOverride({ code: e.target.value || undefined })}
                     placeholder="0x... (runtime bytecode)"
                     rows={3}
-                    className="w-full resize-none rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[10.5px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                    className="w-full resize-none rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                   />
                 </div>
                 <div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                    <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                       storage slots
                     </span>
                     <button
@@ -536,7 +536,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                         state['0x0'] = '0x0';
                         updateOverride({ state });
                       }}
-                      className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2"
+                      className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-dim hover:bg-surface-2"
                     >
                       + slot
                     </button>
@@ -548,13 +548,13 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                           value={slot}
                           onChange={(e) => updateSlot(slot, e.target.value, value)}
                           placeholder="slot (0x...)"
-                          className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[10.5px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                          className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                         />
                         <input
                           value={value}
                           onChange={(e) => updateSlot(slot, slot, e.target.value)}
                           placeholder="value (0x...)"
-                          className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[10.5px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                          className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                         />
                         <button
                           onClick={() => deleteSlot(slot)}
@@ -568,7 +568,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="p-5 font-ui text-[12px] text-fg-mute">
+              <div className="p-5 font-ui text-[13px] text-fg-mute">
                 {t('stateOverride.selectAccountHint')}
               </div>
             )}
@@ -577,12 +577,12 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
           {/* Preset management at bottom */}
           <div className="border-t border-line bg-surface p-3">
             <div className="mb-2 flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+              <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                 {t('stateOverride.presets')}
               </span>
               <button
                 onClick={() => setSavingPreset(!savingPreset)}
-                className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[11px] text-fg-dim hover:bg-surface-2"
+                className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[12px] text-fg-dim hover:bg-surface-2"
               >
                 {savingPreset ? 'cancel' : '+ save'}
               </button>
@@ -593,11 +593,11 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                   value={presetName}
                   onChange={(e) => setPresetName(e.target.value)}
                   placeholder={t('stateOverride.presetNamePlaceholder')}
-                  className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                  className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-ui text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                 />
                 <button
                   onClick={handleSavePreset}
-                  className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] text-bg"
+                  className="rounded-sm bg-mint px-3 py-1 font-mono text-[12px] text-bg"
                 >
                   save
                 </button>
@@ -605,14 +605,14 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
             )}
             <div className="max-h-[120px] space-y-0.5 overflow-y-auto">
               {presets.length === 0 ? (
-                <div className="font-ui text-[12px] text-fg-mute">
+                <div className="font-ui text-[13px] text-fg-mute">
                   {t('stateOverride.noPresets')}
                 </div>
               ) : (
                 presets.map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center gap-2 rounded-sm bg-bg px-2 py-1 font-mono text-[12px]"
+                    className="flex items-center gap-2 rounded-sm bg-bg px-2 py-1 font-mono text-[13px]"
                   >
                     <span
                       className="flex-1 cursor-pointer truncate text-fg hover:text-mint"
@@ -635,7 +635,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
 
         {/* RIGHT: calls + result */}
         <div className="flex min-h-0 flex-col">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('stateOverride.calls')}
             </span>
@@ -644,7 +644,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
             <button
               onClick={handleAddCall}
               disabled={parsedFunctions.length === 0}
-              className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
+              className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
             >
               + add call
             </button>
@@ -652,11 +652,11 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
 
           <div className="flex-shrink-0 overflow-y-auto" style={{ maxHeight: '50%' }}>
             {parsedFunctions.length === 0 ? (
-              <div className="p-5 font-ui text-[13px] text-fg-mute">
+              <div className="p-5 font-ui text-[14px] text-fg-mute">
                 {t('stateOverride.noAbiHint')}
               </div>
             ) : calls.length === 0 ? (
-              <div className="p-5 font-ui text-[13px] text-fg-mute">
+              <div className="p-5 font-ui text-[14px] text-fg-mute">
                 {t('stateOverride.noCallsHint')}
               </div>
             ) : (
@@ -666,11 +666,11 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                 return (
                   <div key={c.id} className="border-b border-line-soft">
                     <div
-                      className="flex cursor-pointer items-center gap-2 px-5 py-2 font-mono text-[12px] hover:bg-surface-2"
+                      className="flex cursor-pointer items-center gap-2 px-5 py-2 font-mono text-[13px] hover:bg-surface-2"
                       onClick={() => setExpandedCallIdx(expanded ? -1 : idx)}
                     >
-                      <span className="text-[11px] text-fg-mute">#{idx}</span>
-                      <span className="rounded-xs bg-call-blue/12 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-call-blue">
+                      <span className="text-[12px] text-fg-mute">#{idx}</span>
+                      <span className="rounded-xs bg-call-blue/12 px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-call-blue">
                         CALL
                       </span>
                       <span className="truncate text-fg">
@@ -693,7 +693,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                       </span>
                     </div>
                     {expanded && (
-                      <div className="space-y-2 bg-surface px-5 py-3 font-mono text-[10.5px]">
+                      <div className="space-y-2 bg-surface px-5 py-3 font-mono text-[12px]">
                         <div className="grid grid-cols-[80px_1fr] items-center gap-2">
                           <span className="text-fg-mute">contract</span>
                           <input
@@ -722,7 +722,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                         </div>
                         {fn && fn.inputs.length > 0 && (
                           <div>
-                            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                               args
                             </div>
                             {fn.inputs.map((inp, i) => (
@@ -732,7 +732,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                               >
                                 <span className="truncate text-fg-mute">
                                   {inp.name || `arg${i}`}
-                                  <span className="ml-1 text-[10px]">({inp.type})</span>
+                                  <span className="ml-1 text-[11px]">({inp.type})</span>
                                 </span>
                                 <input
                                   value={c.argValues[i] ?? ''}
@@ -762,7 +762,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
 
           {/* Result area */}
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-line">
-            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
               <span className="uppercase tracking-[0.22em] text-fg-mute">
                 {t('stateOverride.result')}
               </span>
@@ -770,12 +770,12 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
             {result && rpcMethod === 'eth_call' && result.results ? (
               <div className="flex flex-col gap-px bg-line">
                 {result.results.map((r, i) => (
-                  <div key={i} className="bg-surface px-5 py-3 font-mono text-[10.5px]">
+                  <div key={i} className="bg-surface px-5 py-3 font-mono text-[12px]">
                     <div className="mb-1.5 flex items-center gap-2">
                       <span className="text-fg-mute">#{i}</span>
                       <span
                         className={
-                          'rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] ' +
+                          'rounded-xs px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] ' +
                           (r.success
                             ? 'bg-mint/15 text-mint'
                             : 'bg-call-red/15 text-call-red')
@@ -786,14 +786,14 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
                       <span className="text-fg">{r.call.functionName}()</span>
                     </div>
                     {r.success ? (
-                      <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                      <pre className="whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] text-fg">
                         {stringifySafe(r.data)}
                       </pre>
                     ) : (
                       <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-call-red">
                         {r.error}
                         {r.returnData && r.returnData !== '0x' && (
-                          <div className="mt-1 text-[11px] text-fg-dim">
+                          <div className="mt-1 text-[12px] text-fg-dim">
                             return: {r.returnData}
                           </div>
                         )}
@@ -835,7 +835,7 @@ const StateOverridePage: React.FC<StateOverridePageProps> = ({
               </div>
             ) : (
               <div className="flex flex-1 items-center justify-center p-5 text-center">
-                <p className="font-ui text-[13px] text-fg-mute">
+                <p className="font-ui text-[14px] text-fg-mute">
                   {t('stateOverride.resultHint')}
                 </p>
               </div>

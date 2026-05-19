@@ -90,7 +90,7 @@ const RpcPicker: React.FC<Props> = ({
             }
           }}
           placeholder={placeholder ?? 'https://...'}
-          className="w-full rounded-sm border border-line bg-bg py-1 pl-2 pr-6 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          className="w-full rounded-sm border border-line bg-bg py-1 pl-2 pr-6 font-mono text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
         />
         {value && (
           <button
@@ -101,14 +101,14 @@ const RpcPicker: React.FC<Props> = ({
               setIsTyping(false);
               setActiveIdx(0);
             }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[11px] text-fg-mute hover:text-fg"
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[12px] text-fg-mute hover:text-fg"
           >
             ×
           </button>
         )}
       </div>
       {open && filtered.length > 0 && (
-        <ul className="absolute left-0 right-0 z-40 mt-0.5 max-h-60 overflow-y-auto rounded-sm border border-line bg-surface font-mono text-[12px] shadow-lg">
+        <ul className="absolute left-0 right-0 z-40 mt-0.5 max-h-60 overflow-y-auto rounded-sm border border-line bg-surface font-mono text-[13px] shadow-lg">
           {filtered.map((p, i) => (
             <li
               key={p.id}
@@ -123,7 +123,7 @@ const RpcPicker: React.FC<Props> = ({
               }
             >
               {p.chainId != null && (
-                <span className="rounded-xs bg-mint/15 px-1.5 text-[10px] font-bold text-mint">
+                <span className="rounded-xs bg-mint/15 px-1.5 text-[11px] font-bold text-mint">
                   {chainLabel(p.chainId)}
                 </span>
               )}
@@ -134,7 +134,7 @@ const RpcPicker: React.FC<Props> = ({
         </ul>
       )}
       {open && filtered.length === 0 && (
-        <div className="absolute left-0 right-0 z-40 mt-0.5 rounded-sm border border-line bg-surface px-2.5 py-1.5 font-mono text-[12px] text-fg-dim">
+        <div className="absolute left-0 right-0 z-40 mt-0.5 rounded-sm border border-line bg-surface px-2.5 py-1.5 font-mono text-[13px] text-fg-dim">
           {t('picker.noMatch')}
         </div>
       )}

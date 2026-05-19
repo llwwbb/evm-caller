@@ -64,7 +64,7 @@ const parse32Bytes = (chunk: string, type: ParseType): string => {
 };
 
 const MiniLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+  <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
     {children}
   </div>
 );
@@ -79,7 +79,7 @@ const ParseTypeButtons: React.FC<{
         key={type}
         onClick={() => onChange(type)}
         className={
-          'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
+          'rounded-xs px-1.5 py-0.5 font-mono text-[11px] tracking-[0.05em] ' +
           (current === type
             ? 'bg-mint text-bg font-semibold'
             : 'text-fg-mute hover:bg-surface-2')
@@ -247,7 +247,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
       />
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[13px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 text-[14px] text-call-red">
           {error}
         </div>
       )}
@@ -257,7 +257,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
       {parsedTx ? (
         <div className="flex-1 min-h-0 overflow-y-auto">
           {/* Top: tx header + decoded input */}
-          <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[12px]">
+          <div className="border-b border-line bg-surface px-5 py-4 font-mono text-[13px]">
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
               <div><span className="text-fg-mute">from </span><AddressBadge addr={parsedTx.from} lookup={lookup} showNames={showAddressNames} /></div>
               <div><span className="text-fg-mute">to </span>{parsedTx.to ? <AddressBadge addr={parsedTx.to} lookup={lookup} showNames={showAddressNames} /> : <span className="text-fg">{t('transactionParser.contractCreation')}</span>}</div>
@@ -275,17 +275,17 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                 <MiniLabel>
                   {t('txParser.decodedInput')} — {parsedTx.decodedInput.functionName}
                 </MiniLabel>
-                <div className="mb-1 text-[11px] text-fg-mute">
+                <div className="mb-1 text-[12px] text-fg-mute">
                   {parsedTx.decodedInput.signature}
                 </div>
-                <div className="mt-1 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                <div className="mt-1 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] leading-[1.6]">
                   <DecodedValue value={parsedTx.decodedInput.args as any} lookup={lookup} showNames={showAddressNames} />
                 </div>
               </div>
             ) : (
               <div className="mt-4 border-t border-line-soft pt-3">
                 <MiniLabel>{t('txParser.rawInput')}</MiniLabel>
-                <pre className="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg">
+                <pre className="mt-1 max-h-32 overflow-y-auto whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] text-fg">
                   {parsedTx.inputData}
                 </pre>
               </div>
@@ -293,7 +293,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
           </div>
 
           {/* Bottom: logs */}
-          <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[12px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('txParser.logs')}
             </span>
@@ -318,7 +318,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
           </div>
 
           {parsedTx.logs.length === 0 ? (
-            <div className="p-5 font-ui text-[13px] text-fg-mute">
+            <div className="p-5 font-ui text-[14px] text-fg-mute">
               {t('transactionParser.noLogs')}
             </div>
           ) : (
@@ -445,15 +445,15 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                 <div key={index} className="border-b border-line-soft">
                   <div
                     onClick={() => toggleLog(index)}
-                    className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[12px] hover:bg-surface-2"
+                    className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[13px] hover:bg-surface-2"
                   >
-                    <span className="text-[11px] text-fg-mute">#{log.logIndex}</span>
+                    <span className="text-[12px] text-fg-mute">#{log.logIndex}</span>
                     {isParsed ? (
-                      <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-mint">
+                      <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-mint">
                         {log.parsed!.eventName}
                       </span>
                     ) : (
-                      <span className="rounded-xs bg-line px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-fg-mute">
+                      <span className="rounded-xs bg-line px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-fg-mute">
                         RAW
                       </span>
                     )}
@@ -464,7 +464,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                   </div>
 
                   {expanded && (
-                    <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
+                    <div className="bg-surface px-5 py-3 font-mono text-[12px] leading-[1.55]">
                       <div className="mb-3 flex gap-0.5">
                         {availableModes.map((m) => (
                           <button
@@ -474,7 +474,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                               setMode(m);
                             }}
                             className={
-                              'rounded-xs px-1.5 py-0.5 font-mono text-[10px] tracking-[0.05em] ' +
+                              'rounded-xs px-1.5 py-0.5 font-mono text-[11px] tracking-[0.05em] ' +
                               (mode === m
                                 ? 'bg-mint text-bg font-semibold'
                                 : 'text-fg-mute hover:bg-surface-2')
@@ -508,7 +508,7 @@ const TransactionParserPage: React.FC<TransactionParserPageProps> = ({
                             <span className="text-mint">{log.parsed!.abiName}</span>
                           </div>
                           <MiniLabel>{t('txParser.args')}</MiniLabel>
-                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] leading-[1.6]">
                             <DecodedValue value={log.parsed!.args as any} lookup={lookup} showNames={showAddressNames} />
                           </div>
                         </>

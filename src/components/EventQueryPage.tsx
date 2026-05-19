@@ -258,8 +258,8 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* TxBar: contract + event + blocks + actions */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
+      <div className="flex flex-wrap items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[13px]">
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">contract</span>
         <ContractPicker
           value={contractAddress}
           onChange={(addr) => onContractAddressChange(addr)}
@@ -269,7 +269,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
         />
 
         <span className="text-line">/</span>
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">event</span>
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">event</span>
         <select
           value={selectedEvent}
           onChange={(e) => handleEventChange(e.target.value)}
@@ -289,14 +289,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
         </select>
 
         <span className="text-line">/</span>
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">from</span>
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">from</span>
         <input
           value={fromBlock}
           onChange={(e) => setFromBlock(e.target.value)}
           placeholder="block"
           className="w-[90px] rounded-sm border border-line bg-bg px-2 py-1 text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
         />
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">to</span>
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">to</span>
         <input
           value={toBlock}
           onChange={(e) => setToBlock(e.target.value)}
@@ -308,7 +308,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={
-              'rounded-sm px-2 py-0.5 text-[11px] ' +
+              'rounded-sm px-2 py-0.5 text-[12px] ' +
               (showFilters ? 'bg-mint/10 text-mint' : 'text-fg-dim hover:bg-surface-2')
             }
           >
@@ -320,7 +320,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
           <button
             onClick={handleQuickQuery}
             disabled={isLoading}
-            className="rounded-sm border border-line px-2.5 py-1 text-[11px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
+            className="rounded-sm border border-line px-2.5 py-1 text-[12px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
           >
             {t('eventQueryUI.quickLatest1k')}
           </button>
@@ -329,14 +329,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
               <button
                 onClick={handleQueryPrevious}
                 disabled={isLoading || currentFromBlock === 0}
-                className="rounded-sm border border-line px-2 py-1 text-[11px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
+                className="rounded-sm border border-line px-2 py-1 text-[12px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
               >
                 ← prev
               </button>
               <button
                 onClick={handleQueryNext}
                 disabled={isLoading}
-                className="rounded-sm border border-line px-2 py-1 text-[11px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
+                className="rounded-sm border border-line px-2 py-1 text-[12px] text-fg-dim hover:bg-surface-2 disabled:opacity-50"
               >
                 next →
               </button>
@@ -345,7 +345,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
           <button
             onClick={handleQuery}
             disabled={isLoading}
-            className="rounded-sm bg-mint px-3 py-1 font-mono text-[11px] font-semibold text-bg disabled:opacity-50"
+            className="rounded-sm bg-mint px-3 py-1 font-mono text-[12px] font-semibold text-bg disabled:opacity-50"
           >
             {isLoading ? t('eventQueryUI.querying') : t('eventQueryUI.query')}
           </button>
@@ -354,7 +354,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
 
       {/* Selected event signature + topic hash */}
       {selectedEventObj?.topicHash && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line-soft bg-surface px-5 py-1.5 font-mono text-[11px]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line-soft bg-surface px-5 py-1.5 font-mono text-[12px]">
           <div className="flex items-center gap-2">
             <span className="uppercase tracking-[0.2em] text-fg-mute">sig</span>
             <span className="break-all text-fg-dim">{selectedEventObj.signature}</span>
@@ -385,7 +385,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
       {/* Indexed filters row */}
       {showFilters && hasIndexed && (
         <div className="border-b border-line bg-surface px-5 py-3">
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
             {t('eventQueryUI.indexedFilters')}
           </div>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -393,16 +393,16 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
               .filter((i) => i.indexed)
               .map((i) => (
                 <div key={i.name} className="flex items-center gap-2">
-                  <span className="min-w-[80px] font-mono text-[11px] text-fg-mute">
+                  <span className="min-w-[80px] font-mono text-[12px] text-fg-mute">
                     {i.name}
-                    <span className="ml-1 text-[10px]">({i.type})</span>
+                    <span className="ml-1 text-[11px]">({i.type})</span>
                   </span>
                   <input
                     value={indexedParams[i.name] ?? ''}
                     onChange={(e) =>
                       setIndexedParams((prev) => ({ ...prev, [i.name]: e.target.value }))
                     }
-                    className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[11px] text-fg focus:border-mint focus:outline-none"
+                    className="flex-1 rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg focus:border-mint focus:outline-none"
                   />
                 </div>
               ))}
@@ -411,14 +411,14 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
       )}
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[12px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[13px] text-call-red">
           {error}
         </div>
       )}
 
       {stats && <StatsRibbon stats={stats} />}
 
-      <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[11px]">
+      <div className="flex items-center gap-2 border-b border-line bg-bg px-5 py-2 font-mono text-[12px]">
         <span className="uppercase tracking-[0.22em] text-fg-mute">
           {t('eventQueryUI.results')}
         </span>
@@ -427,7 +427,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
         {results.length > 0 && (
           <button
             onClick={handleClearAll}
-            className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-mute hover:bg-surface-2"
+            className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-mute hover:bg-surface-2"
           >
             {t('debugTrace.closeAll')}
           </button>
@@ -450,17 +450,17 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
             return (
               <div key={i} className="border-b border-line-soft">
                 <div
-                  className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[12px] hover:bg-surface-2"
+                  className="flex cursor-pointer items-center gap-2.5 px-5 py-2 font-mono text-[13px] hover:bg-surface-2"
                   onClick={() => toggleResult(i)}
                 >
-                  <span className="text-[11px] text-fg-mute">#{log.logIndex}</span>
+                  <span className="text-[12px] text-fg-mute">#{log.logIndex}</span>
                   <span className="text-fg-mute">{log.blockNumber}</span>
                   {log.parsed ? (
-                    <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-mint">
+                    <span className="rounded-xs bg-mint/15 px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-mint">
                       {log.parsed.eventName}
                     </span>
                   ) : (
-                    <span className="rounded-xs bg-line px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] text-fg-mute">
+                    <span className="rounded-xs bg-line px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] text-fg-mute">
                       RAW
                     </span>
                   )}
@@ -481,7 +481,7 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
                   </span>
                 </div>
                 {expanded && (
-                  <div className="bg-surface px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
+                  <div className="bg-surface px-5 py-3 font-mono text-[12px] leading-[1.55]">
                     <div className="mb-1.5">
                       <span className="text-fg-mute">address </span>
                       <AddressBadge addr={log.address} lookup={lookup} showNames={showAddressNames} />
@@ -498,10 +498,10 @@ const EventQueryPage: React.FC<EventQueryPageProps> = ({
                         <span className="text-mint">{log.parsed.abiName}</span>
                       </div>
                     )}
-                    <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                    <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                       {t('eventQueryUI.args')}
                     </div>
-                    <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                    <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] leading-[1.6]">
                       <DecodedValue
                         value={log.parsed ? (log.parsed.args as any) : ({ topics: log.topics, data: log.data } as any)}
                         lookup={lookup}

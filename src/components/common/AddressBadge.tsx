@@ -1,5 +1,5 @@
 import React from 'react';
-import { AddressNameLookup, formatAddress } from '../../utils/addressDisplay';
+import { AddressNameLookup } from '../../utils/addressDisplay';
 
 interface Props {
   addr: string;
@@ -9,15 +9,19 @@ interface Props {
 }
 
 const AddressBadge: React.FC<Props> = ({ addr, lookup, showNames, className }) => {
-  const label = formatAddress(addr, lookup, showNames);
-  const isLoose = label.endsWith('?');
-  const tone = isLoose ? 'text-fg-dim' : 'text-fg';
+  const key = addr.toLowerCase();
+  const strict = showNames ? lookup.strict.get(key) : undefined;
+  const loose = showNames && !strict ? lookup.loose.get(key) : undefined;
+  const name = strict ?? loose;
+  const isLoose = !strict && !!loose;
   return (
-    <span
-      title={addr}
-      className={`font-mono ${tone} ${className ?? ''}`}
-    >
-      {label}
+    <span title={addr} className={`font-mono text-fg ${className ?? ''}`}>
+      {addr}
+      {name && (
+        <span className={'ml-1.5 ' + (isLoose ? 'text-fg-dim' : 'text-mint')}>
+          · {name}{isLoose ? '?' : ''}
+        </span>
+      )}
     </span>
   );
 };

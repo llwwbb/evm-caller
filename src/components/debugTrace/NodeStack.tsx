@@ -53,19 +53,19 @@ const NodeStack: React.FC<NodeStackProps> = ({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-bg">
-      <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5 font-mono text-[11px]">
+      <div className="flex items-center gap-2.5 border-b border-line px-4 py-2.5 font-mono text-[12px]">
         <span className="uppercase tracking-[0.22em] text-fg-mute">focused +</span>
         <span className="text-fg">pinned</span>
         <span className="text-mint">{cards.length}</span>
         {pinCount >= 5 && (
-          <span className="text-[10px] text-fg-mute">
+          <span className="text-[11px] text-fg-mute">
             {t('debugTrace.pinnedHint', { count: pinCount })}
           </span>
         )}
         {cards.length > 0 && (
           <button
             onClick={onCloseAll}
-            className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-mute hover:bg-surface-2"
+            className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-mute hover:bg-surface-2"
           >
             {t('debugTrace.closeAll')}
           </button>
@@ -75,7 +75,7 @@ const NodeStack: React.FC<NodeStackProps> = ({
       <div className="flex flex-1 min-h-0 flex-col gap-px overflow-y-auto bg-line">
         {cards.length === 0 ? (
           <div className="flex h-full items-center justify-center bg-bg p-8 text-center">
-            <p className="font-ui text-[13px] text-fg-mute">
+            <p className="font-ui text-[14px] text-fg-mute">
               {t('debugTrace.clickNodeToViewDetail')}
             </p>
           </div>

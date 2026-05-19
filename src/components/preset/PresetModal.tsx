@@ -103,12 +103,12 @@ const PresetModal: React.FC<PresetModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center border-b border-line px-5 py-3">
-          <h2 className="font-mono text-[12px] uppercase tracking-[0.22em] text-fg-dim">
+          <h2 className="font-mono text-[13px] uppercase tracking-[0.22em] text-fg-dim">
             {t('presetModal.title')}
           </h2>
           <button
             onClick={onClose}
-            className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[12px] text-fg-dim hover:bg-surface-2"
+            className="ml-auto rounded-sm px-2 py-0.5 font-mono text-[13px] text-fg-dim hover:bg-surface-2"
           >
             Esc
           </button>

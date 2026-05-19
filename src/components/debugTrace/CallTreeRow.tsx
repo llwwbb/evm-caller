@@ -70,13 +70,13 @@ const CallTreeRow: React.FC<CallTreeRowProps> = ({
   return (
     <div
       onClick={(e) => onClick(path, e.metaKey || e.shiftKey || e.ctrlKey)}
-      className={`group grid cursor-pointer items-center gap-2.5 border-b border-line-soft px-3.5 py-1.5 font-mono text-[12px] transition-colors ${bgClass} ${leftBorder}`}
+      className={`group grid cursor-pointer items-center gap-2.5 border-b border-line-soft px-3.5 py-1.5 font-mono text-[13px] transition-colors ${bgClass} ${leftBorder}`}
       style={{ gridTemplateColumns: 'auto auto minmax(0,1fr) auto 60px auto' }}
     >
-      <span className="whitespace-pre text-[11px] text-line">{rail}</span>
+      <span className="whitespace-pre text-[12px] text-line">{rail}</span>
 
       <span
-        className="rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em]"
+        className="rounded-xs px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em]"
         style={{ background: style.bg, color: style.fg }}
       >
         {style.label}
@@ -92,10 +92,10 @@ const CallTreeRow: React.FC<CallTreeRowProps> = ({
             <span className="text-fg">{fn}</span>
           </>
         )}
-        {isPinned && <span className="ml-2 text-[10px] text-mint">📌</span>}
+        {isPinned && <span className="ml-2 text-[11px] text-mint">📌</span>}
       </span>
 
-      <span className="min-w-[68px] text-right text-[11px] text-fg-mute">
+      <span className="min-w-[68px] text-right text-[12px] text-fg-mute">
         {formatGas(trace.gasUsed)}
       </span>
 

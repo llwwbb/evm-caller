@@ -113,7 +113,7 @@ const ContractPicker: React.FC<Props> = ({
             }
           }}
           placeholder={placeholder ?? '0x...'}
-          className="w-full rounded-sm border border-line bg-bg py-1 pl-2 pr-6 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+          className="w-full rounded-sm border border-line bg-bg py-1 pl-2 pr-6 font-mono text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
         />
         {value && (
           <button
@@ -124,16 +124,16 @@ const ContractPicker: React.FC<Props> = ({
               setIsTyping(false);
               setActiveIdx(0);
             }}
-            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[11px] text-fg-mute hover:text-fg"
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-xs px-1 text-[12px] text-fg-mute hover:text-fg"
           >
             ×
           </button>
         )}
       </div>
       {open && (
-        <div className="absolute left-0 right-0 z-40 mt-0.5 rounded-sm border border-line bg-surface font-mono text-[12px] shadow-lg">
+        <div className="absolute left-0 right-0 z-40 mt-0.5 rounded-sm border border-line bg-surface font-mono text-[13px] shadow-lg">
           {currentChainId != null && (
-            <label className="flex cursor-pointer items-center gap-1.5 border-b border-line-soft px-2.5 py-1 text-[11px] text-fg-dim">
+            <label className="flex cursor-pointer items-center gap-1.5 border-b border-line-soft px-2.5 py-1 text-[12px] text-fg-dim">
               <input
                 type="checkbox"
                 checked={showAllChains}
@@ -159,7 +159,7 @@ const ContractPicker: React.FC<Props> = ({
                     (i === activeIdx ? 'bg-surface-2' : '')
                   }
                 >
-                  <span className="rounded-xs bg-mint/15 px-1.5 text-[10px] font-bold text-mint">
+                  <span className="rounded-xs bg-mint/15 px-1.5 text-[11px] font-bold text-mint">
                     {r.entry.chainId != null ? chainLabel(r.entry.chainId) : 'ALL'}
                   </span>
                   <span className="text-fg">{r.preset.name}</span>

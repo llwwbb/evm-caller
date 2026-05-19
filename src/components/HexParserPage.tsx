@@ -41,7 +41,7 @@ const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
   const style = DECODE_TYPE_STYLE[type] ?? DECODE_TYPE_STYLE.unknown;
   return (
     <span
-      className="rounded-xs px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.08em]"
+      className="rounded-xs px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.08em]"
       style={{ background: style.bg, color: style.fg }}
     >
       {type}
@@ -151,15 +151,15 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* TxBar with mode picker */}
-      <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[12px]">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
+      <div className="flex items-center gap-3 border-b border-line bg-bg px-5 py-2.5 font-mono text-[13px]">
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">mode</span>
         <div className="flex gap-0.5">
           {(['auto', 'function', 'event', 'error'] as DecodeType[]).map((type) => (
             <button
               key={type}
               onClick={() => setDecodeType(type)}
               className={
-                'rounded-sm px-2 py-0.5 text-[11px] transition-colors ' +
+                'rounded-sm px-2 py-0.5 text-[12px] transition-colors ' +
                 (decodeType === type
                   ? 'bg-mint font-semibold text-bg'
                   : 'text-fg-dim hover:bg-surface-2')
@@ -170,14 +170,14 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
           ))}
         </div>
         <span className="text-line">/</span>
-        <span className="text-[11px] uppercase tracking-[0.2em] text-fg-mute">abi</span>
+        <span className="text-[12px] uppercase tracking-[0.2em] text-fg-mute">abi</span>
         <span className={mergedAbi ? 'text-mint' : 'text-call-red'}>
           {mergedAbi ? 'loaded' : 'none'}
         </span>
       </div>
 
       {error && (
-        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[12px] text-call-red">
+        <div className="border-b border-line bg-call-red/5 px-5 py-2 font-mono text-[13px] text-call-red">
           {error}
         </div>
       )}
@@ -188,7 +188,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
       >
         {/* Left: input */}
         <div className="flex min-h-0 flex-col border-r border-line">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('hexParser.hexDataLabel')}
             </span>
@@ -198,11 +198,11 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
               value={hexData}
               onChange={(e) => setHexData(e.target.value)}
               placeholder={t('hexParser.hexDataPlaceholder')}
-              className="min-h-[240px] flex-1 resize-none rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+              className="min-h-[240px] flex-1 resize-none rounded-sm border border-line bg-bg px-3 py-2 font-mono text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
             />
             <button
               onClick={handleDecode}
-              className="mt-3 rounded-sm bg-mint px-4 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80"
+              className="mt-3 rounded-sm bg-mint px-4 py-1.5 font-mono text-[13px] font-semibold text-bg hover:bg-mint/80"
             >
               {t('hexParser.decode')}
             </button>
@@ -211,7 +211,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
 
         {/* Right: history */}
         <div className="flex min-h-0 flex-col">
-          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
             <span className="uppercase tracking-[0.22em] text-fg-mute">
               {t('hexParser.history')}
             </span>
@@ -220,7 +220,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
             {history.length > 0 && (
               <button
                 onClick={handleClearHistory}
-                className="ml-auto rounded-sm px-2 py-0.5 text-[11px] text-fg-mute hover:bg-surface-2"
+                className="ml-auto rounded-sm px-2 py-0.5 text-[12px] text-fg-mute hover:bg-surface-2"
               >
                 {t('debugTrace.closeAll')}
               </button>
@@ -228,7 +228,7 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
           </div>
           <div className="flex-1 overflow-y-auto">
             {history.length === 0 ? (
-              <div className="p-5 font-ui text-[13px] text-fg-mute">
+              <div className="p-5 font-ui text-[14px] text-fg-mute">
                 {t('hexParser.noHistory')}
               </div>
             ) : (
@@ -239,12 +239,12 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
                 return (
                   <div key={h.id} className="border-b border-line-soft">
                     <div
-                      className="flex cursor-pointer items-center gap-2.5 bg-surface px-5 py-2 font-mono text-[11px]"
+                      className="flex cursor-pointer items-center gap-2.5 bg-surface px-5 py-2 font-mono text-[12px]"
                       onClick={() => toggleCollapse(h.id)}
                     >
                       <span
                         className={
-                          'rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] ' +
+                          'rounded-xs px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] ' +
                           (h.success ? 'bg-mint/15 text-mint' : 'bg-call-red/15 text-call-red')
                         }
                       >
@@ -268,11 +268,11 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
                       </button>
                     </div>
                     {!isCollapsed && (
-                      <div className="bg-surface-2 px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
-                        <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                      <div className="bg-surface-2 px-5 py-3 font-mono text-[12px] leading-[1.55]">
+                        <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                           {t('hexParser.hexData')}
                         </div>
-                        <pre className="mb-3 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] text-fg-dim">
+                        <pre className="mb-3 whitespace-pre-wrap break-all rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] text-fg-dim">
                           {h.hexData}
                         </pre>
                         {h.success && r ? (
@@ -291,10 +291,10 @@ const HexParserPage: React.FC<HexParserPageProps> = ({
                             )}
                             {r.args !== undefined && (
                               <>
-                                <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-mute">
+                                <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-mute">
                                   {t('hexParser.decodedArgs')}
                                 </div>
-                                <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                                <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[12px] leading-[1.6]">
                                   <DecodedValue value={r.args as any} lookup={lookup} showNames={showAddressNames} />
                                 </div>
                               </>

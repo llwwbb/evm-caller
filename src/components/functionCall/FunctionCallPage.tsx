@@ -58,7 +58,7 @@ const MutabilityBadge: React.FC<{ mutability: string }> = ({ mutability }) => {
   const style = MUTABILITY_STYLE[mutability] ?? MUTABILITY_STYLE.view;
   return (
     <span
-      className="rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em]"
+      className="rounded-xs px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em]"
       style={{ background: style.bg, color: style.fg }}
     >
       {mutability.toUpperCase()}
@@ -195,7 +195,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
         actions={
           <button
             onClick={onPresetsClick}
-            className="rounded-sm border border-line bg-surface px-2.5 py-1 text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+            className="rounded-sm border border-line bg-surface px-2.5 py-1 text-[12px] text-fg-dim hover:bg-surface-2 hover:text-fg"
           >
             {t('topnav.presets')}
           </button>
@@ -223,7 +223,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
               </p>
               <button
                 onClick={onPresetsClick}
-                className="mt-4 rounded-sm border border-mint px-3 py-1.5 font-mono text-[12px] text-mint hover:bg-mint/10"
+                className="mt-4 rounded-sm border border-mint px-3 py-1.5 font-mono text-[13px] text-mint hover:bg-mint/10"
               >
                 {t('functionCall.selectAbi')}
               </button>
@@ -245,7 +245,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
 
           {/* middle: grouped function list */}
           <div className="flex min-h-0 flex-col border-r border-line">
-            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[11px]">
+            <div className="flex items-center gap-2 border-b border-line px-4 py-2 font-mono text-[12px]">
               <span className="uppercase tracking-[0.22em] text-fg-dim">
                 {t('functionCall.functions')}
               </span>
@@ -255,12 +255,12 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder={t('functionCall.searchFunctions')}
-                className="ml-auto w-40 rounded-sm border border-line bg-bg px-2 py-0.5 font-ui text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                className="ml-auto w-40 rounded-sm border border-line bg-bg px-2 py-0.5 font-ui text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
               />
             </div>
             <div className="flex-1 overflow-y-auto">
               {groups.length === 0 ? (
-                <div className="p-4 font-ui text-[13px] text-fg-dim">
+                <div className="p-4 font-ui text-[14px] text-fg-dim">
                   {t('functionCall.noMatchingFunctions')}
                 </div>
               ) : (
@@ -270,7 +270,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                     <div key={g.abiName}>
                       <div
                         onClick={() => toggleGroup(g.abiName)}
-                        className="sticky top-0 z-10 flex cursor-pointer items-center gap-1.5 border-b border-line bg-surface px-4 py-1.5 font-mono text-[11px] text-fg-dim hover:text-fg"
+                        className="sticky top-0 z-10 flex cursor-pointer items-center gap-1.5 border-b border-line bg-surface px-4 py-1.5 font-mono text-[12px] text-fg-dim hover:text-fg"
                       >
                         <span className="text-fg-mute">{collapsed ? '▸' : '▾'}</span>
                         <span className="uppercase tracking-[0.18em]">{g.abiName}</span>
@@ -285,7 +285,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                             key={k}
                             onClick={() => setSelectedKey(k)}
                             className={
-                              'group cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[12px] transition-colors ' +
+                              'group cursor-pointer border-b border-line-soft px-4 py-2 font-mono text-[13px] transition-colors ' +
                               (selected
                                 ? 'border-l-2 border-l-mint bg-mint/5 pl-[14px]'
                                 : 'border-l-2 border-l-transparent pl-[14px] hover:bg-surface-2')
@@ -294,12 +294,12 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                             <div className="flex items-center gap-2">
                               <MutabilityBadge mutability={fn.stateMutability} />
                               <span className="truncate text-fg">{fn.name}</span>
-                              <span className="truncate text-[11px] text-fg-mute">
+                              <span className="truncate text-[12px] text-fg-mute">
                                 ({fn.inputs.map((i) => i.type).join(', ')})
                               </span>
                             </div>
                             {fn.outputs.length > 0 && (
-                              <div className="mt-0.5 ml-[46px] truncate text-[11px] text-fg-mute">
+                              <div className="mt-0.5 ml-[46px] truncate text-[12px] text-fg-mute">
                                 → {fn.outputs.map((o) => o.type).join(', ')}
                               </div>
                             )}
@@ -317,7 +317,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
           <div className="flex min-h-0 min-w-0 flex-col">
             {selectedFn ? (
               <div className="border-b border-line bg-bg px-5 py-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[12px]">
+                <div className="mb-3 flex flex-wrap items-center gap-2 font-mono text-[13px]">
                   <MutabilityBadge mutability={selectedFn.stateMutability} />
                   <span className="text-fg">{selectedFn.name}</span>
                   <span className="text-fg-dim">
@@ -342,15 +342,15 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                           key={i}
                           className="grid grid-cols-[120px_1fr] items-center gap-3"
                         >
-                          <div className="font-mono text-[11px]">
+                          <div className="font-mono text-[12px]">
                             <div className="text-fg">{input.name || `arg${i}`}</div>
-                            <div className="text-[10px] text-fg-dim">{input.type}</div>
+                            <div className="text-[11px] text-fg-dim">{input.type}</div>
                           </div>
                           <input
                             value={values[i] ?? ''}
                             onChange={(e) => setArgValue(selectedFn, i, e.target.value)}
                             placeholder={input.type}
-                            className="rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[12px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
+                            className="rounded-sm border border-line bg-bg px-2 py-1 font-mono text-[13px] text-fg placeholder:text-fg-mute focus:border-mint focus:outline-none"
                           />
                         </div>
                       );
@@ -362,7 +362,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                   <button
                     onClick={handleCall}
                     disabled={!canCall}
-                    className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[12px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
+                    className="rounded-sm bg-mint px-4 py-1.5 font-mono text-[13px] font-semibold text-bg hover:bg-mint/80 disabled:bg-line disabled:text-fg-mute"
                   >
                     {isCallInProgress
                       ? t('functionCall.calling')
@@ -372,24 +372,24 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                       : t('functionCall.call')}
                   </button>
                   {!hasConfig && (
-                    <span className="font-mono text-[11px] text-fg-dim">
+                    <span className="font-mono text-[12px] text-fg-dim">
                       {t('functionCall.missingConfig')}
                     </span>
                   )}
                   {callError && (
-                    <span className="font-mono text-[11px] text-call-red">
+                    <span className="font-mono text-[12px] text-call-red">
                       {callError}
                     </span>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="border-b border-line bg-bg px-5 py-4 font-ui text-[13px] text-fg-dim">
+              <div className="border-b border-line bg-bg px-5 py-4 font-ui text-[14px] text-fg-dim">
                 {t('functionCall.selectFunctionHint')}
               </div>
             )}
 
-            <div className="flex items-center gap-2 border-b border-line px-5 py-2 font-mono text-[11px]">
+            <div className="flex items-center gap-2 border-b border-line px-5 py-2 font-mono text-[12px]">
               <span className="uppercase tracking-[0.22em] text-fg-dim">
                 {t('functionCall.recentCalls')}
               </span>
@@ -402,7 +402,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                       onClearAll();
                     }
                   }}
-                  className="ml-auto rounded-sm border border-line px-2 py-0.5 text-[11px] text-fg-dim hover:bg-surface-2 hover:text-fg"
+                  className="ml-auto rounded-sm border border-line px-2 py-0.5 text-[12px] text-fg-dim hover:bg-surface-2 hover:text-fg"
                 >
                   {t('functionCall.clearAll')}
                 </button>
@@ -411,7 +411,7 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
 
             <div className="flex-1 min-h-0 overflow-y-auto">
               {callHistory.length === 0 ? (
-                <div className="p-5 font-ui text-[13px] text-fg-dim">
+                <div className="p-5 font-ui text-[14px] text-fg-dim">
                   {t('functionCall.noRecentCalls')}
                 </div>
               ) : (
@@ -419,10 +419,10 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                   const success = item.result.success;
                   return (
                     <div key={item.id} className="border-b border-line-soft">
-                      <div className="flex items-center gap-2 bg-surface px-5 py-2 font-mono text-[11px]">
+                      <div className="flex items-center gap-2 bg-surface px-5 py-2 font-mono text-[12px]">
                         <span
                           className={
-                            'rounded-xs px-1.5 py-0.5 text-[10px] font-bold tracking-[0.08em] ' +
+                            'rounded-xs px-1.5 py-0.5 text-[11px] font-bold tracking-[0.08em] ' +
                             (success ? 'bg-mint/15 text-mint' : 'bg-call-red/15 text-call-red')
                           }
                         >
@@ -445,26 +445,26 @@ const FunctionCallPage: React.FC<FunctionCallPageProps> = ({
                           ×
                         </button>
                       </div>
-                      <div className="bg-surface-2 px-5 py-3 font-mono text-[10.5px] leading-[1.55]">
+                      <div className="bg-surface-2 px-5 py-3 font-mono text-[13px] leading-[1.55]">
                         {item.args.length > 0 && (
                           <>
-                            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-dim">
+                            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-dim">
                               {t('functionCall.args')}
                             </div>
-                            <div className="mb-3 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                            <div className="mb-3 rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[13px] leading-[1.6]">
                               <DecodedValue value={item.args as any} lookup={lookup} showNames={showAddressNames} />
                             </div>
                           </>
                         )}
-                        <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.22em] text-fg-dim">
+                        <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.22em] text-fg-dim">
                           {success ? t('functionCall.result') : t('functionCall.error')}
                         </div>
                         {success ? (
-                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[10.5px] leading-[1.6]">
+                          <div className="rounded-sm border border-line-soft bg-bg px-2.5 py-2 text-[13px] leading-[1.6]">
                             <DecodedValue value={item.result.data as any} lookup={lookup} showNames={showAddressNames} />
                           </div>
                         ) : (
-                          <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-[12px] text-call-red">
+                          <div className="rounded-sm border border-call-red/30 bg-call-red/5 px-2.5 py-2 text-[13px] text-call-red">
                             {item.result.error}
                           </div>
                         )}
